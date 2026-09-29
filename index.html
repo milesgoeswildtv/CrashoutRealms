@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0a0c10" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="REALMS" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <title>REALMS — Alpha Playtest</title>
+</head>
+<body>
+  <div id="app" class="app-shell">
+    <header class="topbar">
+      <div>
+        <div class="eyebrow">REALMS • v0.7 iPhone playable alpha</div>
+        <h1>REALMS</h1>
+      </div>
+      <div class="top-actions">
+        <button id="newGameBtn" class="btn ghost" type="button">New Game</button>
+        <button id="rulesBtn" class="btn ghost" type="button">Prototype Rules</button>
+      </div>
+    </header>
+
+    <main id="gameRoot" class="game-root" aria-live="polite"></main>
+  </div>
+
+  <div id="setupModal" class="modal open" role="dialog" aria-modal="true" aria-labelledby="setupTitle">
+    <div class="modal-card setup-card">
+      <div class="modal-head">
+        <div>
+          <div class="eyebrow">Build a match</div>
+          <h2 id="setupTitle">Enter a Realm</h2>
+        </div>
+      </div>
+      <div class="setup-grid">
+        <label>Mode
+          <select id="modeSelect">
+            <option value="ai">Player vs AI</option>
+            <option value="hotseat">Local 2 Player</option>
+            <option value="watch">AI vs AI — Watch</option>
+          </select>
+        </label>
+        <label>Realm
+          <select id="realmSelect">
+            <option value="Random">Random Realm</option>
+            <option>Crystal Isle</option>
+            <option>Blood Moon</option>
+            <option>Upper Strata</option>
+            <option>Deadlands</option>
+            <option>The Endless</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="duel-setup">
+        <section class="setup-player p1">
+          <h3>Player 1</h3>
+          <label>Faction<select id="p1Faction"></select></label>
+          <label>Passive<select id="p1Passive"></select></label>
+        </section>
+        <div class="versus">VS</div>
+        <section class="setup-player p2">
+          <h3 id="p2Title">AI</h3>
+          <label>Faction<select id="p2Faction"></select></label>
+          <label>Passive<select id="p2Passive"></select></label>
+        </section>
+      </div>
+
+      <div class="prototype-note">
+        <strong>iPhone-ready:</strong> after this is hosted, open it in Safari and use <strong>Share → Add to Home Screen</strong> to launch it like an app. No App Store or TestFlight is required for this alpha.<br><br>
+        <strong>Alpha build:</strong> core economy, combat, faction passives, Geode cracking, Continuum Sequence, Realm rules, Deadlands shared grave and common card effects are automated. A built-in referee panel lets you resolve any unscripted or disputed card text manually without restarting the match.
+      </div>
+      <button id="startBtn" class="btn primary large" type="button">Start Match</button>
+    </div>
+  </div>
+
+  <div id="choiceModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="choiceTitle">
+    <div class="modal-card choice-card">
+      <div class="modal-head">
+        <div>
+          <div id="choiceEyebrow" class="eyebrow">Decision</div>
+          <h2 id="choiceTitle">Choose</h2>
+        </div>
+      </div>
+      <div id="choiceBody"></div>
+      <div id="choiceActions" class="modal-actions"></div>
+    </div>
+  </div>
+
+  <div id="rulesModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="rulesTitle">
+    <div class="modal-card rules-card">
+      <div class="modal-head">
+        <div>
+          <div class="eyebrow">Prototype rulings</div>
+          <h2 id="rulesTitle">REALMS v0.7 engine</h2>
+        </div>
+        <button class="icon-btn" data-close="rulesModal" type="button">×</button>
+      </div>
+      <div class="rules-copy">
+        <p><strong>Health:</strong> 20. <strong>Deck:</strong> 30 unique faction cards. <strong>Hand:</strong> recurring selective cycle to 5 at the start of every round.</p>
+        <p><strong>Resources:</strong> after the hand cycle, total the +1/+2 resource values on the five cards in hand. That is the round pool. Played cards do not reduce the already-generated total except by paying their cost. Unspent resource expires.</p>
+        <p><strong>Placement:</strong> players alternate one play/pass at a time. Two consecutive passes move to Combat. Creatures may act the round they enter in this alpha.</p>
+        <p><strong>Combat:</strong> players alternate one creature activation. Creature combat deals simultaneous damage. Direct attacks are legal unless Taunt or a Realm/card redirects them.</p>
+        <p><strong>Initiative:</strong> determines the first Combat activation and alternates each round in this prototype. Blood Moon can override the opening cadence.</p>
+        <p><strong>Deckout:</strong> each failed draw deals 1 Health in this prototype.</p>
+        <p><strong>Deadlands half-cost:</strong> rounded up, minimum 1. Grave Echoes retain printed ability text, are 1/1, are accessible from the shared Grave State by either player, and never retrigger Deadlands when leaving play.</p>
+        <p><strong>Open rule:</strong> Grave Echo deaths currently <em>do</em> count for faction/card death triggers, but not Realm triggers. The referee panel lets you override this manually if you want to A/B the opposite ruling.</p>
+      </div>
+    </div>
+  </div>
+
+  <style id="boot-style">
+    body{margin:0;background:#0a0c10;color:#eef2f6;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    .boot{min-height:100vh;display:grid;place-items:center;padding:24px;text-align:center}
+    .boot b{letter-spacing:.18em} .boot small{display:block;color:#95a0ae;margin-top:10px}
+  </style>
+  <div id="boot" class="boot"><div><b>REALMS</b><small>Loading playable alpha…</small></div></div>
+  <script>
+  (async()=>{
+    const payloads={"styles.css": ["payload/styles-css-0.b64"], "cards.js": ["payload/cards-js-0.b64", "payload/cards-js-1.b64"], "game.js": ["payload/game-js-0.b64", "payload/game-js-1.b64", "payload/game-js-2.b64", "payload/game-js-3.b64"]};
+    async function readB64(files){
+      let s=''; for(const f of files){ const r=await fetch(f,{cache:'no-store'}); if(!r.ok) throw new Error('Failed '+f); s+=await r.text(); } return s.trim();
+    }
+    async function gunzipText(files){
+      const b64=await readB64(files); const bin=atob(b64); const u8=new Uint8Array(bin.length);
+      for(let i=0;i<bin.length;i++)u8[i]=bin.charCodeAt(i);
+      if(!('DecompressionStream' in window)) throw new Error('This browser is too old for the alpha loader. Use current iPhone Safari.');
+      const ds=new DecompressionStream('gzip'); const stream=new Blob([u8]).stream().pipeThrough(ds);
+      return await new Response(stream).text();
+    }
+    try{
+      const css=await gunzipText(payloads['styles.css']);
+      const style=document.createElement('style'); style.textContent=css; document.head.appendChild(style);
+      document.getElementById('boot-style')?.remove(); document.getElementById('boot')?.remove();
+      const cards=await gunzipText(payloads['cards.js']); (0,eval)(cards);
+      const game=await gunzipText(payloads['game.js']); (0,eval)(game);
+      if('serviceWorker' in navigator && location.protocol!=='file:') navigator.serviceWorker.register('./sw.js').catch(()=>{});
+    }catch(err){
+      document.body.innerHTML='<div class="boot"><div><b>REALMS failed to load</b><small>'+String(err.message||err)+'</small></div></div>';
+      console.error(err);
+    }
+  })();
+  </script>
+</body>
+</html>
