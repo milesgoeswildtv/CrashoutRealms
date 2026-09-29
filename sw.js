@@ -1,0 +1,5 @@
+const CACHE='realms-gh-v01';
+const ASSETS=["./","./index.html","./manifest.webmanifest","./icon.svg","./payload/styles-css-0.b64","./payload/cards-js-0.b64","./payload/cards-js-1.b64","./payload/game-js-0.b64","./payload/game-js-1.b64","./payload/game-js-2.b64","./payload/game-js-3.b64"];
+self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting())));
+self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==CACHE).map(x=>caches.delete(x)))).then(()=>self.clients.claim())));
+self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{const q=r.clone();caches.open(CACHE).then(x=>x.put(e.request,q));return r;}).catch(()=>caches.match('./index.html'))));});
