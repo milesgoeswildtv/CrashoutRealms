@@ -1,0 +1,19 @@
+{
+  "name": "REALMS — Playable Alpha",
+  "short_name": "REALMS",
+  "description": "Mobile-first playable alpha for the REALMS card game.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0a0c10",
+  "theme_color": "#0a0c10",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
