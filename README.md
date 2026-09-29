@@ -1,38 +1,33 @@
-# REALMS — iPhone Playable Alpha v0.2
+# REALMS — iPhone Playable Alpha
 
-This is a zero-build, mobile-first playable REALMS alpha. It is designed to run on iPhone Safari and can be installed to the iPhone Home Screen as a PWA after hosting.
+This repository contains the mobile-first playable REALMS alpha.
 
-## Fastest deployment: GitHub Pages
+## Play on iPhone
 
-1. Create a GitHub repository.
-2. Upload **the contents of this folder** to the repository root.
-3. In GitHub: **Settings → Pages → Deploy from a branch → main / root**.
-4. Open the published URL in Safari on iPhone.
-5. Tap **Share → Add to Home Screen**.
-6. Launch REALMS from the new Home Screen icon.
+Once GitHub Pages is enabled for the repository, open the Pages URL in Safari, then use **Share → Add to Home Screen**. REALMS launches in standalone mode like an app.
 
 No TestFlight, App Store account, npm, build process, server, database, or native iOS project is required for this alpha.
 
-## iPhone-specific work in v0.2
-
-- Portrait-first responsive layout.
-- iPhone safe-area support for Dynamic Island/notch and Home indicator.
-- 44px+ tap targets and touch-first card selection.
-- Swipeable hand, battlefield, trap rows, and action controls.
-- Sticky mobile action/referee dock.
-- Bottom-sheet style setup, choices, mulligan, grave-state and rules modals.
-- No gameplay action depends on hover.
-- PWA manifest and Home Screen icons.
-- Service worker caches the static game for repeat/offline launches after the first successful hosted load.
-
-## Current gameplay modes
+## Current gameplay
 
 - Player vs AI
 - Local two-player / hotseat
 - AI vs AI Watch
+- Five 30-card faction decks
+- Both faction passives for every faction
+- All five Realms
+- v0.7 five-card hand / +1 +2 resource economy
+- Alternating Placement and Combat
+- Living Geodes Pressure / Crack / Kimberlite / Fracture
+- Continuum Sequence / Skip Ahead / Loop Back
+- Harvest growth / sacrifice systems
+- Moondemons Bloodthirst / Frenzied
+- Eliteborn linking / formation systems
+- Deadlands shared Grave State, Grave Echo stealing and absorption
+- Referee controls for unresolved or not-yet-scripted interactions
 
-The alpha includes the five 30-card faction decks, faction passives, v0.7 resource/round rules, Realms, Geode Pressure/Crack chains, Continuum Sequence, Deadlands shared Grave State/Echoes, and a referee panel for effects that are not yet fully automated.
+## Mobile
 
-## Why browser/PWA instead of TestFlight right now?
+The UI is portrait-first, safe-area aware, touch-first, and does not depend on hover. The hand, battlefield, traps and action controls are swipeable on narrow screens. A service worker caches the static game after the first successful hosted load.
 
-The entire current game is HTML/CSS/JavaScript, so a PWA gives the fastest real-device iteration loop. Every balance/UI change can go live from GitHub without creating an Xcode project, signing certificates, provisioning, or waiting for TestFlight processing. If REALMS later needs native iOS features, the web build can be wrapped or ported after the game rules and UX stabilize.
+See `TESTING.md` for the alpha playtest checklist.
