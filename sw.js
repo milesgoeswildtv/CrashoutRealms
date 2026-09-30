@@ -1,5 +1,13 @@
-const CACHE='realms-geode-stress-v02';
-const ASSETS=["./","./index.html","./manifest.webmanifest","./icon.svg","./payload/styles-css-0.b64","./payload/cards-js-0.b64","./payload/cards-js-1.b64","./payload-v2/game-js-0-0.b64","./payload-v2/game-js-0-1.b64","./payload-v2/game-js-0-2.b64","./payload-v2/game-js-0-3.b64","./payload-v2/game-js-0-4.b64","./payload-v2/game-js-1-0.b64","./payload-v2/game-js-1-1.b64","./payload-v2/game-js-1-2.b64","./payload-v2/game-js-1-3.b64","./payload-v2/game-js-1-4.b64","./payload-v2/game-js-2-0.b64","./payload-v2/game-js-2-1.b64","./payload-v2/game-js-2-2.b64","./payload-v2/game-js-2-3.b64","./payload-v2/game-js-2-4.b64","./payload/game-js-3.b64"];
-self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting())));
-self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==CACHE).map(x=>caches.delete(x)))).then(()=>self.clients.claim())));
-self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{const q=r.clone();caches.open(CACHE).then(x=>x.put(e.request,q));return r;}).catch(()=>caches.match('./index.html'))));});
+const CACHE='realms-v08-faction-source-01';
+const SHELL=['./','./index.html','./manifest.webmanifest','./icon.svg'];
+self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting())));
+self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
+self.addEventListener('fetch',e=>{
+  if(e.request.method!=='GET')return;
+  e.respondWith(
+    fetch(e.request).then(r=>{
+      if(r.ok){const copy=r.clone();caches.open(CACHE).then(c=>c.put(e.request,copy));}
+      return r;
+    }).catch(()=>caches.match(e.request).then(hit=>hit||caches.match(new Request(e.request.url.split('?')[0])).then(x=>x||caches.match('./index.html'))))
+  );
+});
