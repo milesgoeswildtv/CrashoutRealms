@@ -10,4 +10,41 @@ function finishMulligans(){for(const p of state.players){p.resourceStart=p.hand.
 function effectiveCost(p,c,consume=false){let n=c.cost;const next=p.effects.nextDiscount||0;if(next)n-=next;if((p.effects.tripleDiscount||0)>0)n--;const conSpell=c.type==='Spell'&&(p.sequence===4||p.sequence===5)&&p.board.some(x=>x.id==='CON-025')&&!p.statuses.spellDisc;if(conSpell)n-=2;const eliteEquip=c.type==='Equip'&&p.board.some(x=>x.id==='ELI-024'&&formationSize(p,x)===4)&&!p.statuses.engDisc;if(eliteEquip)n--;if(consume){if(next)p.effects.nextDiscount=0;if((p.effects.tripleDiscount||0)>0)p.effects.tripleDiscount--;if(conSpell)p.statuses.spellDisc=true;if(eliteEquip)p.statuses.engDisc=true;}return Math.max(1,n);}
 function selectedFriendly(p){return state.selected?p.board.find(x=>x.iid===state.selected.iid)||null:null;}
 function selectedEnemy(p){return state.selected?state.players[1-p.index].board.find(x=>x.iid===state.selected.iid)||null:null;}
-function playCard(i,iid,{ai=false,formationChoice=undefined,equipTargetId=null}={}){if(state.phase!=='placement'||state.active!==i||state.winner!==null)return false;const p=state.players[i],c
+function spellTargetPlan(c,p){
+ const single=new Set(['GEO-014','GEO-015','GEO-017','HAR-008','HAR-009','MON-013','MON-017']);
+ if(single.has(c.id))return {kind:'single'};
+ if(c.id==='GEO-013')return {kind:'multi',count:2,optionalSecond:true};
+ if(c.id==='HAR-019')return {kind:'multi',count:2,optionalSecond:false};
+ if(c.id==='ELI-016')return {kind:'formation'};
+ return null;
+}
+function spellCandidates(c,p){
+ if(c.id.startsWith('GEO-'))return p.board.filter(x=>x.faction==='Living Geodes');
+ if(c.id.startsWith('MON-'))return p.board.filter(x=>x.faction==='Moondemons');
+ return p.board.slice();
+}
+function requestSpellTargets(p,c,done){
+ const plan=spellTargetPlan(c,p);if(!plan)return done([]);
+ if(plan.kind==='single'){
+  const a=spellCandidates(c,p);if(!a.length){toast('No legal target for '+c.name+'.');return false;}
+  showOptions('Choose Target',c.name,a.map(x=>({label:`${x.name} — STR ${getStr(x)} • HP ${x.currentHp}/${getMaxHp(x)}`,value:x.iid})),id=>done([id]));return true;
+ }
+ if(plan.kind==='multi'){
+  const a=spellCandidates(c,p),need=plan.optionalSecond?1:2;
+  if(a.length<need){toast(c.name+(need===2?' needs two friendly creatures.':' has no legal target.'));return false;}
+  showOptions('Choose First Target',c.name,a.map(x=>({label:`${x.name} — STR ${getStr(x)} • HP ${x.currentHp}/${getMaxHp(x)}`,value:x.iid})),first=>{
+   const left=a.filter(x=>x.iid!==first);
+   if(!left.length)return done([first]);
+   const opts=left.map(x=>({label:`${x.name} — STR ${getStr(x)} • HP ${x.currentHp}/${getMaxHp(x)}`,value:x.iid}));
+   if(plan.optionalSecond)opts.push({label:'Cast with one target',value:'__done__'});
+   showOptions('Choose Second Target',c.name,opts,second=>done(second==='__done__'?[first]:[first,second]));
+  });return true;
+ }
+ if(plan.kind==='formation'){
+  const ids=[...new Set(p.board.map(x=>x.formation).filter(x=>x!=null))];
+  if(!ids.length){toast('No Formation to target.');return false;}
+  showOptions('Choose Formation',c.name,ids.map(fid=>({label:`Formation ${fid} — size ${formationSize(p,fid)}`,value:'F:'+fid})),id=>done([id]));return true;
+ }
+ return done([]);
+}
+function playCard(i,iid,{ai=false,formationChoice=undefined,equipTargetId=null,spellTargetsReady=false}={}){if(state.phase!=='placement'||state.active!==i||state.winner!==null)return false;const p=state.players[i],c
