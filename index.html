@@ -16,7 +16,7 @@
   <div id="app" class="app-shell">
     <header class="topbar">
       <div>
-        <div class="eyebrow">REALMS • v0.7 iPhone playable alpha</div>
+        <div class="eyebrow">REALMS • v0.7 Geode Stress alpha</div>
         <h1>REALMS</h1>
       </div>
       <div class="top-actions">
@@ -104,7 +104,7 @@
         <p><strong>Health:</strong> 20. <strong>Deck:</strong> 30 unique faction cards. <strong>Hand:</strong> recurring selective cycle to 5 at the start of every round.</p>
         <p><strong>Resources:</strong> after the hand cycle, total the +1/+2 resource values on the five cards in hand. That is the round pool. Played cards do not reduce the already-generated total except by paying their cost. Unspent resource expires.</p>
         <p><strong>Placement:</strong> players alternate one play/pass at a time. Two consecutive passes move to Combat. Creatures may act the round they enter in this alpha.</p>
-        <p><strong>Combat:</strong> players alternate one creature activation. Creature combat deals simultaneous damage. Direct attacks are legal unless Taunt or a Realm/card redirects them.</p>
+        <p><strong>Combat:</strong> players alternate one creature activation. Creature combat deals simultaneous damage. Direct attacks are legal unless Taunt or a Realm/card redirects them.</p>\n        <p><strong>Living Geodes — Stress:</strong> whenever a Dormant Geode takes damage, it gains 1 Pressure before destruction is finalized. Each separate damage event triggers once. If that hit reaches its Crack threshold, Crack resolves first and the transformed Geode survives at a minimum of 1 HP. Cracked Geodes do not gain Pressure from Stress.</p>
         <p><strong>Initiative:</strong> determines the first Combat activation and alternates each round in this prototype. Blood Moon can override the opening cadence.</p>
         <p><strong>Deckout:</strong> each failed draw deals 1 Health in this prototype.</p>
         <p><strong>Deadlands half-cost:</strong> rounded up, minimum 1. Grave Echoes retain printed ability text, are 1/1, are accessible from the shared Grave State by either player, and never retrigger Deadlands when leaving play.</p>
@@ -121,7 +121,7 @@
   <div id="boot" class="boot"><div><b>REALMS</b><small>Loading playable alpha…</small></div></div>
   <script>
   (async()=>{
-    const payloads={"styles.css": ["payload/styles-css-0.b64?v=combat-retaliation-1"], "cards.js": ["payload/cards-js-0.b64?v=combat-retaliation-1", "payload/cards-js-1.b64?v=combat-retaliation-1"], "game.js": ["payload/game-js-0.b64?v=combat-retaliation-1", "payload/game-js-1.b64?v=combat-retaliation-1", "payload/game-js-2.b64?v=combat-retaliation-1", "payload/game-js-3.b64?v=combat-retaliation-1"]};
+    const payloads={"styles.css": ["payload/styles-css-0.b64?v=geode-stress-v01"], "cards.js": ["payload/cards-js-0.b64?v=geode-stress-v01", "payload/cards-js-1.b64?v=geode-stress-v01"], "game.js": ["payload/game-js-0.b64?v=geode-stress-v01", "payload/game-js-1.b64?v=geode-stress-v01", "payload/game-js-2.b64?v=geode-stress-v01", "payload/game-js-3.b64?v=geode-stress-v01"]};
     async function readB64(files){
       let s=''; for(const f of files){ const r=await fetch(f,{cache:'no-store'}); if(!r.ok) throw new Error('Failed '+f); s+=await r.text(); } return s.trim();
     }
