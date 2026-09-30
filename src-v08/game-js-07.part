@@ -52,7 +52,7 @@ function pushUIEvent(kind,title,detail=''){
 function queueBeat(title,detail='',kind='effect'){
   READABILITY.beatQueue.push({title,detail,kind});
   if(READABILITY.beatQueue.length>18)READABILITY.beatQueue.splice(0,READABILITY.beatQueue.length-18);
-  pumpBeat();
+  if(!state?.uiBusy)pumpBeat();
 }
 function pumpBeat(){
   if(READABILITY.beatBusy||!READABILITY.beatQueue.length)return;
@@ -130,6 +130,7 @@ function finishCombatReadability(){
   state.uiBusy=false;
   gameRoot.classList.remove('ui-busy');
   render();
+  pumpBeat();
   maybeAI();
 }
 function animateCombatReadability(ghost,targetRect,atk,ret,target,noRet,attacker){
@@ -294,12 +295,11 @@ playCard=function(i,iid,opts={}){
 const _readabilityGainPressure=gainPressure;
 gainPressure=function(u,n=1,source='effect',chain=null){
   const name=u?.name,owner=u?.owner,wasOnBoard=!!(u&&state?.players?.[owner]?.board?.includes(u));
-  const out=_readabilityGainPressure(u,n,source,chain);
   if(state&&name&&wasOnBoard){
     pushUIEvent('pressure',name+' gains Pressure','+'+n+' • '+source);
     queueBeat('PRESSURE +'+n,name+' • '+source,'pressure');
   }
-  return out;
+  return _readabilityGainPressure(u,n,source,chain);
 };
 const _readabilityCrackUnit=crackUnit;
 crackUnit=function(u,source='effect'){
