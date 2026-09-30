@@ -16,7 +16,7 @@
   <div id="app" class="app-shell">
     <header class="topbar">
       <div>
-        <div class="eyebrow">REALMS • v0.7 Geode Stress alpha</div>
+        <div class="eyebrow">REALMS • v0.8 Faction Identity alpha</div>
         <h1>REALMS</h1>
       </div>
       <div class="top-actions">
@@ -72,7 +72,7 @@
 
       <div class="prototype-note">
         <strong>iPhone-ready:</strong> after this is hosted, open it in Safari and use <strong>Share → Add to Home Screen</strong> to launch it like an app. No App Store or TestFlight is required for this alpha.<br><br>
-        <strong>Alpha build:</strong> core economy, combat, faction passives, Geode cracking, Continuum Sequence, Realm rules, Deadlands shared grave and common card effects are automated. A built-in referee panel lets you resolve any unscripted or disputed card text manually without restarting the match.
+        <strong>Alpha build:</strong> core economy, simultaneous combat, the five v0.8 faction systems, Realm rules, Deadlands shared grave, Formation + Equips, and common card effects are automated. A built-in referee panel remains available for edge-case or disputed card text during this alpha.
       </div>
       <button id="startBtn" class="btn primary large" type="button">Start Match</button>
     </div>
@@ -96,7 +96,7 @@
       <div class="modal-head">
         <div>
           <div class="eyebrow">Prototype rulings</div>
-          <h2 id="rulesTitle">REALMS v0.7 engine</h2>
+          <h2 id="rulesTitle">REALMS v0.8 engine</h2>
         </div>
         <button class="icon-btn" data-close="rulesModal" type="button">×</button>
       </div>
@@ -104,11 +104,16 @@
         <p><strong>Health:</strong> 20. <strong>Deck:</strong> 30 unique faction cards. <strong>Hand:</strong> recurring selective cycle to 5 at the start of every round.</p>
         <p><strong>Resources:</strong> after the hand cycle, total the +1/+2 resource values on the five cards in hand. That is the round pool. Played cards do not reduce the already-generated total except by paying their cost. Unspent resource expires.</p>
         <p><strong>Placement:</strong> players alternate one play/pass at a time. Two consecutive passes move to Combat. Creatures may act the round they enter in this alpha.</p>
-        <p><strong>Combat:</strong> players alternate one creature activation. Creature combat deals simultaneous damage. Direct attacks are legal unless Taunt or a Realm/card redirects them.</p>\n        <p><strong>Living Geodes — Stress:</strong> whenever a Dormant Geode takes damage, it gains 1 Pressure before destruction is finalized. Each separate damage event triggers once. If that hit reaches its Crack threshold, Crack resolves first and the transformed Geode survives at a minimum of 1 HP. Cracked Geodes do not gain Pressure from Stress.</p>
-        <p><strong>Initiative:</strong> determines the first Combat activation and alternates each round in this prototype. Blood Moon can override the opening cadence.</p>
+        <p><strong>Combat:</strong> players alternate one creature activation. Creature-vs-creature damage is simultaneous: attacker STR and retaliation STR are snapshotted before either damage packet resolves.</p>
+        <p><strong>Living Geodes:</strong> damage gives Pressure while Dormant or Cracked. Dormant reaching its Crack threshold transforms; Cracked reaching its Fold threshold dies. <em>Provisional test rule:</em> a Fracture chain cannot revisit the same Geode during that chain.</p>
+        <p><strong>Harvest:</strong> creatures must gain STR or maximum HP from a friendly effect each round to remain Nourished; otherwise they Wither for 1 at round end. Regurgitate redistributes death; Consume concentrates printed Cost into STR or HP.</p>
+        <p><strong>Continuum:</strong> Sequence is a persistent 0–5 clock advanced by new rounds and card effects, never by combat. Skip Ahead accelerates toward completion; Loop Back reverses after 5 for the 4 → 5 → 4 High Sequence window.</p>
+        <p><strong>Moondemons:</strong> below max HP means Bloodied. Dealing damage to another target restores 2 HP. Frenzied grows while Bloodied but dies on returning to full HP; Bloodthirst bleeds Bloodied creatures and rewards natural bleed-out deaths.</p>
+        <p><strong>Eliteborn:</strong> Creatures and attached Equips count toward Formation size. Each Creature can hold only one Equip. WST gets 7 creature slots and Disperse at Formation 5+; Rise grows Formations at size 3+ but one Creature death wipes that Formation.</p>
+        <p><strong>Initiative:</strong> determines the first Combat activation and alternates each round. Blood Moon can override the opening cadence.</p>
         <p><strong>Deckout:</strong> each failed draw deals 1 Health in this prototype.</p>
-        <p><strong>Deadlands half-cost:</strong> rounded up, minimum 1. Grave Echoes retain printed ability text, are 1/1, are accessible from the shared Grave State by either player, and never retrigger Deadlands when leaving play.</p>
-        <p><strong>Open rule:</strong> Grave Echo deaths currently <em>do</em> count for faction/card death triggers, but not Realm triggers. The referee panel lets you override this manually if you want to A/B the opposite ruling.</p>
+        <p><strong>Deadlands:</strong> half-cost is rounded up, minimum 1. Grave Echoes are 1/1, retain printed ability text, are accessible from the shared Grave State by either player, and never retrigger Deadlands Realm effects when leaving play.</p>
+        <p><strong>Alpha coverage:</strong> core faction systems and common card effects are automated. The referee controls remain available for edge-case text while the full 150-card implementation is hardened.</p>
       </div>
     </div>
   </div>
@@ -116,31 +121,33 @@
   <style id="boot-style">
     body{margin:0;background:#0a0c10;color:#eef2f6;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
     .boot{min-height:100vh;display:grid;place-items:center;padding:24px;text-align:center}
-    .boot b{letter-spacing:.18em} .boot small{display:block;color:#95a0ae;margin-top:10px}
+    .boot b{letter-spacing:.18em}.boot small{display:block;color:#95a0ae;margin-top:10px}
   </style>
-  <div id="boot" class="boot"><div><b>REALMS</b><small>Loading playable alpha…</small></div></div>
+  <div id="boot" class="boot"><div><b>REALMS v0.8</b><small>Loading faction identity alpha…</small></div></div>
   <script>
   (async()=>{
-    const payloads={"styles.css":["payload/styles-css-0.b64?v=geode-stress-v02"],"cards.js":["payload/cards-js-0.b64?v=geode-stress-v02","payload/cards-js-1.b64?v=geode-stress-v02"],"game.js":["payload-v2/game-js-0-0.b64?v=geode-stress-v02","payload-v2/game-js-0-1.b64?v=geode-stress-v02","payload-v2/game-js-0-2.b64?v=geode-stress-v02","payload-v2/game-js-0-3.b64?v=geode-stress-v02","payload-v2/game-js-0-4.b64?v=geode-stress-v02","payload-v2/game-js-1-0.b64?v=geode-stress-v02","payload-v2/game-js-1-1.b64?v=geode-stress-v02","payload-v2/game-js-1-2.b64?v=geode-stress-v02","payload-v2/game-js-1-3.b64?v=geode-stress-v02","payload-v2/game-js-1-4.b64?v=geode-stress-v02","payload-v2/game-js-2-0.b64?v=geode-stress-v02","payload-v2/game-js-2-1.b64?v=geode-stress-v02","payload-v2/game-js-2-2.b64?v=geode-stress-v02","payload-v2/game-js-2-3.b64?v=geode-stress-v02","payload-v2/game-js-2-4.b64?v=geode-stress-v02","payload/game-js-3.b64?v=geode-stress-v02"]};
-    async function readB64(files){
-      let s=''; for(const f of files){ const r=await fetch(f,{cache:'no-store'}); if(!r.ok) throw new Error('Failed '+f); s+=await r.text(); } return s.trim();
-    }
-    async function gunzipText(files){
-      const b64=await readB64(files); const bin=atob(b64); const u8=new Uint8Array(bin.length);
-      for(let i=0;i<bin.length;i++)u8[i]=bin.charCodeAt(i);
-      if(!('DecompressionStream' in window)) throw new Error('This browser is too old for the alpha loader. Use current iPhone Safari.');
-      const ds=new DecompressionStream('gzip'); const stream=new Blob([u8]).stream().pipeThrough(ds);
-      return await new Response(stream).text();
+    const V='v08-alpha1';
+    const cssParts=['src-v08/styles-css-00.part','src-v08/styles-css-01.part','src-v08/styles-css-02.part'];
+    const cardParts=['src-v08/cards-js-00.part','src-v08/cards-js-01.part','src-v08/cards-js-02.part','src-v08/cards-js-03.part','src-v08/cards-js-04.part','src-v08/cards-js-05.part','src-v08/cards-js-06.part','src-v08/cards-js-07.part','src-v08/cards-js-08.part','src-v08/cards-js-09.part'];
+    const gameParts=['src-v08/game-js-00.part','src-v08/game-js-01.part','src-v08/game-js-02.part','src-v08/game-js-03.part','src-v08/game-js-04.part','src-v08/game-js-05.part','src-v08/game-js-06.part','src-v08/game-js-07.part'];
+    async function load(parts){
+      const chunks=await Promise.all(parts.map(async p=>{
+        const r=await fetch(p+'?v='+V,{cache:'no-store'});
+        if(!r.ok)throw new Error(p+' returned '+r.status);
+        return r.text();
+      }));
+      return chunks.join('');
     }
     try{
-      const css=await gunzipText(payloads['styles.css']);
-      const style=document.createElement('style'); style.textContent=css; document.head.appendChild(style);
-      document.getElementById('boot-style')?.remove(); document.getElementById('boot')?.remove();
-      const cards=await gunzipText(payloads['cards.js']); (0,eval)(cards);
-      const game=await gunzipText(payloads['game.js']); (0,eval)(game);
-      if('serviceWorker' in navigator && location.protocol!=='file:') navigator.serviceWorker.register('./sw.js').catch(()=>{});
+      const css=await load(cssParts);
+      const style=document.createElement('style');style.textContent=css;document.head.appendChild(style);
+      document.getElementById('boot-style')?.remove();
+      document.getElementById('boot')?.remove();
+      (0,eval)(await load(cardParts));
+      (0,eval)(await load(gameParts));
+      if('serviceWorker' in navigator&&location.protocol!=='file:')navigator.serviceWorker.register('./sw.js').then(r=>r.update()).catch(()=>{});
     }catch(err){
-      document.body.innerHTML='<div class="boot"><div><b>REALMS failed to load</b><small>'+String(err.message||err)+'</small></div></div>';
+      document.body.innerHTML='<div class="boot"><div><b>REALMS v0.8 failed to load</b><small>'+String(err.message||err)+'</small></div></div>';
       console.error(err);
     }
   })();
