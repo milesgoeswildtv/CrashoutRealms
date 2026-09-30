@@ -214,6 +214,30 @@ function enhanceReadabilityDOM(){
         const u=enemy.board.find(x=>x.iid===el.dataset.iid);
         if(u&&(!taunt||unitHasTaunt(u)))el.classList.add('targetable','enemy');
       });
+
+      const zones=gameRoot.querySelectorAll('.player-zone');
+      const enemyZone=zones[enemy.index===1?0:1];
+      if(enemyZone){
+        const playerTarget=document.createElement('button');
+        playerTarget.type='button';
+        playerTarget.className='player-direct-target'+(taunt?' blocked':'');
+        playerTarget.disabled=taunt;
+        playerTarget.innerHTML=taunt
+          ? '<strong>PLAYER BLOCKED</strong><span>Destroy or bypass Taunt first.</span>'
+          : '<strong>ATTACK PLAYER</strong><span>Direct target • ♥ '+enemy.health+'</span>';
+        if(!taunt){
+          enemyZone.classList.add('player-targetable');
+          playerTarget.addEventListener('click',ev=>{
+            ev.preventDefault();
+            ev.stopPropagation();
+            const chosen=getSelected();
+            if(chosen)combatAttack(chosen,null);
+          });
+        }
+        const header=enemyZone.querySelector('.player-header');
+        if(header)header.insertAdjacentElement('afterend',playerTarget);
+        else enemyZone.prepend(playerTarget);
+      }
     }
   }
   const passBtn=gameRoot.querySelector('[data-action="pass-combat"]');
@@ -222,7 +246,7 @@ function enhanceReadabilityDOM(){
   if(actionPanel&&state.phase==='combat'&&!state.players[state.active].ai){
     const hint=document.createElement('span');
     hint.className='action-hint';
-    hint.textContent=state.selected?.owner===state.active?'Choose a highlighted enemy. Retaliation resolves automatically.':'Choose a ready creature to act.';
+    hint.textContent=state.selected?.owner===state.active?'Choose a highlighted enemy creature or ATTACK PLAYER. Retaliation resolves automatically against creatures.':'Choose a ready creature to act.';
     actionPanel.prepend(hint);
   }
   const logPanel=gameRoot.querySelector('.log-panel');
