@@ -7,5 +7,362 @@ function useEndlessShift(p){if(p.endlessShiftUsed||!p.hand.length)return;showOpt
 function showOptions(eyebrow,title,opts,pick,{cancel=true}={}){choiceEyebrow.textContent=eyebrow;choiceTitle.textContent=title;choiceBody.innerHTML=`<div class="choice-list">${opts.map(o=>`<button class="choice-option" data-val="${esc(o.value)}">${esc(o.label)}</button>`).join('')}</div>`;choiceActions.innerHTML=cancel?'<button class="btn ghost" id="choiceCancelBtn">Cancel</button>':'';choiceModal.classList.add('open');choiceBody.querySelectorAll('[data-val]').forEach(b=>b.onclick=()=>{const v=b.dataset.val;closeChoice();pick(v);});if($('#choiceCancelBtn'))$('#choiceCancelBtn').onclick=closeChoice;}
 function closeChoice(){choiceModal.classList.remove('open');choiceBody.innerHTML='';choiceActions.innerHTML='';}
 function populateSetup(){const f=Object.keys(DATA.factions),a=$('#p1Faction'),b=$('#p2Faction');a.innerHTML=f.map(x=>`<option>${esc(x)}</option>`).join('');b.innerHTML=a.innerHTML;b.value='Moondemons';const fill=(fs,ps)=>{$(ps).innerHTML=Object.keys(DATA.factions[$(fs).value].passives).map(x=>`<option>${esc(x)}</option>`).join('');};a.onchange=()=>fill('#p1Faction','#p1Passive');b.onchange=()=>fill('#p2Faction','#p2Passive');fill('#p1Faction','#p1Passive');fill('#p2Faction','#p2Passive');$('#startBtn').onclick=()=>startGame({mode:$('#modeSelect').value,realm:$('#realmSelect').value,p1Faction:a.value,p1Passive:$('#p1Passive').value,p2Faction:b.value,p2Passive:$('#p2Passive').value});$('#newGameBtn').onclick=()=>setupModal.classList.add('open');$('#rulesBtn').onclick=()=>$('#rulesModal').classList.add('open');document.querySelectorAll('[data-close]').forEach(x=>x.onclick=()=>$('#'+x.dataset.close).classList.remove('open'));}
+
+
+/* --- Gameplay readability pass v0.8-R1 ---
+   Presentation-only layer: phase communication, action cadence, combat motion,
+   retaliation visibility, trigger beats, recent actions, and Geode Pressure readability.
+   Core economy and combat rules are intentionally unchanged.
+*/
+const READABILITY={phaseQueue:[],phaseBusy:false,beatQueue:[],beatBusy:false};
+
+function ensureReadabilityState(){
+  if(!state)return;
+  if(!Array.isArray(state.uiEvents))state.uiEvents=[];
+  if(typeof state.uiBusy!=='boolean')state.uiBusy=false;
+}
+function readablePhaseName(){
+  if(!state)return '';
+  if(state.phase==='mulligan')return 'HAND';
+  if(state.phase==='placement')return 'PLACEMENT';
+  if(state.phase==='combat')return 'ACTION';
+  if(state.phase==='gameover')return 'COMPLETE';
+  return String(state.phase||'').toUpperCase();
+}
+function readableActorLabel(){
+  if(!state||state.winner!==null)return '';
+  const p=state.players[state.active];
+  if(!p)return '';
+  if(state.phase==='combat'){
+    if(state.mode==='ai')return p.index===0?'YOUR ACTION':'OPPONENT ACTION';
+    return (p.name+' ACTION').toUpperCase();
+  }
+  if(state.phase==='placement'){
+    if(state.mode==='ai')return p.index===0?'YOUR PLACEMENT':'OPPONENT PLACEMENT';
+    return (p.name+' PLACEMENT').toUpperCase();
+  }
+  return '';
+}
+function pushUIEvent(kind,title,detail=''){
+  ensureReadabilityState();
+  if(!state)return;
+  state.uiEvents.push({kind,title,detail,round:state.round});
+  if(state.uiEvents.length>80)state.uiEvents.splice(0,state.uiEvents.length-80);
+}
+function queueBeat(title,detail='',kind='effect'){
+  READABILITY.beatQueue.push({title,detail,kind});
+  if(READABILITY.beatQueue.length>18)READABILITY.beatQueue.splice(0,READABILITY.beatQueue.length-18);
+  if(!state?.uiBusy)pumpBeat();
+}
+function pumpBeat(){
+  if(READABILITY.beatBusy||!READABILITY.beatQueue.length)return;
+  READABILITY.beatBusy=true;
+  const item=READABILITY.beatQueue.shift();
+  const el=document.createElement('div');
+  el.className='trigger-beat '+item.kind;
+  el.innerHTML='<strong>'+esc(item.title)+'</strong>'+(item.detail?'<span>'+esc(item.detail)+'</span>':'');
+  document.body.appendChild(el);
+  requestAnimationFrame(()=>el.classList.add('show'));
+  setTimeout(()=>el.classList.remove('show'),560);
+  setTimeout(()=>{el.remove();READABILITY.beatBusy=false;pumpBeat();},760);
+}
+function queuePhase(title,detail=''){
+  READABILITY.phaseQueue.push({title,detail});
+  pumpPhase();
+}
+function pumpPhase(){
+  if(READABILITY.phaseBusy||!READABILITY.phaseQueue.length)return;
+  READABILITY.phaseBusy=true;
+  const item=READABILITY.phaseQueue.shift();
+  const el=document.createElement('div');
+  el.className='phase-pop';
+  el.innerHTML='<div class="phase-pop-kicker">REALMS</div><strong>'+esc(item.title)+'</strong>'+(item.detail?'<span>'+esc(item.detail)+'</span>':'');
+  document.body.appendChild(el);
+  requestAnimationFrame(()=>el.classList.add('show'));
+  setTimeout(()=>el.classList.remove('show'),760);
+  setTimeout(()=>{el.remove();READABILITY.phaseBusy=false;pumpPhase();},980);
+}
+function showDamageFloat(rect,text,kind){
+  if(!rect)return;
+  const el=document.createElement('div');
+  el.className='damage-float '+(kind||'');
+  el.textContent=text;
+  el.style.left=(rect.left+rect.width/2)+'px';
+  el.style.top=(rect.top+rect.height/2)+'px';
+  document.body.appendChild(el);
+  requestAnimationFrame(()=>el.classList.add('show'));
+  setTimeout(()=>el.remove(),820);
+}
+function showCombatSummary(attacker,target,atk,ret,noRet){
+  const el=document.createElement('div');
+  el.className='combat-summary';
+  el.innerHTML='<div class="combat-summary-label">ACTION RESOLVES</div><strong>'+esc(attacker.name)+' → '+esc(target?target.name:'PLAYER')+'</strong><div class="combat-numbers"><span>'+atk+' DAMAGE</span>'+(target?'<span>'+esc(noRet?'NO RETALIATION':ret+' RETALIATION')+'</span>':'')+'</div>';
+  document.body.appendChild(el);
+  requestAnimationFrame(()=>el.classList.add('show'));
+  setTimeout(()=>el.classList.remove('show'),760);
+  setTimeout(()=>el.remove(),980);
+}
+function makeCombatGhost(el){
+  if(!el)return null;
+  const rect=el.getBoundingClientRect(),clone=el.cloneNode(true);
+  clone.classList.add('combat-ghost');
+  clone.removeAttribute('data-card');
+  clone.style.left=rect.left+'px';
+  clone.style.top=rect.top+'px';
+  clone.style.width=rect.width+'px';
+  clone.style.height=rect.height+'px';
+  document.body.appendChild(clone);
+  return {node:clone,rect};
+}
+function combatTargetRect(owner,target){
+  if(target){
+    const el=document.querySelector('[data-card="1"][data-iid="'+target.iid+'"][data-zone="board"]');
+    return el?el.getBoundingClientRect():null;
+  }
+  const zones=document.querySelectorAll('.player-zone');
+  const opponent=1-owner;
+  const zone=zones[opponent===1?0:1];
+  const el=zone?.querySelector('.player-header')||zone;
+  return el?el.getBoundingClientRect():null;
+}
+function finishCombatReadability(){
+  if(!state)return;
+  state.uiBusy=false;
+  gameRoot.classList.remove('ui-busy');
+  render();
+  pumpBeat();
+  maybeAI();
+}
+function animateCombatReadability(ghost,targetRect,atk,ret,target,noRet,attacker){
+  showCombatSummary(attacker,target,atk,ret,noRet);
+  if(!ghost||!targetRect){
+    setTimeout(finishCombatReadability,850);
+    return;
+  }
+  const ar=ghost.rect;
+  const dx=(targetRect.left+targetRect.width/2)-(ar.left+ar.width/2);
+  const dy=(targetRect.top+targetRect.height/2)-(ar.top+ar.height/2);
+  setTimeout(()=>showDamageFloat(targetRect,'-'+atk,'damage'),250);
+  if(target&&!noRet)setTimeout(()=>showDamageFloat(ar,'-'+ret,'retaliation'),330);
+  let done=false;
+  const finish=()=>{
+    if(done)return;
+    done=true;
+    ghost.node.remove();
+    setTimeout(finishCombatReadability,180);
+  };
+  if(ghost.node.animate){
+    const anim=ghost.node.animate([
+      {transform:'translate3d(0,0,0) scale(1)',offset:0},
+      {transform:'translate3d('+(dx*.82)+'px,'+(dy*.82)+'px,0) scale(1.06)',offset:.58},
+      {transform:'translate3d('+dx+'px,'+dy+'px,0) scale(.98)',offset:.72},
+      {transform:'translate3d(0,0,0) scale(1)',offset:1}
+    ],{duration:650,easing:'cubic-bezier(.22,.75,.26,1)'});
+    anim.finished.then(finish).catch(finish);
+  }else{
+    ghost.node.style.transform='translate3d('+dx+'px,'+dy+'px,0)';
+    setTimeout(finish,650);
+  }
+  setTimeout(finish,780);
+}
+
+const _readabilityCardHTML=cardHTML;
+cardHTML=function(c,zone,hidden=false){
+  let html=_readabilityCardHTML(c,zone,hidden);
+  if(hidden||zone!=='board'||!c?.type?.includes('Creature'))return html;
+  let extra='';
+  if(c.faction==='Living Geodes'){
+    const threshold=Math.max(1,c.cracked?(c.fold||1):(c.crack||1));
+    const current=Math.min(threshold,Math.max(0,c.pressure||0));
+    let pips='';
+    for(let i=0;i<threshold;i++)pips+='<i class="pressure-pip'+(i<current?' filled':'')+'"></i>';
+    extra+='<div class="pressure-meter '+(c.cracked?'fold-risk':'crack-build')+'"><div class="pressure-copy"><b>PRESSURE '+current+'/'+threshold+'</b><span>'+(c.cracked?'→ FOLD':'→ CRACK')+'</span></div><div class="pressure-pips">'+pips+'</div></div>';
+  }
+  if(c.acted&&c.extraActions<=0)extra+='<div class="acted-ribbon">ACTED</div>';
+  return html.replace('</article>',extra+'</article>');
+};
+
+function enhanceReadabilityDOM(){
+  if(!state)return;
+  ensureReadabilityState();
+  const realm=gameRoot.querySelector('.realm-banner');
+  if(realm){
+    const strip=document.createElement('div');
+    strip.className='phase-strip readability-phase-strip';
+    ['HAND','PLACEMENT','ACTION','END'].forEach(name=>{
+      const span=document.createElement('span');
+      span.className='pill'+(readablePhaseName()===name?' active':'');
+      span.textContent=name;
+      strip.appendChild(span);
+    });
+    realm.appendChild(strip);
+  }
+  const actor=readableActorLabel();
+  if(actor&&state.winner===null){
+    const turn=document.createElement('section');
+    turn.className='turn-banner '+(state.phase==='combat'?'action':'placement');
+    let sub=state.phase==='combat'?'Choose one ready creature, then choose its target. The target retaliates automatically and damage is simultaneous.':'Play one card or pass. Players alternate Placement.';
+    turn.innerHTML='<strong>'+esc(actor)+'</strong><span>'+esc(sub)+'</span>';
+    const realmEl=gameRoot.querySelector('.realm-banner');
+    if(realmEl)realmEl.insertAdjacentElement('afterend',turn);
+  }
+  if(state.phase==='combat'&&state.selected?.owner===state.active){
+    const attacker=getSelected();
+    if(attacker&&state.players[state.active].board.includes(attacker)&&(!attacker.acted||attacker.extraActions>0)){
+      const enemy=state.players[1-state.active],taunt=hasTaunt(enemy);
+      document.querySelectorAll('[data-card="1"][data-owner="'+(1-state.active)+'"][data-zone="board"]').forEach(el=>{
+        const u=enemy.board.find(x=>x.iid===el.dataset.iid);
+        if(u&&(!taunt||unitHasTaunt(u)))el.classList.add('targetable','enemy');
+      });
+    }
+  }
+  const passBtn=gameRoot.querySelector('[data-action="pass-combat"]');
+  if(passBtn)passBtn.textContent='Pass Action';
+  const actionPanel=gameRoot.querySelector('.action-panel');
+  if(actionPanel&&state.phase==='combat'&&!state.players[state.active].ai){
+    const hint=document.createElement('span');
+    hint.className='action-hint';
+    hint.textContent=state.selected?.owner===state.active?'Choose a highlighted enemy. Retaliation resolves automatically.':'Choose a ready creature to act.';
+    actionPanel.prepend(hint);
+  }
+  const logPanel=gameRoot.querySelector('.log-panel');
+  if(logPanel){
+    const recent=document.createElement('section');
+    recent.className='recent-panel';
+    const items=state.uiEvents.slice(-6).reverse();
+    recent.innerHTML='<div class="zone-label"><span>Recent Action</span><span>'+state.uiEvents.length+'</span></div><div class="recent-list">'+(items.length?items.map(x=>'<div class="recent-line '+esc(x.kind)+'"><strong>'+esc(x.title)+'</strong>'+(x.detail?'<span>'+esc(x.detail)+'</span>':'')+'</div>').join(''):'<div class="player-sub">Actions will appear here as they resolve.</div>')+'</div>';
+    logPanel.insertAdjacentElement('beforebegin',recent);
+  }
+}
+const _readabilityRender=render;
+render=function(){
+  _readabilityRender();
+  enhanceReadabilityDOM();
+};
+
+const _readabilityMaybeAI=maybeAI;
+maybeAI=function(){
+  if(state?.uiBusy)return;
+  return _readabilityMaybeAI();
+};
+
+const _readabilityBeginMulligan=beginMulligan;
+beginMulligan=function(i){
+  if(state&&i===0){
+    pushUIEvent('phase','HAND PHASE','Keep or return cards, then refill to five.');
+    queuePhase('HAND PHASE','Keep or return cards, then refill to five.');
+  }
+  return _readabilityBeginMulligan(i);
+};
+const _readabilityFinishMulligans=finishMulligans;
+finishMulligans=function(){
+  const out=_readabilityFinishMulligans();
+  if(state){
+    pushUIEvent('phase','PLACEMENT PHASE','Players alternate one play or pass.');
+    queuePhase('PLACEMENT PHASE','Players alternate one play or pass.');
+    render();
+  }
+  return out;
+};
+const _readabilityBeginCombat=beginCombat;
+beginCombat=function(){
+  const out=_readabilityBeginCombat();
+  if(state){
+    pushUIEvent('phase','ACTION PHASE','Attacks alternate. Targets retaliate automatically.');
+    queuePhase('ACTION PHASE','Attacks alternate. Targets retaliate automatically.');
+    render();
+  }
+  return out;
+};
+const _readabilityEndRound=endRound;
+endRound=function(){
+  if(state){
+    pushUIEvent('phase','END PHASE','Resolving end-of-round effects.');
+    queuePhase('END PHASE','Resolving end-of-round effects.');
+  }
+  return _readabilityEndRound();
+};
+
+const _readabilityPlayCard=playCard;
+playCard=function(i,iid,opts={}){
+  const p=state?.players?.[i],c=p?.hand?.find(x=>x.iid===iid),name=c?.name,type=c?.type;
+  const out=_readabilityPlayCard(i,iid,opts);
+  if(out&&p&&c&&!p.hand.some(x=>x.iid===iid)){
+    pushUIEvent('play',(p.name+' plays '+name),type||'Card');
+  }
+  return out;
+};
+const _readabilityGainPressure=gainPressure;
+gainPressure=function(u,n=1,source='effect',chain=null){
+  const name=u?.name,owner=u?.owner,wasOnBoard=!!(u&&state?.players?.[owner]?.board?.includes(u));
+  if(state&&name&&wasOnBoard){
+    pushUIEvent('pressure',name+' gains Pressure','+'+n+' • '+source);
+    queueBeat('PRESSURE +'+n,name+' • '+source,'pressure');
+  }
+  return _readabilityGainPressure(u,n,source,chain);
+};
+const _readabilityCrackUnit=crackUnit;
+crackUnit=function(u,source='effect'){
+  const name=u?.name,was=!!u?.cracked;
+  const out=_readabilityCrackUnit(u,source);
+  if(state&&name&&!was&&u?.cracked){
+    pushUIEvent('crack',name+' CRACKS','Transformed into its Cracked form.');
+    queueBeat('CRACK!',name,'crack');
+  }
+  return out;
+};
+const _readabilityFoldUnit=foldUnit;
+foldUnit=function(u){
+  const name=u?.name;
+  if(state&&name){
+    pushUIEvent('fold',name+' FOLDS','Pressure reached its Fold threshold.');
+    queueBeat('FOLD!',name,'fold');
+  }
+  return _readabilityFoldUnit(u);
+};
+const _readabilitySequenceComplete=sequenceComplete;
+sequenceComplete=function(p,causer=null){
+  if(state&&p){
+    pushUIEvent('sequence',p.name+' completes Sequence','Sequence reached 5.');
+    queueBeat('SEQUENCE COMPLETE',p.name,'sequence');
+  }
+  return _readabilitySequenceComplete(p,causer);
+};
+const _readabilityDestroyUnit=destroyUnit;
+destroyUnit=function(u,source=null,opts={}){
+  const p=u?state?.players?.[u.owner]:null,name=u?.name,was=!!(u&&p?.board?.includes(u));
+  const out=_readabilityDestroyUnit(u,source,opts);
+  if(state&&was&&name&&!p?.board?.includes(u)&&opts?.reason!=='fold'){
+    pushUIEvent('death',name+' leaves play',opts?.reason||'destroyed');
+  }
+  return out;
+};
+const _readabilityCombatAttack=combatAttack;
+combatAttack=function(a,t=null){
+  if(!state||state.uiBusy)return false;
+  const p=state.players[a?.owner],e=state.players[1-(a?.owner??0)];
+  if(!a||!p?.board.includes(a))return false;
+  const attackerEl=document.querySelector('[data-card="1"][data-iid="'+a.iid+'"][data-zone="board"]');
+  const ghost=makeCombatGhost(attackerEl);
+  const targetRect=combatTargetRect(a.owner,t);
+  const atk=getStr(a)+(a.statuses.nextDamageBonus||0);
+  const ret=t?getStr(t):0;
+  const noRet=!!(t&&a.id==='MON-024'&&isBloodied(a)&&t.currentHp<getMaxHp(t));
+  const attackerName=a.name,targetName=t?t.name:e.name;
+  state.uiBusy=true;
+  gameRoot.classList.add('ui-busy');
+  const ok=_readabilityCombatAttack(a,t);
+  if(!ok){
+    state.uiBusy=false;
+    gameRoot.classList.remove('ui-busy');
+    ghost?.node?.remove();
+    return false;
+  }
+  const detail=t?(atk+' damage • '+(noRet?'no retaliation':ret+' retaliation')):(atk+' direct damage');
+  pushUIEvent('combat',attackerName+' → '+targetName,detail);
+  animateCombatReadability(ghost,targetRect,atk,ret,t,noRet,a);
+  return true;
+};
+
 window.REALMS_DEBUG={getState:()=>state,startGame,playCard,combatAttack,gainPressure,shiftSequence};populateSetup();render();
 })();
