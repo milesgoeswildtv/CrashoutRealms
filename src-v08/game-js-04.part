@@ -25,12 +25,12 @@ function resolveSpell(c,p){
   case'CON-016':shiftSequence(p,1,{towardZero:true});break;
   case'CON-027':shiftSequence(p,1,{causer:c.id});break;
   case'MON-013':if(f){applyDamage(f,1,null,{reason:'self'});if(p.board.includes(f)&&isBloodied(f))f.tempStr+=3;}break;
-  case'MON-015':distributeHeal(p,3);break;
+  case'MON-015':{if(targetIds.length){for(const v of targetIds){const mode=v.slice(0,1),id=v.slice(2),u=p.board.find(x=>x.iid===id);if(!u)continue;if(mode==='H')healUnit(u,1,'Feed the Pack');else if(mode==='M'&&isBloodied(u))u.permHp+=1;}}else distributeHeal(p,3);break;}
   case'MON-017':if(f&&isBloodied(f))f.tempStr+=Math.min(4,Math.floor((getMaxHp(f)-f.currentHp)/2));break;
   case'MON-027':p.health-=2;p.resource+=3;checkWinner();break;
   case'MON-029':p.board.filter(isBloodied).forEach(x=>{x.tempStr+=2;x.statuses.moonrage=true;});break;
   case'ELI-016':{let fid=null;if(targetIds[0]?.startsWith('F:'))fid=+targetIds[0].slice(2);if(fid==null&&p.ai){const ids=[...new Set(p.board.map(x=>x.formation).filter(x=>x!=null))];fid=ids.sort((a,b)=>formationSize(p,b)-formationSize(p,a))[0];}if(fid!=null){const n=formationSize(p,fid)>=4?2:1;formationMembers(p,fid).forEach(x=>x.tempStr+=n);}break;}
-  case'ELI-017':for(let j=0;j<2&&p.board.length<maxSlots(p);j++){const u=makeToken(p.index,'Recruit',1,1,{faction:'Eliteborn'});ensureFormation(p,u,p.board[0]);p.board.push(u);formationJoined(p,u.formation);}break;
+  case'ELI-017':{if(targetIds.length){let firstRecruit=null;for(let j=0;j<targetIds.length&&p.board.length<maxSlots(p);j++){const pick=targetIds[j],u=makeToken(p.index,'Recruit',1,1,{faction:'Eliteborn'});let join=null;if(pick.startsWith('R:')){const fid=+pick.slice(2);join=p.board.find(x=>x.formation===fid)||null;}else if(pick==='FIRST')join=firstRecruit;ensureFormation(p,u,join);p.board.push(u);if(j===0)firstRecruit=u;formationJoined(p,u.formation);}}else for(let j=0;j<2&&p.board.length<maxSlots(p);j++){const u=makeToken(p.index,'Recruit',1,1,{faction:'Eliteborn'});ensureFormation(p,u,p.board[0]);p.board.push(u);formationJoined(p,u.formation);}break;}
   default:break;
  }
  delete c.statuses.castTargets;
