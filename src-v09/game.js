@@ -713,7 +713,7 @@ render=function(){
 
 const _readabilityMaybeAI=maybeAI;
 maybeAI=function(){
-  if(state?.uiBusy)return;
+  if(state?.uiBusy||state?.choicePending)return;
   return _readabilityMaybeAI();
 };
 
@@ -888,6 +888,7 @@ function recipeMissing(u){
   const atts=geodePrismAttachments(u);
   if(req.length===1&&req[0]==='Any')return atts.length?0:1;
   const pool=[],wild=[];
+  if(u?.statuses?.emergencyFacetWild)wild.push({emergency:true});
   for(const a of atts){
     const mode=prismMode(a);
     if(mode?.kind==='wildRecipe')wild.push(a);
@@ -909,28 +910,52 @@ function geodeRecipeText(u){
 }
 function holdForHumanChoice(eyebrow,title,opts,pick){
   if(!opts?.length)return false;
-  state.uiBusy=true;
-  gameRoot.classList.add('ui-busy');
+  state.choicePending=true;
   showOptions(eyebrow,title,opts,value=>{
     try{pick(value);}
     finally{
-      state.uiBusy=false;
-      gameRoot.classList.remove('ui-busy');
+      state.choicePending=false;
       render();
       maybeAI();
     }
   },{cancel:false});
   return true;
 }
-function triggerPrismFollowers(p){
+function triggerPrismFollowers(p,recipient,newCard){
+  if(!p||!recipient)return;
+
+  // Creature listeners.
+  if(recipient.id==='GEO-009'&&recipient.statuses.stressPrismRound!==state.round){
+    recipient.statuses.stressPrismRound=state.round;
+    recipient.tempStr+=2;
+  }
+  if(recipient.id==='GEO-021'&&recipient.statuses.seedPrismRound!==state.round){
+    recipient.statuses.seedPrismRound=state.round;
+    healUnit(recipient,1,'Seed of the Deep');
+  }
+  for(const u of p.board){
+    if(u.faction!=='Living Geodes'||u.iid===recipient.iid)continue;
+    if(u.id==='GEO-010'&&u.cracked){
+      const count=u.statuses.choirPrismCount||0;
+      if(count<3){u.statuses.choirPrismCount=count+1;u.tempStr+=1;}
+    }
+    if(u.id==='GEO-023'&&u.statuses.parasitePrismRound!==state.round){
+      u.statuses.parasitePrismRound=state.round;
+      u.tempStr+=1;
+      healUnit(u,1,'Crystal Parasite');
+    }
+  }
+
+  // Existing Riftglass Violet attachments hear a later Prism attach. The
+  // Prism being attached now is explicitly not allowed to trigger itself.
   for(const u of p.board){
     if(u.faction!=='Living Geodes')continue;
     for(const a of geodePrismAttachments(u)){
+      if(a.card?.iid===newCard?.iid)continue;
       const m=prismMode(a);
-      if(m?.kind==='onPrismTempStats'&&!a.followUsedRound){
+      if(m?.kind==='onPrismTempStats'&&a.followUsedRound!==state.round){
         a.followUsedRound=state.round;
         addTempStats(u,m.str||0,m.hp||0);
-        break;
       }
     }
   }
@@ -1014,7 +1039,7 @@ function attachPrism(p,c,u,color){
   if(u.statuses.doubleNextPrism)delete u.statuses.doubleNextPrism;
   u.prisms.push(a);c.zone='prism';
   state.log.push(`${p.name} attaches <strong>${c.name}</strong> to ${u.name} as <strong>${color}</strong>.`);
-  triggerPrismFollowers(p);
+  triggerPrismFollowers(p,u,c);
   const cracked=!u.cracked&&recipeSatisfied(u)?crackUnit(u,'Prism recipe'):false;
   if(fracture)a.countsColors=[a.chosenColor];
   if(!cracked&&p.traps.some(t=>t.id==='GEO-030')&&recipeMissing(u)===1){
@@ -1066,6 +1091,7 @@ getStr=function(u){
       if(m?.kind==='firstCombatStr'&&!u.statuses.prismFirstCombatUsed)s+=m.amount||0;
       if(m?.kind==='directDamage'&&!u.statuses.attackTarget)s+=m.amount||0;
     }
+    if(u.id==='GEO-005'&&u.cracked&&!u.statuses.razorFirstCombatUsed)s+=2;
   }
   if(u?.statuses?.sigilFangActive)s+=u.statuses.sigilFangActive;
   return s;
@@ -1131,6 +1157,23 @@ applyDamage=function(u,amount,source=null,opts={}){
     if(amount<=0)return 0;
   }
 
+  if(u.faction==='Living Geodes'&&!u.cracked&&amount>=u.currentHp&&recipeMissing(u)===1&&geodePrismAttachments(u).length&&p.traps.some(t=>t.id==='GEO-020')){
+    u.statuses.emergencyFacetWild=true;
+    const canCrack=recipeSatisfied(u);
+    delete u.statuses.emergencyFacetWild;
+    if(canCrack){
+      consumeTrap(p,'GEO-020');
+      u.statuses.emergencyFacetWild=true;
+      const cracked=crackUnit(u,'Emergency Facet');
+      delete u.statuses.emergencyFacetWild;
+      if(cracked){
+        amount=Math.max(0,amount-3);
+        state.log.push('Emergency Facet prevents 3 damage after completing the Crack.');
+        if(amount<=0)return 0;
+      }
+    }
+  }
+
   const dealt=_v09ApplyDamage(u,amount,source,opts);
   const survives=state.players[u.owner].board.includes(u);
 
@@ -1142,6 +1185,7 @@ applyDamage=function(u,amount,source=null,opts={}){
   }
   if(survives&&u.growth&&!u.growth.active&&u.growth.card.growthEffect==='thornbloom'&&opts.combat&&dealt>0)activateGrowth(u);
   if(survives&&u.growth&&!u.growth.active&&u.growth.card.growthEffect==='ironbark'&&dealt>=3)activateGrowth(u);
+  if(survives&&u.id==='GEO-024'&&dealt>=3)u.tempStr+=2;
 
   if(dealt>0&&source?.growth?.active&&source.growth.card.growthEffect==='predator'&&!source.statuses.predatorGrowthUsed&&state.players[source.owner].board.includes(source)){
     source.statuses.predatorGrowthUsed=true;addPermStats(source,1,1);
@@ -1260,6 +1304,7 @@ prepareRound=function(){
     for(const u of p.board){
       if(u.faction==='Living Geodes'){
         for(const a of geodePrismAttachments(u)){const m=prismMode(a);if(m?.kind==='startHeal')healUnit(u,m.amount||0,'Prism');}
+        if(u.id==='GEO-021'&&u.cracked)healUnit(u,1,'Seed of the Deep — Cracked');
       }
       if(u.growth?.active&&state.round>u.growth.activatedRound){
         const e=u.growth.card.growthEffect;
@@ -1299,14 +1344,12 @@ function resolveWorldheartEndRound(queue,done){
     applyTarget(t);
     return;
   }
-  state.uiBusy=true;
-  gameRoot.classList.add('ui-busy');
+  state.choicePending=true;
   showOptions('WORLDHEART','Choose another friendly Geode to restore 2 HP.',legal.map(t=>({
     label:`${t.name} • HP ${t.currentHp}/${getMaxHp(t)}`,
     value:t.iid
   })),iid=>{
-    state.uiBusy=false;
-    gameRoot.classList.remove('ui-busy');
+    state.choicePending=false;
     const t=legal.find(x=>x.iid===iid);
     if(t&&p.board.includes(t))healUnit(t,2,'Worldheart');
     render();
@@ -1488,7 +1531,10 @@ combatAttack=function(a,t=null){
   if(a.sigil?.sigilEffect==='fang'&&isBloodied(a)){revealSigil(a,'attacks while Bloodied');a.statuses.sigilFangActive=3;}
   const out=_v09CombatAttack(a,t);
   delete a.statuses.sigilFangActive;
-  if(a.faction==='Living Geodes')a.statuses.prismFirstCombatUsed=true;
+  if(a.faction==='Living Geodes'){
+    a.statuses.prismFirstCombatUsed=true;
+    if(a.id==='GEO-005'&&a.cracked)a.statuses.razorFirstCombatUsed=true;
+  }
 
   if(out&&t&&defender&&!state.players[t.owner].board.includes(t)){
     if(a.sigil?.sigilEffect==='feast'){revealSigil(a,'destroyed an enemy');healUnit(a,3,'Feast Sigil');drawOne(state.players[a.owner]);bottomWorst(state.players[a.owner]);}
