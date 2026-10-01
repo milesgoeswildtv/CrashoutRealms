@@ -797,3 +797,40 @@ button, select, input, .card, .trap-chip, .choice-option, .mulligan-card {
   .flux-chip{min-width:138px}
   .prism-recipe{margin:0 5px 5px}
 }
+
+/* --- Deadlands shared Grave State --- */
+.grave-zone{
+  border:1px solid #4b5a49;
+  border-left:0;
+  border-right:0;
+  background:linear-gradient(180deg,rgba(69,87,67,.14),rgba(20,27,21,.18));
+}
+.grave-row{
+  display:flex;
+  gap:7px;
+  overflow-x:auto;
+  padding-bottom:2px;
+  -webkit-overflow-scrolling:touch;
+}
+.grave-chip{
+  flex:0 0 auto;
+  min-width:150px;
+  max-width:220px;
+  border:1px solid #52604f;
+  border-radius:10px;
+  background:#121812;
+  padding:7px 9px;
+  display:grid;
+  gap:2px;
+}
+.grave-chip strong{
+  font-size:10px;
+  color:#d7e1d2;
+}
+.grave-chip span{
+  font-size:9px;
+  color:#8fa08b;
+}
+@media(max-width:620px){
+  .grave-chip{min-width:138px}
+}
