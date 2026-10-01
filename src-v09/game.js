@@ -46,7 +46,37 @@ function applyDamage(u,amount,source=null,{combat=false,noDisperse=false,reason=
  const before=u.currentHp;u.currentHp-=amount;const dealt=Math.min(amount,Math.max(0,before));u.damageTakenThisRound+=amount;if(u.faction==='Moondemons'&&u.currentHp<getMaxHp(u))u.everBloodied=true;if(u.faction==='Living Geodes'&&p.board.includes(u))gainPressure(u,1,'damage');if(!p.board.includes(u))return dealt;
  if(combat&&u.currentHp>0){if(u.id==='HAR-002'&&!u.statuses.briar){u.statuses.briar=true;addPermStats(u,0,1);}if(p.traps.some(t=>t.id==='HAR-010')){consumeTrap(p,'HAR-010');addPermStats(u,1,1);}if(p.traps.some(t=>t.id==='HAR-020')){consumeTrap(p,'HAR-020');addPermStats(u,0,2);}}
  if(u.currentHp<=0){if(p.shatterproof===u.iid){p.shatterproof=false;u.currentHp+=2;if(u.currentHp<=0)destroyUnit(u,source,{combat,reason});}else destroyUnit(u,source,{combat,reason});}return dealt;}
-function dealPlayerDamage(i,n,source=null,combat=false){const p=state.players[i];if(combat&&state.flags.has('upperMinor')&&p.board.length>=3){const red=Math.floor(n/2);p.health-=n-red;let left=red,units=[...p.board],k=0;while(left>0&&units.length){const u=units[k++%units.length];if(p.board.includes(u))applyDamage(u,1,source,{combat:true});left--;}}else p.health-=n;checkWinner();}
+function resolveUpperStrataChainLink(p,n,source=null){
+ const incoming=Math.max(0,Math.floor(n));
+ if(!incoming)return {incoming:0,playerDamage:0,redirected:0,returned:0};
+ const units=[...p.board];
+ const redirected=Math.floor(incoming/2);
+ let playerDamage=incoming-redirected,returned=0;
+ if(redirected<=0||units.length<3){
+  p.health-=incoming;
+  return {incoming,playerDamage:incoming,redirected:0,returned:0};
+ }
+ const q=Math.floor(redirected/units.length),r=redirected%units.length;
+ const shares=units.map((u,index)=>({u,amount:q+(index<r?1:0)})).filter(x=>x.amount>0);
+ for(const share of shares){
+  const {u,amount}=share;
+  // Chain Link breaks immediately below three creatures. Any already-assigned
+  // redirect that can no longer resolve returns to the player; it never vanishes.
+  if(p.board.length<3||!p.board.includes(u)){
+   playerDamage+=amount;returned+=amount;continue;
+  }
+  applyDamage(u,amount,source,{combat:true,reason:'chain-link'});
+ }
+ p.health-=playerDamage;
+ state.log.push(`<strong>Upper Strata — Chain Link:</strong> ${incoming} direct damage → ${playerDamage} to ${p.name}, ${redirected-returned} redirected${returned?` • ${returned} returned after Chain Link broke`:''}.`);
+ return {incoming,playerDamage,redirected:redirected-returned,returned};
+}
+function dealPlayerDamage(i,n,source=null,combat=false){
+ const p=state.players[i];
+ if(combat&&state.flags.has('upperMinor')&&p.board.length>=3)resolveUpperStrataChainLink(p,n,source);
+ else p.health-=Math.max(0,Math.floor(n));
+ checkWinner();
+}
 function destroyUnit(u,source=null,{reason='death',formationCascade=false}={}){const p=state.players[u.owner];if(!p.board.includes(u))return;const fid=u.formation;if(u.equip){u.equip.zone='discard';p.discard.push(u.equip);u.equip=null;}p.board=p.board.filter(x=>x.iid!==u.iid);const blood=state.flags.has('bloodMajor')&&state.round>=5;if(u.echo||blood){u.zone='banished';p.banished.push(u);}else if(state.flags.has('deadMajor')){u.zone='graveState';state.graveState.push(u);}else{u.zone='discard';p.discard.push(u);}
  if(p.faction==='Harvest'&&p.passive==='Regurgitate'&&p.board.length){const t=[...p.board].sort((a,b)=>(getStr(b)+getMaxHp(b))-(getStr(a)+getMaxHp(a)));if(p.board.some(x=>x.id==='HAR-026')&&!p.statuses.elderRegurg&&t[1]){p.statuses.elderRegurg=true;addPermStats(t[0],1,1);addPermStats(t[1],1,1);}else addPermStats(t[0],1,1);p.passiveTriggers++;}
  if(p.faction==='Eliteborn'&&p.passive==='Rise as One. Die as One.'&&fid!=null&&!formationCascade){const others=formationMembers(p,fid).slice();if(others.length)state.log.push(`<strong>Formation ${fid} collapses.</strong>`);others.forEach(x=>destroyUnit(x,null,{reason:'formation-wipe',formationCascade:true}));}
@@ -1350,5 +1380,5 @@ handleRef=function(x){
 };
 
 
-window.REALMS_DEBUG={getState:()=>state,startGame,playCard,combatAttack,gainPressure,shiftSequence,addShield,recipeMissing,checkFlux,polarity,checkPolarityLoss,deadlands:{canRaise:canUseDeadlandsEcho,raise:summonEcho,useRaise:useDeadlandsEcho,canAbsorb:canUseDeadlandsAbsorption,absorb:absorbDeadlandsEcho,useAbsorb:useDeadlandsAbsorption,grave:()=>state?.graveState||[]}};populateSetup();render();
+window.REALMS_DEBUG={getState:()=>state,startGame,playCard,combatAttack,gainPressure,shiftSequence,addShield,recipeMissing,checkFlux,polarity,checkPolarityLoss,resolveUpperStrataChainLink,deadlands:{canRaise:canUseDeadlandsEcho,raise:summonEcho,useRaise:useDeadlandsEcho,canAbsorb:canUseDeadlandsAbsorption,absorb:absorbDeadlandsEcho,useAbsorb:useDeadlandsAbsorption,grave:()=>state?.graveState||[]}};populateSetup();render();
 })();
