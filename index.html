@@ -112,6 +112,7 @@
         <p><strong>Eliteborn:</strong> Equips remain their signature type. Creatures and attached Equips count toward Formation size. WST keeps 7 creature slots and Disperse; Rise now begins growing a Formation once it reaches size 2.</p>
         <p><strong>Initiative:</strong> determines the first Combat activation and alternates each round. Blood Moon can override the opening cadence.</p>
         <p><strong>Deckout:</strong> each failed draw deals 1 Health in this prototype.</p>
+        <p><strong>Crystal Isle:</strong> at the end of every even-numbered round, Polarity simultaneously swaps every creature's current STR and current HP. Permanent, temporary, Equip, Prism, and other ongoing modifier layers remain attached and continue to function after the swap. A creature whose new HP is 0 is destroyed by Polarity. Each player tracks their own Polarity-caused deaths; reaching 5 loses the match. If both players reach 5 during the same Polarity Shift, the match is a draw.</p>
         <p><strong>Deadlands:</strong> when one of your non-Echo creatures dies, you may raise one creature from the shared Grave State as a 1/1 Grave Echo; either player may choose a creature originally owned by either player. Grave Echoes retain the original printed ability text and do not return to Grave State or retrigger Deadlands Realm effects when they leave play. <strong>Absorption:</strong> once during your Placement each round, if you control a Grave Echo, you may play a Creature from hand over it for that Creature's normal printed cost; the new Creature permanently absorbs the Echo's current STR and HP, not its printed effect text.</p>
         <p><strong>Alpha coverage:</strong> core faction systems and common card effects are automated. The referee controls remain available for edge-case text while the full 150-card implementation is hardened.</p>
       </div>
@@ -126,7 +127,7 @@
   <div id="boot" class="boot"><div><b>REALMS v0.9</b><small>Loading signature systems alpha…</small></div></div>
   <script>
   (async()=>{
-    const V='v09-deadlands-alpha3';
+    const V='v09-crystal-alpha4';
     const fail=err=>{
       const msg=String(err?.message||err||'Unknown boot error');
       document.body.innerHTML='<div class="boot"><div><b>REALMS v0.9 failed to load</b><small>'+msg.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))+'</small></div></div>';
