@@ -567,7 +567,7 @@ function closeChoice(){choiceModal.classList.remove('open');choiceBody.innerHTML
 function populateSetup(){const f=Object.keys(DATA.factions),a=$('#p1Faction'),b=$('#p2Faction');a.innerHTML=f.map(x=>`<option>${esc(x)}</option>`).join('');b.innerHTML=a.innerHTML;b.value='Moondemons';const fill=(fs,ps)=>{$(ps).innerHTML=Object.keys(DATA.factions[$(fs).value].passives).map(x=>`<option>${esc(x)}</option>`).join('');};a.onchange=()=>fill('#p1Faction','#p1Passive');b.onchange=()=>fill('#p2Faction','#p2Passive');fill('#p1Faction','#p1Passive');fill('#p2Faction','#p2Passive');$('#startBtn').onclick=()=>startGame({mode:$('#modeSelect').value,realm:$('#realmSelect').value,p1Faction:a.value,p1Passive:$('#p1Passive').value,p2Faction:b.value,p2Passive:$('#p2Passive').value});$('#newGameBtn').onclick=()=>setupModal.classList.add('open');$('#rulesBtn').onclick=()=>$('#rulesModal').classList.add('open');document.querySelectorAll('[data-close]').forEach(x=>x.onclick=()=>$('#'+x.dataset.close).classList.remove('open'));}
 
 
-/* --- Gameplay readability pass v0.8-R1 ---
+/* --- Gameplay readability pass v0.9 signature systems ---
    Presentation-only layer: phase communication, action cadence, combat motion,
    retaliation visibility, trigger beats, recent actions, and Geode Pressure readability.
    Core economy and combat rules are intentionally unchanged.
@@ -725,19 +725,11 @@ function animateCombatReadability(ghost,targetRect,atk,ret,target,noRet,attacker
 }
 
 const _readabilityCardHTML=cardHTML;
-cardHTML=function(c,zone,hidden=false){
-  let html=_readabilityCardHTML(c,zone,hidden);
-  if(hidden||zone!=='board'||!c?.type?.includes('Creature'))return html;
-  let extra='';
-  if(c.faction==='Living Geodes'){
-    const threshold=Math.max(1,c.cracked?(c.fold||1):(c.crack||1));
-    const current=Math.min(threshold,Math.max(0,c.pressure||0));
-    let pips='';
-    for(let i=0;i<threshold;i++)pips+='<i class="pressure-pip'+(i<current?' filled':'')+'"></i>';
-    extra+='<div class="pressure-meter '+(c.cracked?'fold-risk':'crack-build')+'"><div class="pressure-copy"><b>PRESSURE '+current+'/'+threshold+'</b><span>'+(c.cracked?'→ FOLD':'→ CRACK')+'</span></div><div class="pressure-pips">'+pips+'</div></div>';
-  }
-  if(c.acted&&c.extraActions<=0)extra+='<div class="acted-ribbon">ACTED</div>';
-  return html.replace('</article>',extra+'</article>');
+cardHTML=function(c,zone,hidden=false,hideSecrets=false){
+ let html=_readabilityCardHTML(c,zone,hidden,hideSecrets);
+ if(hidden||zone!=='board'||!c?.type?.includes('Creature'))return html;
+ if(c.acted&&c.extraActions<=0)html=html.replace('</article>','<div class="acted-ribbon">ACTED</div></article>');
+ return html;
 };
 
 function enhanceReadabilityDOM(){
@@ -874,15 +866,6 @@ playCard=function(i,iid,opts={}){
   }
   return out;
 };
-const _readabilityGainPressure=gainPressure;
-gainPressure=function(u,n=1,source='effect',chain=null){
-  const name=u?.name,owner=u?.owner,wasOnBoard=!!(u&&state?.players?.[owner]?.board?.includes(u));
-  if(state&&name&&wasOnBoard){
-    pushUIEvent('pressure',name+' gains Pressure','+'+n+' • '+source);
-    queueBeat('PRESSURE +'+n,name+' • '+source,'pressure');
-  }
-  return _readabilityGainPressure(u,n,source,chain);
-};
 const _readabilityCrackUnit=crackUnit;
 crackUnit=function(u,source='effect'){
   const name=u?.name,was=!!u?.cracked;
@@ -892,15 +875,6 @@ crackUnit=function(u,source='effect'){
     queueBeat('CRACK!',name,'crack');
   }
   return out;
-};
-const _readabilityFoldUnit=foldUnit;
-foldUnit=function(u){
-  const name=u?.name;
-  if(state&&name){
-    pushUIEvent('fold',name+' FOLDS','Pressure reached its Fold threshold.');
-    queueBeat('FOLD!',name,'fold');
-  }
-  return _readabilityFoldUnit(u);
 };
 const _readabilitySequenceComplete=sequenceComplete;
 sequenceComplete=function(p,causer=null){
@@ -946,5 +920,5 @@ combatAttack=function(a,t=null){
   return true;
 };
 
-window.REALMS_DEBUG={getState:()=>state,startGame,playCard,combatAttack,gainPressure,shiftSequence};populateSetup();render();
+window.REALMS_DEBUG={getState:()=>state,startGame,playCard,combatAttack,crackUnit,checkCrackRecipe,shiftSequence};populateSetup();render();
 })();
