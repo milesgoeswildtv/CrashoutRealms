@@ -248,7 +248,10 @@ function resolveSpell(c,p){
 function useSkipAhead(p,ai=false){const max=p.board.some(x=>x.id==='CON-026')?2:1;if(p.faction!=='Continuum'||p.passive!=='Skip Ahead'||p.skipUsed>=max||!p.hand.length||p.sequence===5)return false;const go=c=>{p.hand=p.hand.filter(x=>x.iid!==c.iid);c.zone='discard';p.discard.push(c);p.skipUsed++;shiftSequence(p,1);state.log.push(`${p.name} uses Skip Ahead, discarding ${c.name}.`);};if(ai){go([...p.hand].sort((a,b)=>a.cost-b.cost)[0]);return true;}showOptions('Skip Ahead','Discard one card to Shift Sequence +1.',p.hand.map(c=>({label:`${c.name} — Cost ${c.cost}`,value:c.iid})),id=>{const c=p.hand.find(x=>x.iid===id);if(c){go(c);render();}});return true;}
 function useConsume(p,ai=false){if(p.faction!=='Harvest'||p.passive!=='Consume'||p.consumeUsed||p.board.length<2)return false;const finish=(s,t,stat)=>{let n=s.cost+(p.board.some(x=>x.id==='HAR-026')?2:0);n=Math.min(9,n);destroyUnit(s,null,{reason:'consume'});if(p.board.includes(t))addPermStats(t,stat==='str'?n:0,stat==='hp'?n:0);p.consumeUsed=true;state.log.push(`${p.name} Consumes ${s.name}; ${t.name} gains +${n} ${stat.toUpperCase()}.`);};if(ai){const s=chooseFriendly(p,'weak'),t=p.board.find(x=>x.iid!==s.iid);if(t)finish(s,t,'hp');return !!t;}showOptions('Consume','Choose ally to consume.',p.board.map(x=>({label:`${x.name} — Cost ${x.cost}`,value:x.iid})),sid=>{const s=p.board.find(x=>x.iid===sid);if(!s)return;showOptions('Consume','Choose survivor.',p.board.filter(x=>x.iid!==sid).map(x=>({label:x.name,value:x.iid})),tid=>{const t=p.board.find(x=>x.iid===tid);if(!t)return;showOptions('Consume','Choose stat.',[{label:'STR',value:'str'},{label:'HP',value:'hp'}],stat=>{finish(s,t,stat);render();});});});return true;}
 function passPlacement(i){if(state.phase!=='placement'||state.active!==i)return;state.placementPasses++;state.log.push(`${state.players[i].name} passes Placement.`);if(state.placementPasses>=2)beginCombat();else{state.active=1-i;render();maybeAI();}}
-function advancePlacement(i){state.active=1-i;render();maybeAI();}
+function advancePlacement(i){
+ if(state.choicePending){state.pendingPlacementAdvance=i;return;}
+ state.active=1-i;render();maybeAI();
+}
 function beginCombat(){
  state.phase='combat';
  state.players.forEach(p=>p.board.forEach(u=>u.acted=false));
@@ -915,19 +918,36 @@ function beginPendingChoice(){
 function endPendingChoice(){
   state.choiceDepth=Math.max(0,(state.choiceDepth||0)-1);
   state.choicePending=state.choiceDepth>0;
+  if(!state.choicePending&&state.pendingPlacementAdvance!=null){
+    const i=state.pendingPlacementAdvance;
+    delete state.pendingPlacementAdvance;
+    queueMicrotask(()=>{
+      if(!state?.choicePending&&state?.phase==='placement'&&state.active===i)advancePlacement(i);
+    });
+  }
 }
 function holdForHumanChoice(eyebrow,title,opts,pick){
   if(!opts?.length)return false;
   beginPendingChoice();
-  showOptions(eyebrow,title,opts,value=>{
-    try{pick(value);}
+  if(!Array.isArray(state.humanChoiceQueue))state.humanChoiceQueue=[];
+  state.humanChoiceQueue.push({eyebrow,title,opts,pick});
+  pumpHumanChoiceQueue();
+  return true;
+}
+function pumpHumanChoiceQueue(){
+  if(state.choiceShowing||!state.humanChoiceQueue?.length)return;
+  const job=state.humanChoiceQueue.shift();
+  state.choiceShowing=true;
+  showOptions(job.eyebrow,job.title,job.opts,value=>{
+    try{job.pick(value);}
     finally{
+      state.choiceShowing=false;
       endPendingChoice();
       render();
+      pumpHumanChoiceQueue();
       maybeAI();
     }
   },{cancel:false});
-  return true;
 }
 function triggerPrismFollowers(p,recipient,newCard){
   if(!p||!recipient)return;
@@ -970,17 +990,28 @@ function triggerPrismFollowers(p,recipient,newCard){
 }
 function resolveLumenCrackHeal(p,left=3){
   const legal=()=>p.board.filter(x=>x.currentHp<getMaxHp(x));
-  if(left<=0||!legal().length){
-    endPendingChoice();render();maybeAI();return;
-  }
-  showOptions('LUMEN CRACK',`Allocate healing • ${left} HP remaining`,legal().map(x=>({
+  if(left<=0||!legal().length)return;
+  holdForHumanChoice('LUMEN CRACK',`Allocate healing • ${left} HP remaining`,legal().map(x=>({
     label:`${x.name} • HP ${x.currentHp}/${getMaxHp(x)}`,
     value:x.iid
   })),iid=>{
     const t=p.board.find(x=>x.iid===iid);
     if(t)healUnit(t,1,'Lumen Nodule');
     resolveLumenCrackHeal(p,left-1);
-  },{cancel:false});
+  });
+}
+function cycleCardToBottom(p,source){
+  if(!p.hand.length)return;
+  if(p.ai){bottomWorst(p);return;}
+  holdForHumanChoice(source,'Choose a card from your hand to put on the bottom of your deck.',p.hand.map(c=>({
+    label:`${c.name} • ${c.type}`,
+    value:c.iid
+  })),iid=>{
+    const c=p.hand.find(x=>x.iid===iid);
+    if(!c)return;
+    p.hand=p.hand.filter(x=>x.iid!==iid);
+    c.zone='deck';p.deck.unshift(c);
+  });
 }
 function v09OnGeodeCrack(u){
   const p=state.players[u.owner];
@@ -1003,10 +1034,7 @@ function v09OnGeodeCrack(u){
   }
   if(u.id==='GEO-004'){
     if(p.ai)distributeHeal(p,3);
-    else if(p.board.some(x=>x.currentHp<getMaxHp(x))){
-      beginPendingChoice();
-      resolveLumenCrackHeal(p,3);
-    }
+    else if(p.board.some(x=>x.currentHp<getMaxHp(x)))resolveLumenCrackHeal(p,3);
   }
   if(u.id==='GEO-006'){
     const enemies=state.players[1-u.owner].board.slice();
@@ -1030,9 +1058,9 @@ function v09OnGeodeCrack(u){
     }
   }
   if(u.id==='GEO-007')healUnit(u,2,'Deepcore');
-  if(u.id==='GEO-008')u.extraActions++;
+  if(u.id==='GEO-008'&&!u.acted)u.extraActions++;
   if(u.id==='GEO-009')drawOne(p);
-  if(u.id==='GEO-011'){drawOne(p);drawOne(p);bottomWorst(p);}
+  if(u.id==='GEO-011'){drawOne(p);drawOne(p);cycleCardToBottom(p,'CROWN GEODE');}
   if(u.id==='GEO-022')addShield(u,2,'Faultborn Crack');
   if(u.id==='GEO-025'&&p.board.length<maxSlots(p)){
     const t=makeToken(p.index,'Shardling',0,3,{id:'GEO-T01',faction:'Living Geodes',crackRecipe:['Any'],crackedStr:3,crackedHp:3});
@@ -1041,7 +1069,7 @@ function v09OnGeodeCrack(u){
   for(const a of geodePrismAttachments(u)){
     const m=prismMode(a);
     if(m?.kind==='crackHeal')healUnit(u,m.amount||0,'Prism');
-    if(m?.kind==='crackCycle'){drawOne(p);bottomWorst(p);}
+    if(m?.kind==='crackCycle'){drawOne(p);cycleCardToBottom(p,'VERDANT ECHO PRISM');}
   }
   p.board.filter(x=>x.id==='GEO-026'&&x.iid!==u.iid).forEach(x=>healUnit(x,1,'Aurex'));
   if(p.passive==='Kimberlite'){
@@ -1077,7 +1105,7 @@ function attachPrism(p,c,u,color){
   if(p.passive==='Fracture'&&!p.statuses.fractureUsed){
     p.statuses.fractureUsed=true;p.passiveTriggers++;
     if(p.board.some(x=>x.id==='GEO-026'&&x.cracked)&&!p.statuses.aurexFracture){
-      p.statuses.aurexFracture=true;drawOne(p);bottomWorst(p);
+      p.statuses.aurexFracture=true;drawOne(p);cycleCardToBottom(p,'AUREX — FAULT NETWORK');
     }
   }
   if(u.statuses.doubleNextPrism)delete u.statuses.doubleNextPrism;
@@ -1145,7 +1173,7 @@ unitHasTaunt=function(u){
   const p=state.players[u.owner];
   const fakeHigh=p.faction==='Continuum'&&p.lingerHighUntilRound>=state.round&&p.sequence!==4&&p.sequence!==5;
   const old=fakeHigh?p.sequence:null;if(fakeHigh)p.sequence=4;
-  const out=_v09UnitHasTaunt(u);
+  const out=(u?.id==='GEO-007'&&!u.cracked)||_v09UnitHasTaunt(u);
   if(fakeHigh)p.sequence=old;
   return out;
 };
@@ -1188,11 +1216,19 @@ applyDamage=function(u,amount,source=null,opts={}){
     }
   }
 
-  if(u.faction==='Living Geodes'&&!u.statuses.prismDamageReduced){
+  if(u.faction==='Living Geodes'){
     let reduce=0;
-    if(u.id==='GEO-022'&&u.cracked)reduce=Math.max(reduce,1);
-    if(geodePrismAttachments(u).some(a=>prismMode(a)?.kind==='firstDamageReduce'))reduce=Math.max(reduce,1);
-    if(reduce){amount=Math.max(0,amount-reduce);u.statuses.prismDamageReduced=true;}
+    if(u.id==='GEO-022'&&u.cracked&&!u.statuses.faultbornDamageReduced){
+      reduce++;
+      u.statuses.faultbornDamageReduced=true;
+    }
+    for(const a of geodePrismAttachments(u)){
+      if(prismMode(a)?.kind==='firstDamageReduce'&&a.damageReducedRound!==state.round){
+        reduce+=prismMode(a).amount||1;
+        a.damageReducedRound=state.round;
+      }
+    }
+    if(reduce)amount=Math.max(0,amount-reduce);
   }
 
   if((u.shield||0)>0&&amount>0){
@@ -1682,5 +1718,5 @@ handleRef=function(x){
 };
 
 
-window.REALMS_DEBUG={getState:()=>state,startGame,playCard,combatAttack,gainPressure,shiftSequence,addShield,recipeMissing,checkFlux,polarity,checkPolarityLoss,resolveUpperStrataOvercharge,resolveUpperStrataChainLink,bloodMoonBanishmentActive,endlessBorrowPairValid,endlessBorrowPairs,realmFlags,deadlands:{canRaise:canUseDeadlandsEcho,raise:summonEcho,useRaise:useDeadlandsEcho,canAbsorb:canUseDeadlandsAbsorption,absorb:absorbDeadlandsEcho,useAbsorb:useDeadlandsAbsorption,grave:()=>state?.graveState||[]}};populateSetup();render();
+window.REALMS_DEBUG={getState:()=>state,startGame,playCard,combatAttack,gainPressure,shiftSequence,addShield,recipeMissing,checkFlux,polarity,checkPolarityLoss,resolveUpperStrataOvercharge,resolveUpperStrataChainLink,bloodMoonBanishmentActive,endlessBorrowPairValid,endlessBorrowPairs,realmFlags,geodes:{cardById,makeInstance,crackUnit,attachPrism,applyDamage,healUnit,getStr,getMaxHp,prepareRound,endRound,resolveSpell,spellCandidates,unitHasTaunt},deadlands:{canRaise:canUseDeadlandsEcho,raise:summonEcho,useRaise:useDeadlandsEcho,canAbsorb:canUseDeadlandsAbsorption,absorb:absorbDeadlandsEcho,useAbsorb:useDeadlandsAbsorption,grave:()=>state?.graveState||[]}};populateSetup();render();
 })();
