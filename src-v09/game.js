@@ -908,13 +908,21 @@ function geodeRecipeText(u){
   if(u.cracked)return 'CRACKED';
   return (u.crackRecipe||[]).join(' + ')||'—';
 }
+function beginPendingChoice(){
+  state.choiceDepth=(state.choiceDepth||0)+1;
+  state.choicePending=true;
+}
+function endPendingChoice(){
+  state.choiceDepth=Math.max(0,(state.choiceDepth||0)-1);
+  state.choicePending=state.choiceDepth>0;
+}
 function holdForHumanChoice(eyebrow,title,opts,pick){
   if(!opts?.length)return false;
-  state.choicePending=true;
+  beginPendingChoice();
   showOptions(eyebrow,title,opts,value=>{
     try{pick(value);}
     finally{
-      state.choicePending=false;
+      endPendingChoice();
       render();
       maybeAI();
     }
@@ -960,10 +968,46 @@ function triggerPrismFollowers(p,recipient,newCard){
     }
   }
 }
+function resolveLumenCrackHeal(p,left=3){
+  const legal=()=>p.board.filter(x=>x.currentHp<getMaxHp(x));
+  if(left<=0||!legal().length){
+    endPendingChoice();render();maybeAI();return;
+  }
+  showOptions('LUMEN CRACK',`Allocate healing • ${left} HP remaining`,legal().map(x=>({
+    label:`${x.name} • HP ${x.currentHp}/${getMaxHp(x)}`,
+    value:x.iid
+  })),iid=>{
+    const t=p.board.find(x=>x.iid===iid);
+    if(t)healUnit(t,1,'Lumen Nodule');
+    resolveLumenCrackHeal(p,left-1);
+  },{cancel:false});
+}
 function v09OnGeodeCrack(u){
   const p=state.players[u.owner];
-  if(u.id==='GEO-001'){const e=chooseEnemy(u.owner);if(e)applyDamage(e,2,u);}
-  if(u.id==='GEO-004')distributeHeal(p,3);
+  if(u.id==='GEO-001'){
+    const enemies=state.players[1-u.owner].board.slice();
+    if(enemies.length){
+      if(p.ai){
+        const e=[...enemies].sort((a,b)=>a.currentHp-b.currentHp)[0];
+        applyDamage(e,2,u,{reason:'Pebbleheart Crack'});
+      }else{
+        holdForHumanChoice('PEBBLEHEART CRACK','Choose an enemy creature to take 2 damage.',enemies.map(e=>({
+          label:`${e.name} • HP ${e.currentHp}/${getMaxHp(e)}`,
+          value:e.iid
+        })),iid=>{
+          const e=enemies.find(x=>x.iid===iid);
+          if(e&&state.players[e.owner].board.includes(e))applyDamage(e,2,u,{reason:'Pebbleheart Crack'});
+        });
+      }
+    }
+  }
+  if(u.id==='GEO-004'){
+    if(p.ai)distributeHeal(p,3);
+    else if(p.board.some(x=>x.currentHp<getMaxHp(x))){
+      beginPendingChoice();
+      resolveLumenCrackHeal(p,3);
+    }
+  }
   if(u.id==='GEO-006'){
     const enemies=state.players[1-u.owner].board.slice();
     const applyMirror=e=>{
@@ -1344,12 +1388,12 @@ function resolveWorldheartEndRound(queue,done){
     applyTarget(t);
     return;
   }
-  state.choicePending=true;
+  beginPendingChoice();
   showOptions('WORLDHEART','Choose another friendly Geode to restore 2 HP.',legal.map(t=>({
     label:`${t.name} • HP ${t.currentHp}/${getMaxHp(t)}`,
     value:t.iid
   })),iid=>{
-    state.choicePending=false;
+    endPendingChoice();
     const t=legal.find(x=>x.iid===iid);
     if(t&&p.board.includes(t))healUnit(t,2,'Worldheart');
     render();
@@ -1410,20 +1454,88 @@ spellCandidates=function(c,p){
 const _v09ResolveSpell=resolveSpell;
 resolveSpell=function(c,p){
   if(c.id==='GEO-027'){
-    const seen=p.deck.splice(Math.max(0,p.deck.length-4),4),hit=seen.find(x=>x.type==='Prism');
-    if(hit){seen.splice(seen.indexOf(hit),1);hit.zone='hand';p.hand.push(hit);}
-    seen.forEach(x=>{x.zone='deck';p.deck.unshift(x);});
+    const seen=p.deck.splice(Math.max(0,p.deck.length-4),4);
+    const finishBottomOrder=(rest,order=[])=>{
+      if(!rest.length){
+        p.deck=[...order,...p.deck];
+        delete c.statuses.searchSeen;
+        render();maybeAI();return;
+      }
+      showOptions('PRISMATIC SEARCH',`Choose the bottom card first • ${rest.length} remaining`,rest.map(x=>({
+        label:`${x.name} • ${x.type}`,
+        value:x.iid
+      })),iid=>{
+        const x=rest.find(y=>y.iid===iid);
+        if(!x)return;
+        finishBottomOrder(rest.filter(y=>y.iid!==iid),[...order,x]);
+      },{cancel:false});
+    };
+    const finishWithPrism=hit=>{
+      const rest=seen.filter(x=>x!==hit);
+      if(hit){hit.zone='hand';p.hand.push(hit);}
+      if(p.ai){
+        rest.forEach(x=>x.zone='deck');
+        p.deck=[...rest,...p.deck];
+        return;
+      }
+      rest.forEach(x=>x.zone='deck');
+      beginPendingChoice();
+      if(!rest.length){endPendingChoice();render();maybeAI();return;}
+      const originalFinish=finishBottomOrder;
+      const wrapped=(cards,order=[])=>{
+        if(!cards.length){
+          p.deck=[...order,...p.deck];
+          endPendingChoice();render();maybeAI();return;
+        }
+        showOptions('PRISMATIC SEARCH',`Choose the bottom card first • ${cards.length} remaining`,cards.map(x=>({
+          label:`${x.name} • ${x.type}`,
+          value:x.iid
+        })),iid=>{
+          const x=cards.find(y=>y.iid===iid);
+          if(x)wrapped(cards.filter(y=>y.iid!==iid),[...order,x]);
+        },{cancel:false});
+      };
+      wrapped(rest,[]);
+    };
+    const prisms=seen.filter(x=>x.type==='Prism');
+    if(p.ai){finishWithPrism(prisms[0]||null);return;}
+    if(prisms.length>1){
+      beginPendingChoice();
+      showOptions('PRISMATIC SEARCH','Choose a Prism from the top four to put into your hand.',prisms.map(x=>({
+        label:`${x.name} • ${(x.colors||[]).join('/')}`,
+        value:x.iid
+      })),iid=>{
+        endPendingChoice();
+        finishWithPrism(prisms.find(x=>x.iid===iid)||null);
+      },{cancel:false});
+    }else finishWithPrism(prisms[0]||null);
     return;
   }
   if(c.id==='GEO-028'){
     const legal=spellCandidates(c,p),targetId=c.statuses?.castTargets?.[0];
     const u=p.ai?(legal[0]||null):(legal.find(x=>x.iid===targetId)||null);
+    const refract=a=>{
+      if(!a)return;
+      const other=a.card?.colors?.find(x=>x!==a.chosenColor);
+      if(!other)return;
+      a.chosenColor=other;a.countsColors=[other];
+      state.log.push(`${a.card.name} refracts to ${other} on ${u.name}.`);
+      if(recipeSatisfied(u))crackUnit(u,'Refract');
+    };
     if(u){
-      const a=u.prisms[u.prisms.length-1],other=a?.card?.colors?.find(x=>x!==a.chosenColor);
-      if(other){
-        a.chosenColor=other;a.countsColors=[other];
-        state.log.push(`${a.card.name} refracts to ${other} on ${u.name}.`);
-        if(recipeSatisfied(u))crackUnit(u,'Refract');
+      if(p.ai){
+        const a=[...u.prisms].sort((x,y)=>{
+          const xo=x.card?.colors?.find(c=>c!==x.chosenColor),yo=y.card?.colors?.find(c=>c!==y.chosenColor);
+          const xm=xo&&u.crackRecipe?.includes(xo)?1:0,ym=yo&&u.crackRecipe?.includes(yo)?1:0;
+          return ym-xm;
+        })[0];
+        refract(a);
+      }else if(u.prisms.length===1)refract(u.prisms[0]);
+      else{
+        holdForHumanChoice('REFRACT',`Choose the Prism on ${u.name} to switch colors.`,u.prisms.map((a,index)=>{
+          const other=a.card?.colors?.find(x=>x!==a.chosenColor)||a.chosenColor;
+          return {label:`${a.card?.name||'Prism'} • ${a.chosenColor} → ${other}`,value:String(index)};
+        }),value=>refract(u.prisms[+value]));
       }
     }
     delete c.statuses.castTargets;
