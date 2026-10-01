@@ -126,30 +126,59 @@
   <div id="boot" class="boot"><div><b>REALMS v0.9</b><small>Loading signature systems alpha…</small></div></div>
   <script>
   (async()=>{
-    const V='v09-signature-systems-alpha1';
-    const cssParts=['src-v09/styles.css'];
-    const cardParts=['src-v09/cards.js'];
-    const gameParts=['src-v09/game.js'];
-    async function load(parts){
-      const chunks=await Promise.all(parts.map(async p=>{
-        const r=await fetch(p+'?v='+V,{cache:'no-store'});
-        if(!r.ok)throw new Error(p+' returned '+r.status);
-        return r.text();
-      }));
-      return chunks.join('');
-    }
+    const V='v09-signature-systems-alpha2';
+    const fail=err=>{
+      const msg=String(err?.message||err||'Unknown boot error');
+      document.body.innerHTML='<div class="boot"><div><b>REALMS v0.9 failed to load</b><small>'+msg.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))+'</small></div></div>';
+      console.error(err);
+    };
+    const loadStyle=href=>new Promise((resolve,reject)=>{
+      const el=document.createElement('link');
+      el.rel='stylesheet';el.href=href;
+      el.onload=()=>resolve(el);
+      el.onerror=()=>reject(new Error('Stylesheet failed: '+href));
+      document.head.appendChild(el);
+    });
+    const loadScript=src=>new Promise((resolve,reject)=>{
+      const el=document.createElement('script');
+      el.src=src;el.async=false;
+      el.onload=()=>resolve(el);
+      el.onerror=()=>reject(new Error('Script failed: '+src));
+      document.body.appendChild(el);
+    });
     try{
-      const css=await load(cssParts);
-      const style=document.createElement('style');style.textContent=css;document.head.appendChild(style);
+      let previous='';
+      try{previous=localStorage.getItem('realmsBootVersion')||'';}catch(_){}
+      if(previous!==V){
+        if('serviceWorker' in navigator){
+          const regs=await navigator.serviceWorker.getRegistrations().catch(()=>[]);
+          await Promise.all(regs.map(r=>r.unregister().catch(()=>false)));
+        }
+        if('caches' in window){
+          const keys=await caches.keys().catch(()=>[]);
+          await Promise.all(keys.filter(k=>k.startsWith('realms-')).map(k=>caches.delete(k)));
+        }
+        try{localStorage.setItem('realmsBootVersion',V);}catch(_){}
+        if(navigator.serviceWorker?.controller){
+          const u=new URL(location.href);
+          if(u.searchParams.get('boot')!==V){
+            u.searchParams.set('boot',V);
+            location.replace(u.toString());
+            return;
+          }
+        }
+      }
+      await loadStyle('./src-v09/styles.css?v='+V);
+      await loadScript('./src-v09/cards.js?v='+V);
+      if(!window.REALMS_DATA)throw new Error('Card data did not initialize.');
+      await loadScript('./src-v09/game.js?v='+V);
+      if(!window.REALMS_DEBUG)throw new Error('Game runtime did not initialize.');
       document.getElementById('boot-style')?.remove();
       document.getElementById('boot')?.remove();
-      (0,eval)(await load(cardParts));
-      (0,eval)(await load(gameParts));
-      if('serviceWorker' in navigator&&location.protocol!=='file:')navigator.serviceWorker.register('./sw.js').then(r=>r.update()).catch(()=>{});
-    }catch(err){
-      document.body.innerHTML='<div class="boot"><div><b>REALMS v0.8 failed to load</b><small>'+String(err.message||err)+'</small></div></div>';
-      console.error(err);
-    }
+      if('serviceWorker' in navigator&&location.protocol!=='file:'){
+        navigator.serviceWorker.register('./sw.js?v='+V).then(r=>r.update()).catch(console.warn);
+      }
+    }catch(err){fail(err);}
   })();
   </script>
 </body>
