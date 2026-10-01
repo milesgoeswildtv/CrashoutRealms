@@ -200,10 +200,11 @@ function summonEcho(p,c){
  if(!state.graveState.length)state.players.forEach(x=>x.statuses.echoOffer=false);
  return true;
 }
-function useDeadlandsReanimate(p){
+function useDeadlandsReanimate(p,ai=false){
  if(!state.flags.has('deadMajor')||state.phase!=='placement'||state.active!==p.index||p.board.length>=maxSlots(p))return false;
  const legal=state.graveState.filter(c=>p.resource>=deadlandsEchoCost(c));if(!legal.length)return false;
  const finish=c=>{if(!summonEcho(p,c))return false;state.placementPasses=0;state.selected=null;advancePlacement(p.index);return true;};
+ if(ai)return finish([...legal].sort((a,b)=>(b.cost||0)-(a.cost||0))[0]);
  showOptions('Deadlands — Shared Grave','Choose a creature to reanimate as a 1 STR / 1 HP Grave Echo.',legal.map(c=>({label:`${c.name} — ${deadlandsEchoCost(c)} RES • ${c.rules||'No printed ability'}`,value:c.iid})),id=>{const c=state.graveState.find(x=>x.iid===id);if(c)finish(c);});
  return true;
 }
@@ -218,9 +219,10 @@ function absorbDeadlandsEcho(p,echo,c){
  state.log.push(`${p.name} uses <strong>Absorption</strong>: ${c.name} absorbs ${echo.name}'s ${absorbedStr} STR / ${absorbedHp} HP.`);
  onPlay(c,p);if(c.formation!=null)formationJoined(p,c.formation);state.placementPasses=0;state.selected=null;checkWinner();if(state.winner===null)advancePlacement(p.index);return true;
 }
-function useDeadlandsAbsorption(p){
+function useDeadlandsAbsorption(p,ai=false){
  if(!state.flags.has('deadMinor')||!state.flags.has('deadMajor')||p.statuses.absorptionUsed||state.phase!=='placement'||state.active!==p.index)return false;
  const echoes=p.board.filter(x=>x.echo),creatures=p.hand.filter(c=>c.type.includes('Creature')&&effectiveCost(p,c,false)<=p.resource);if(!echoes.length||!creatures.length)return false;
+ if(ai){const e=[...echoes].sort((a,b)=>getStr(b)+b.currentHp-getStr(a)-a.currentHp)[0],c=[...creatures].sort((a,b)=>(b.cost||0)-(a.cost||0))[0];return absorbDeadlandsEcho(p,e,c);}
  showOptions('Deadlands — Absorption','Choose the Grave Echo to absorb.',echoes.map(e=>({label:`${e.name} — ${getStr(e)} STR / ${e.currentHp} HP`,value:e.iid})),eid=>{const e=p.board.find(x=>x.iid===eid&&x.echo);if(!e)return;showOptions('Deadlands — Absorption','Choose a Creature from hand. Normal cost applies.',creatures.map(c=>({label:`${c.name} — ${effectiveCost(p,c,false)} RES`,value:c.iid})),cid=>{const c=p.hand.find(x=>x.iid===cid);if(c)absorbDeadlandsEcho(p,e,c);});});return true;
 }
 function maybeAI(){if(!state||state.winner!==null)return;const p=state.players[state.active];if(!p?.ai)return;setTimeout(()=>{if(!state||state.winner!==null||state.active!==p.index)return;if(state.phase==='placement')aiPlacement(p);else if(state.phase==='combat')aiCombat(p);},120);}
@@ -1152,6 +1154,8 @@ playCard=function(i,iid,opts={}){
 };
 
 aiPlacement=function(p){
+  if(state.flags.has('deadMinor')&&state.flags.has('deadMajor')&&!p.statuses.absorptionUsed&&p.board.some(x=>x.echo)&&p.hand.some(c=>c.type.includes('Creature')&&effectiveCost(p,c,false)<=p.resource)){if(useDeadlandsAbsorption(p,true))return;}
+  if(state.flags.has('deadMajor')&&state.graveState.some(c=>p.resource>=deadlandsEchoCost(c))&&p.board.length<maxSlots(p)){if(useDeadlandsReanimate(p,true))return;}
   if(p.faction==='Harvest'&&p.passive==='Consume'&&!p.consumeUsed&&p.board.length>=2&&Math.random()<.12){if(useConsume(p,true)){state.active=1-p.index;render();maybeAI();return;}}
   if(p.faction==='Continuum'&&p.passive==='Skip Ahead'&&p.sequence>=3&&Math.random()<.35){if(useSkipAhead(p,true)){state.active=1-p.index;render();maybeAI();return;}}
   const a=p.hand.filter(c=>{
