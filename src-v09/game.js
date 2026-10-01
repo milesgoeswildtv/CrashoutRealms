@@ -236,18 +236,84 @@ function distributeHeal(p,n){let left=n;while(left--){const h=p.board.filter(x=>
 function formationJoined(p,fid){if(p.faction!=='Eliteborn'||fid==null)return;const m=formationMembers(p,fid),fs=formationSize(p,fid);if(p.passive==='Rise as One. Die as One.'&&fs>=3){let n=1;if(p.board.some(x=>x.id==='ELI-026')&&!p.statuses.caedrynRise){p.statuses.caedrynRise=true;n=2;}m.forEach(x=>addPermStats(x,n,n));p.passiveTriggers++;state.log.push(`Rise: Formation ${fid} reaches ${fs}; members gain +${n}/+${n}.`);}if(fs===3){const a=m.find(x=>x.id==='ELI-006'&&!x.statuses.formed3);if(a){a.statuses.formed3=true;drawOne(p);bottomWorst(p);}}syncDynamicHp(p);}
 function ensureFormation(p,u,join=null){if(p.faction!=='Eliteborn')return;u.formation=join?.formation??p.nextFormation++;}
 function attachEquip(p,c,target){if(!target||target.owner!==p.index||!p.board.includes(target)||target.equip)return false;target.equip=c;c.zone='equip';target.currentHp+=c.equipHp||0;state.log.push(`${p.name} equips <strong>${c.name}</strong> to ${target.name}.`);formationJoined(p,target.formation);return true;}
-function shiftSequence(p,steps=1,{towardZero=false,causer=null}={}){if(p.faction!=='Continuum')return;for(let i=0;i<steps;i++){const old=p.sequence;if(towardZero){p.sequence=Math.max(0,p.sequence-1);}else if(p.passive==='Loop Back'){p.sequence+=p.sequenceDir;if(p.sequence>=5){p.sequence=5;p.sequenceDir=-1;}else if(p.sequence<=0){p.sequence=0;p.sequenceDir=1;}}else p.sequence=(p.sequence+1)%6;state.log.push(`${p.name} Sequence ${old} → ${p.sequence}.`);syncDynamicHp(p);if(p.sequence===5&&old!==5)sequenceComplete(p,causer);if(old===5&&p.sequence===4)p.board.filter(x=>x.id==='CON-024').forEach(x=>x.extraActions++);if(old>=4&&p.sequence>=4){p.board.filter(x=>x.id==='CON-002'&&!x.statuses.bell).forEach(x=>{x.statuses.bell=true;x.tempStr+=2;});if(p.passive==='Loop Back'&&p.sequenceDir===-1&&p.board.some(x=>x.id==='CON-026')&&!p.statuses.closedCircuit){p.statuses.closedCircuit=true;p.board.filter(x=>/High Sequence/.test(x.rules||'')).forEach(x=>addTempStats(x,1,1));}}}}
+function recordSequence(p,n){
+ p.sequenceHistory=p.sequenceHistory||[];p.sequenceHistory.push(n);if(p.sequenceHistory.length>14)p.sequenceHistory.shift();checkFluxes(p);
+}
+function resolveFluxTarget(p,fn){
+ if(!p.board.length)return;if(p.ai){fn(chooseFriendly(p));return;}showOptions('FLUX','Choose a creature.',p.board.map(x=>({label:`${x.name} — ${getStr(x)}/${x.currentHp}`,value:x.iid})),id=>{const u=p.board.find(x=>x.iid===id);if(u)fn(u);});
+}
+function resolveFlux(p,fl){
+ p.fluxes=p.fluxes.filter(x=>x.iid!==fl.iid);fl.zone='discard';p.discard.push(fl);state.log.push(`<strong>FLUX — ${fl.name}</strong> activates.`);
+ switch(fl.fluxEffect){
+  case'freeze4':p.sequence=4;p.sequenceFrozenTurns=3;p.sequenceFreezeStartRound=state.round;syncDynamicHp(p);recordSequence(p,4);break;
+  case'closedCircuit':resolveFluxTarget(p,u=>{u.extraActions++;u.tempStr+=2;render();});break;
+  case'backstep':drawOne(p);drawOne(p);bottomWorst(p);p.effects.nextDiscount=Math.max(p.effects.nextDiscount||0,1);break;
+  case'zeroCrossing':drawOne(p);p.resource+=2;break;
+  case'dejaVu':resolveFluxTarget(p,u=>{u.statuses.freeActionOnce=true;render();});break;
+  case'fifthReflection':drawOne(p);drawOne(p);p.effects.nextDiscount=Math.max(p.effects.nextDiscount||0,2);break;
+ }
+}
+function checkFluxes(p){
+ if(!p?.fluxes?.length)return;const h=p.sequenceHistory||[];
+ for(const fl of [...p.fluxes]){const pat=fl.pattern||[];if(h.length<pat.length)continue;const tail=h.slice(-pat.length);if(pat.every((n,i)=>tail[i]===n))resolveFlux(p,fl);}
+}
+function shiftSequence(p,steps=1,{towardZero=false,causer=null}={}){
+ if(p.faction!=='Continuum')return;
+ for(let i=0;i<steps;i++){
+  if(p.sequenceFrozenTurns>0){p.sequence=4;state.log.push(`${p.name} Sequence is <strong>FROZEN AT 4</strong>.`);continue;}
+  const old=p.sequence;
+  if(towardZero)p.sequence=Math.max(0,p.sequence-1);
+  else if(p.passive==='Loop Back'){p.sequence+=p.sequenceDir;if(p.sequence>=5){p.sequence=5;p.sequenceDir=-1;}else if(p.sequence<=0){p.sequence=0;p.sequenceDir=1;}}
+  else p.sequence=(p.sequence+1)%6;
+  state.log.push(`${p.name} Sequence ${old} → ${p.sequence}.`);syncDynamicHp(p);recordSequence(p,p.sequence);
+  if(p.sequence===5&&old!==5)sequenceComplete(p,causer);
+  if(old===5&&p.sequence===4)p.board.filter(x=>x.id==='CON-024').forEach(x=>x.extraActions++);
+  if(old>=4&&p.sequence>=4){p.board.filter(x=>x.id==='CON-002'&&!x.statuses.bell).forEach(x=>{x.statuses.bell=true;x.tempStr+=2;});if(p.passive==='Loop Back'&&p.sequenceDir===-1&&p.board.some(x=>x.id==='CON-026')&&!p.statuses.closedCircuit){p.statuses.closedCircuit=true;p.board.filter(x=>/High Sequence/.test(x.rules||'')).forEach(x=>addTempStats(x,1,1));}}
+ }
+}
 function sequenceComplete(p,causer=null){state.log.push(`<strong>${p.name} COMPLETES Sequence.</strong>`);p.board.slice().forEach(u=>{if(u.id==='CON-003')p.effects.nextDiscount=Math.max(p.effects.nextDiscount||0,2);if(u.id==='CON-005'){healUnit(u,2,'Sequence');p.health=Math.min(20,p.health+2);}if(u.id==='CON-007'){const a=p.board.find(x=>x.iid!==u.iid&&x.acted);if(a)a.extraActions++;}if(u.id==='CON-008'){u.tempStr+=3;u.extraActions++;}if(u.id==='CON-010'||u.id==='CON-023'){drawOne(p);drawOne(p);bottomWorst(p);}if(u.id==='CON-026'){drawOne(p);drawOne(p);p.effects.nextDiscount=Math.max(p.effects.nextDiscount||0,2);}});if(causer==='CON-015')p.resource+=2;if(causer==='CON-020'||causer==='CON-021')drawOne(p);if(causer==='CON-027')p.effects.tripleDiscount=3;if(p.passive==='Skip Ahead'&&p.board.some(x=>x.id==='CON-026')&&p.skipUsed>=2)drawOne(p);}
-function moondemonDealtDamage(source,dealt,combat=false){if(!source||dealt<=0||source.faction!=='Moondemons'||!state.players[source.owner].board.includes(source)||!isBloodied(source))return;const p=state.players[source.owner];if(p.passive==='Frenzied'){addPermStats(source,2,2);p.passiveTriggers++;}if(source.id==='MON-004'&&combat&&!source.statuses.redjaw){source.statuses.redjaw=true;source.permHp++;}let h=2;if(source.id==='MON-026'&&!source.statuses.vesperaRedirect){const a=p.board.find(x=>x.iid!==source.iid&&isBloodied(x));if(a){source.statuses.vesperaRedirect=true;healUnit(a,2,'Vespera');h=0;}}healUnit(source,h,'Blood feed');if(source.id==='MON-007'&&combat&&isBloodied(source)&&!source.statuses.duelist){source.statuses.duelist=true;source.extraActions++;}if(source.id==='MON-002'&&p.board.includes(source))applyDamage(source,1,null,{reason:'self'});}
+function moondemonDealtDamage(source,dealt,combat=false){
+ if(!source||dealt<=0||source.faction!=='Moondemons'||!state.players[source.owner].board.includes(source)||!isBloodied(source))return;
+ const p=state.players[source.owner];
+ if(source.sigil?.sigilEffect==='feast'){revealSigil(source,'SIGIL');source.permHp+=2;}
+ if(p.passive==='Frenzied'){addPermStats(source,2,2);p.passiveTriggers++;}
+ if(source.id==='MON-004'&&combat&&!source.statuses.redjaw){source.statuses.redjaw=true;source.permHp++;}
+ let h=2;if(source.id==='MON-026'&&!source.statuses.vesperaRedirect){const a=p.board.find(x=>x.iid!==source.iid&&isBloodied(x));if(a){source.statuses.vesperaRedirect=true;healUnit(a,2,'Vespera');h=0;}}
+ healUnit(source,h,'Blood feed');
+ if(source.id==='MON-007'&&combat&&isBloodied(source)&&!source.statuses.duelist){source.statuses.duelist=true;source.extraActions++;}
+ if(source.id==='MON-002'&&p.board.includes(source))applyDamage(source,1,null,{reason:'self'});
+}
 function chooseEndless(){const a=['crystalMajor','crystalMinor','bloodMajor','bloodMinor','upperMajor','upperMinor','deadMajor','deadMinor'];while(true){const x=sample(a),y=sample(a.filter(z=>z!==x));if(y==='crystalMinor'&&x!=='crystalMajor')continue;if(y==='deadMinor'&&x!=='deadMajor')continue;if(x==='crystalMinor'&&y!=='crystalMajor')continue;if(x==='deadMinor'&&y!=='deadMajor')continue;return[x,y];}}
 function realmFlags(r,b=[]){const s=new Set;if(r==='Crystal Isle'){s.add('crystalMajor');s.add('crystalMinor');}if(r==='Blood Moon'){s.add('bloodMajor');s.add('bloodMinor');}if(r==='Upper Strata'){s.add('upperMajor');s.add('upperMinor');}if(r==='Deadlands'){s.add('deadMajor');s.add('deadMinor');}if(r==='The Endless')b.forEach(x=>s.add(x));return s;}
-function startGame(c){uid=1;const realm=c.realm==='Random'?sample(REALMS):c.realm,borrowed=realm==='The Endless'?chooseEndless():[];state={version:'0.8-mechanics-alpha',realm,borrowed,flags:realmFlags(realm,borrowed),mode:c.mode,round:1,phase:'mulligan',initiative:rand(2),active:0,placementPasses:0,winner:null,selected:null,graveState:[],polarityDeaths:[0,0],log:[],preparedRound:0,players:[buildPlayer(0,c.p1Faction,c.p1Passive,c.mode==='watch'),buildPlayer(1,c.p2Faction,c.p2Passive,c.mode!=='hotseat')]};setupModal.classList.remove('open');state.log.push(`${state.players[state.initiative].name} has Initiative. Realm: <strong>${realm}</strong>.`);state.players.forEach(p=>{for(let i=0;i<5;i++)drawOne(p);});beginMulligan(0);}
-function prepareRound(){for(const p of state.players){p.statuses={};p.effects={};p.skipUsed=0;p.consumeUsed=false;p.endlessShiftUsed=false;p.preventNextDamage=0;p.shatterproof=false;p.cascadeRemaining=0;p.board.slice().forEach(u=>{u.acted=false;u.extraActions=0;u.tempStr=0;u.tempHp=0;u.damageTakenThisRound=0;u.statuses={};if(u.faction==='Harvest')u.nourished=false;});syncDynamicHp(p);if(p.faction==='Continuum')shiftSequence(p,1);if(p.faction==='Harvest'){p.board.filter(x=>x.id==='HAR-006').forEach(o=>p.board.filter(x=>x.iid!==o.iid).slice(0,2).forEach(x=>addPermStats(x,0,1)));}if(p.faction==='Eliteborn')p.board.slice().forEach(u=>{const fs=formationSize(p,u);if((u.id==='ELI-008'&&fs===4)||(u.id==='ELI-022'&&fs===3))distributeHeal({board:formationMembers(p,u.formation)},2);});}}
+function startGame(c){uid=1;const realm=c.realm==='Random'?sample(REALMS):c.realm,borrowed=realm==='The Endless'?chooseEndless():[];state={version:'0.9-signature-types-alpha',realm,borrowed,flags:realmFlags(realm,borrowed),mode:c.mode,round:1,phase:'mulligan',initiative:rand(2),active:0,placementPasses:0,winner:null,selected:null,graveState:[],polarityDeaths:[0,0],log:[],preparedRound:0,players:[buildPlayer(0,c.p1Faction,c.p1Passive,c.mode==='watch'),buildPlayer(1,c.p2Faction,c.p2Passive,c.mode!=='hotseat')]};setupModal.classList.remove('open');state.log.push(`${state.players[state.initiative].name} has Initiative. Realm: <strong>${realm}</strong>.`);state.players.forEach(p=>{for(let i=0;i<5;i++)drawOne(p);});beginMulligan(0);}
+function prepareRound(){
+ for(const p of state.players){
+  p.statuses={};p.effects={};p.skipUsed=0;p.consumeUsed=false;p.endlessShiftUsed=false;p.preventNextDamage=0;p.shatterproof=false;p.cascadeRemaining=0;p.sequenceHistory=[p.sequence];
+  p.hand.forEach(c=>{if(c.statuses)c.statuses.tempCostReduction=0;});
+  p.board.slice().forEach(u=>{u.acted=false;u.extraActions=0;u.tempStr=0;u.tempHp=0;u.damageTakenThisRound=0;u.statuses={};u.tempPrismColors=[];if(u.faction==='Harvest')u.nourished=!!(u.growth?.bloomed&&u.growth.growthEffect==='rootNetwork');});
+  syncDynamicHp(p);
+  for(const u of p.board.slice()){
+   if(u.growth?.bloomed&&u.growth.growthEffect==='rejuvenation'&&state.round>u.growth.bloomRound&&(u.growth.turns||0)>0)healUnit(u,2,'Rejuvenation');
+   if(u.faction==='Living Geodes'&&u.prisms?.some(pr=>pr.id==='GEO-015'&&pr.chosenColor==='Green'))healUnit(u,1,'Verdant Prism');
+  }
+  if(p.faction==='Continuum'){if(p.sequenceFrozenTurns>0&&state.round>p.sequenceFreezeStartRound){p.sequence=4;recordSequence(p,4);}else shiftSequence(p,1);}
+  if(p.faction==='Harvest')p.board.filter(x=>x.id==='HAR-006').forEach(o=>p.board.filter(x=>x.iid!==o.iid).slice(0,2).forEach(x=>addPermStats(x,0,1)));
+  if(p.faction==='Eliteborn')p.board.slice().forEach(u=>{const fs=formationSize(p,u);if((u.id==='ELI-008'&&fs===4)||(u.id==='ELI-022'&&fs===3))distributeHeal({board:formationMembers(p,u.formation)},2);});
+ }
+}
 function beginMulligan(i){if(state.winner!==null)return;if(i===0&&state.preparedRound!==state.round){prepareRound();state.preparedRound=state.round;}if(i>1)return finishMulligans();const p=state.players[i];state.active=i;if(p.ai){aiMulligan(p);return beginMulligan(i+1);}showMulligan(p,()=>beginMulligan(i+1));}
 function aiMulligan(p){drawToFive(p);const ret=p.hand.filter(c=>c.cost>8&&c.resource===1).slice(0,2);p.hand=p.hand.filter(c=>!ret.includes(c));ret.forEach(c=>{c.zone='deck';p.deck.push(c)});p.deck=shuffle(p.deck);drawToFive(p);}
 function showMulligan(p,done){choiceEyebrow.textContent=state.round===1?'Opening hand':`Round ${state.round}`;choiceTitle.textContent=`${p.name}: keep or return`;const sel=new Set;choiceBody.innerHTML=`<p class="player-sub">Return any cards, then refill to 5. Your final five generate resources.</p><div class="mulligan-grid">${p.hand.map(c=>`<button class="mulligan-card" data-iid="${c.iid}"><strong>${esc(c.name)}</strong><div class="mini">Cost ${c.cost} • +${c.resource} RES</div></button>`).join('')}</div>`;choiceActions.innerHTML='<button class="btn primary" id="keepHandBtn">Confirm Hand</button>';choiceModal.classList.add('open');choiceBody.querySelectorAll('[data-iid]').forEach(b=>b.onclick=()=>{sel.has(b.dataset.iid)?sel.delete(b.dataset.iid):sel.add(b.dataset.iid);b.classList.toggle('return');});$('#keepHandBtn').onclick=()=>{const ret=p.hand.filter(c=>sel.has(c.iid));p.hand=p.hand.filter(c=>!sel.has(c.iid));ret.forEach(c=>{c.zone='deck';p.deck.push(c)});p.deck=shuffle(p.deck);drawToFive(p);closeChoice();done();};}
 function finishMulligans(){for(const p of state.players){p.resourceStart=p.hand.slice(0,5).reduce((s,c)=>s+c.resource,0);p.resource=p.resourceStart;p.placementPassed=false;}state.phase='placement';state.active=state.initiative;state.placementPasses=0;state.log.push(`<strong>Round ${state.round}</strong> begins. Resources ${state.players[0].resource}/${state.players[1].resource}.`);render();maybeAI();}
-function effectiveCost(p,c,consume=false){let n=c.cost;const next=p.effects.nextDiscount||0;if(next)n-=next;if((p.effects.tripleDiscount||0)>0)n--;const conSpell=c.type==='Spell'&&(p.sequence===4||p.sequence===5)&&p.board.some(x=>x.id==='CON-025')&&!p.statuses.spellDisc;if(conSpell)n-=2;const eliteEquip=c.type==='Equip'&&p.board.some(x=>x.id==='ELI-024'&&formationSize(p,x)===4)&&!p.statuses.engDisc;if(eliteEquip)n--;if(consume){if(next)p.effects.nextDiscount=0;if((p.effects.tripleDiscount||0)>0)p.effects.tripleDiscount--;if(conSpell)p.statuses.spellDisc=true;if(eliteEquip)p.statuses.engDisc=true;}return Math.max(1,n);}
+function effectiveCost(p,c,consume=false){
+ if(c.type==='Flux')return 0;
+ let n=c.cost;const next=p.effects.nextDiscount||0;if(next)n-=next;if((p.effects.tripleDiscount||0)>0)n--;if(c.statuses?.tempCostReduction)n-=c.statuses.tempCostReduction;
+ if(c.type==='Prism'&&(p.effects.prismDiscountCount||0)>0)n-=p.effects.prismDiscountAmount||0;
+ const conSpell=c.type==='Spell'&&(p.sequence===4||p.sequence===5)&&p.board.some(x=>x.id==='CON-025')&&!p.statuses.spellDisc;if(conSpell)n-=2;
+ const eliteEquip=c.type==='Equip'&&p.board.some(x=>x.id==='ELI-024'&&formationSize(p,x)===4)&&!p.statuses.engDisc;if(eliteEquip)n--;
+ if(consume){if(next)p.effects.nextDiscount=0;if((p.effects.tripleDiscount||0)>0)p.effects.tripleDiscount--;if(c.statuses?.tempCostReduction)c.statuses.tempCostReduction=0;if(c.type==='Prism'&&(p.effects.prismDiscountCount||0)>0)p.effects.prismDiscountCount--;if(conSpell)p.statuses.spellDisc=true;if(eliteEquip)p.statuses.engDisc=true;}
+ return Math.max(1,n);
+}
 function selectedFriendly(p){return state.selected?p.board.find(x=>x.iid===state.selected.iid)||null:null;}
 function selectedEnemy(p){return state.selected?state.players[1-p.index].board.find(x=>x.iid===state.selected.iid)||null:null;}
 function spellTargetPlan(c,p){
