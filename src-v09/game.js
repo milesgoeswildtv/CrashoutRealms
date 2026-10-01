@@ -106,22 +106,132 @@ function hasTaunt(p){return p.board.some(unitHasTaunt);}
 function chooseFriendly(p,mode='grow'){if(!p.board.length)return null;const a=[...p.board];if(mode==='heal')return a.sort((x,y)=>(getMaxHp(y)-y.currentHp)-(getMaxHp(x)-x.currentHp))[0];if(mode==='weak')return a.sort((x,y)=>(getStr(x)+x.currentHp)-(getStr(y)+y.currentHp))[0];return a.sort((x,y)=>(getStr(y)+getMaxHp(y))-(getStr(x)+getMaxHp(x)))[0];}
 function chooseEnemy(owner){const b=state.players[1-owner].board;return b.length?[...b].sort((x,y)=>x.currentHp-y.currentHp)[0]:null;}
 function consumeTrap(p,id){const t=p.traps.find(x=>x.id===id);if(!t)return null;p.traps=p.traps.filter(x=>x.iid!==t.iid);t.zone='discard';p.discard.push(t);return t;}
-function applyDamage(u,amount,source=null,{combat=false,noDisperse=false,reason='damage'}={}){if(!u||amount<=0||state.winner!==null||!state.players[u.owner].board.includes(u))return 0;const p=state.players[u.owner];amount=Math.floor(amount);if(p.preventNextDamage){const r=Math.min(p.preventNextDamage,amount);p.preventNextDamage-=r;amount-=r;}if(amount<=0)return 0;
- if(p.faction==='Eliteborn'&&u.formation!=null&&!noDisperse){const m=formationMembers(p,u.formation),fs=formationSize(p,u);const bast=m.find(x=>x.id==='ELI-005'&&formationSize(p,x)===4&&!x.statuses.bastionUsed);if(bast){bast.statuses.bastionUsed=true;amount=Math.max(0,amount-2);}const caed=m.some(x=>x.id==='ELI-026'),dis=p.passive==='We Stand Together'&&(fs>=5||(caed&&fs>=4));if(dis&&m.length>1&&amount){if(caed&&!p.statuses.caedrynDisperse){p.statuses.caedrynDisperse=true;amount=Math.max(0,amount-2);}const q=Math.floor(amount/m.length),r=amount%m.length;m.slice().forEach(x=>p.board.includes(x)&&applyDamage(x,q+(x.iid===u.iid?r:0),source,{combat,noDisperse:true,reason:'disperse'}));return amount;}}
- const before=u.currentHp;u.currentHp-=amount;const dealt=Math.min(amount,Math.max(0,before));u.damageTakenThisRound+=amount;if(u.faction==='Moondemons'&&u.currentHp<getMaxHp(u))u.everBloodied=true;if(u.faction==='Living Geodes'&&p.board.includes(u))gainPressure(u,1,'damage');if(!p.board.includes(u))return dealt;
- if(combat&&u.currentHp>0){if(u.id==='HAR-002'&&!u.statuses.briar){u.statuses.briar=true;addPermStats(u,0,1);}if(p.traps.some(t=>t.id==='HAR-010')){consumeTrap(p,'HAR-010');addPermStats(u,1,1);}if(p.traps.some(t=>t.id==='HAR-020')){consumeTrap(p,'HAR-020');addPermStats(u,0,2);}}
- if(u.currentHp<=0){if(p.shatterproof===u.iid){p.shatterproof=false;u.currentHp+=2;if(u.currentHp<=0)destroyUnit(u,source,{combat,reason});}else destroyUnit(u,source,{combat,reason});}return dealt;}
+function applyDamage(u,amount,source=null,{combat=false,noDisperse=false,reason='damage'}={}){
+ if(!u||amount<=0||state.winner!==null||!state.players[u.owner].board.includes(u))return 0;
+ const p=state.players[u.owner];amount=Math.floor(amount);
+ if(u.sigil?.sigilEffect==='ward'){const prevented=amount;revealSigil(u,'SIGIL');u.shield=(u.shield||0)+prevented;state.log.push(`${u.name} prevents ${prevented} damage and gains Shield ${prevented}.`);return 0;}
+ if(u.shield>0){const r=Math.min(u.shield,amount);u.shield-=r;amount-=r;if(r)state.log.push(`${u.name}'s Shield prevents ${r}.`);}
+ if(amount<=0)return 0;
+ if(u.faction==='Living Geodes'){
+  if(combat&&(reason==='attack'||reason==='retaliation')){const n=u.prisms.filter(pr=>pr.id==='GEO-013'&&pr.chosenColor==='Blue').length;if(n)amount=Math.max(0,amount-n);}
+  if(amount>0&&u.prisms.some(pr=>pr.id==='GEO-015'&&pr.chosenColor==='Blue')&&!u.statuses.verdantBlue){u.statuses.verdantBlue=true;amount=Math.max(0,amount-2);}
+  const sentinel=p.board.find(x=>x.id==='GEO-022'&&x.cracked&&x.iid!==u.iid&&!x.statuses.faultbornGuard);
+  if(amount>0&&sentinel){sentinel.statuses.faultbornGuard=true;amount=Math.max(0,amount-1);}
+ }
+ if(p.preventNextDamage){const r=Math.min(p.preventNextDamage,amount);p.preventNextDamage-=r;amount-=r;}
+ if(amount<=0)return 0;
+ if(p.faction==='Eliteborn'&&u.formation!=null&&!noDisperse){
+  const m=formationMembers(p,u.formation),fs=formationSize(p,u);const bast=m.find(x=>x.id==='ELI-005'&&formationSize(p,x)===4&&!x.statuses.bastionUsed);
+  if(bast){bast.statuses.bastionUsed=true;amount=Math.max(0,amount-2);}
+  const caed=m.some(x=>x.id==='ELI-026'),dis=p.passive==='We Stand Together'&&(fs>=5||(caed&&fs>=4));
+  if(dis&&m.length>1&&amount){if(caed&&!p.statuses.caedrynDisperse){p.statuses.caedrynDisperse=true;amount=Math.max(0,amount-2);}const q=Math.floor(amount/m.length),r=amount%m.length;m.slice().forEach(x=>p.board.includes(x)&&applyDamage(x,q+(x.iid===u.iid?r:0),source,{combat,noDisperse:true,reason:'disperse'}));return amount;}
+ }
+ const wasBloodied=isBloodied(u),before=u.currentHp;u.currentHp-=amount;const dealt=Math.min(amount,Math.max(0,before));u.damageTakenThisRound+=amount;
+ if(u.faction==='Moondemons'&&u.currentHp<getMaxHp(u))u.everBloodied=true;
+ if(u.faction==='Moondemons'&&!wasBloodied&&isBloodied(u)&&u.sigil?.sigilEffect==='bloodwake'){revealSigil(u,'SIGIL');u.tempStr+=3;u.shield=(u.shield||0)+2;}
+ if(u.faction==='Living Geodes'&&amount>=3&&u.id==='GEO-024')u.tempStr+=2;
+ if(combat&&u.currentHp>0){
+  if(u.id==='HAR-002'&&!u.statuses.briar){u.statuses.briar=true;addPermStats(u,0,1);}
+  if(u.id==='HAR-010'&&!u.statuses.titheback){u.statuses.titheback=true;addPermStats(u,1,1);}
+  if(u.growth?.bloomed&&u.growth.growthEffect==='thornbloom'&&!u.statuses.thornbloomCombat){u.statuses.thornbloomCombat=true;addPermStats(u,0,1);}
+  if(u.statuses.brambleReserve&&!u.statuses.brambleSpent){u.statuses.brambleSpent=true;addPermStats(u,0,2);}
+ }
+ if(u.currentHp<=0){
+  if(u.growth&&!u.growth.bloomed&&u.growth.growthEffect==='rejuvenation'){bloomGrowth(u,'fatal damage');u.currentHp=1;}
+  else if(u.statuses.deepRoots&&(u.permStr>0||u.permHp>0)){
+   let points=Math.min(2,u.permHp+u.permStr),prevent=points*2;
+   while(points>0&&u.permHp>0){u.permHp--;points--;}while(points>0&&u.permStr>0){u.permStr--;points--;}
+   u.currentHp+=prevent;if(u.currentHp<=0)destroyUnit(u,source,{combat,reason});
+  }else destroyUnit(u,source,{combat,reason});
+ }
+ return dealt;
+}
 function dealPlayerDamage(i,n,source=null,combat=false){const p=state.players[i];if(combat&&state.flags.has('upperMinor')&&p.board.length>=3){const red=Math.floor(n/2);p.health-=n-red;let left=red,units=[...p.board],k=0;while(left>0&&units.length){const u=units[k++%units.length];if(p.board.includes(u))applyDamage(u,1,source,{combat:true});left--;}}else p.health-=n;checkWinner();}
-function destroyUnit(u,source=null,{reason='death',formationCascade=false}={}){const p=state.players[u.owner];if(!p.board.includes(u))return;const fid=u.formation;if(u.equip){u.equip.zone='discard';p.discard.push(u.equip);u.equip=null;}p.board=p.board.filter(x=>x.iid!==u.iid);const blood=state.flags.has('bloodMajor')&&state.round>=5;if(u.echo||blood){u.zone='banished';p.banished.push(u);}else if(state.flags.has('deadMajor')){u.zone='graveState';state.graveState.push(u);}else{u.zone='discard';p.discard.push(u);}
- if(p.faction==='Harvest'&&p.passive==='Regurgitate'&&p.board.length){const t=[...p.board].sort((a,b)=>(getStr(b)+getMaxHp(b))-(getStr(a)+getMaxHp(a)));if(p.board.some(x=>x.id==='HAR-026')&&!p.statuses.elderRegurg&&t[1]){p.statuses.elderRegurg=true;addPermStats(t[0],1,1);addPermStats(t[1],1,1);}else addPermStats(t[0],1,1);p.passiveTriggers++;}
+function destroyUnit(u,source=null,{reason='death',formationCascade=false,combat=false}={}){
+ const p=state.players[u.owner];if(!p.board.includes(u))return;const fid=u.formation;
+ if(u.equip){discardAttachment(p,u.equip);u.equip=null;}
+ if(u.prisms?.length){u.prisms.forEach(x=>discardAttachment(p,x));u.prisms=[];}
+ if(u.sigil){discardAttachment(p,u.sigil);u.sigil=null;}
+ if(u.growth){discardAttachment(p,u.growth);u.growth=null;}
+ p.board=p.board.filter(x=>x.iid!==u.iid);
+ const blood=state.flags.has('bloodMajor')&&state.round>=5;
+ if(u.echo||blood){u.zone='banished';p.banished.push(u);}else if(state.flags.has('deadMajor')){u.zone='graveState';state.graveState.push(u);}else{u.zone='discard';p.discard.push(u);}
+ if(p.faction==='Harvest'){
+  p.board.filter(x=>x.id==='HAR-007').forEach(x=>{addPermStats(x,1,0);if(u.permStr>0||u.permHp>0)markNourished(x);});
+  p.board.forEach(x=>{if(x.growth?.growthEffect==='carrion'){if(!x.growth.bloomed)bloomGrowth(x,'friendly death');else if(!x.statuses.carrionDeath){x.statuses.carrionDeath=true;healUnit(x,2,'Carrion Bloom');}}});
+ }
+ if(p.faction==='Harvest'&&p.passive==='Regurgitate'&&p.board.length){
+  const t=[...p.board].sort((a,b)=>(getStr(b)+getMaxHp(b))-(getStr(a)+getMaxHp(a)));
+  if(p.board.some(x=>x.id==='HAR-026')&&!p.statuses.elderRegurg&&t[1]){p.statuses.elderRegurg=true;addPermStats(t[0],1,1);addPermStats(t[1],1,1);}else addPermStats(t[0],1,1);p.passiveTriggers++;
+ }
+ if(source&&source.owner!==u.owner&&state.players[source.owner]?.board.includes(source)&&source.growth?.growthEffect==='predatory'&&!source.growth.bloomed)bloomGrowth(source,'combat kill');
  if(p.faction==='Eliteborn'&&p.passive==='Rise as One. Die as One.'&&fid!=null&&!formationCascade){const others=formationMembers(p,fid).slice();if(others.length)state.log.push(`<strong>Formation ${fid} collapses.</strong>`);others.forEach(x=>destroyUnit(x,null,{reason:'formation-wipe',formationCascade:true}));}
- if(state.flags.has('deadMajor')&&!u.echo)offerDeadlandsEcho(p.index);state.log.push(`${u.name} leaves play${reason==='fold'?' — <strong>FOLDED</strong>':''}.`);syncDynamicHp(p);}
-function gainPressure(u,n=1,source='effect',chain=null){if(!u||u.faction!=='Living Geodes'||!state.players[u.owner].board.includes(u))return;const p=state.players[u.owner];for(let i=0;i<n;i++){if(!p.board.includes(u))return;u.pressure++;const wasCracked=u.cracked;if(wasCracked&&p.passive==='Fracture'){const seen=chain||new Set([u.iid]),cand=p.board.filter(x=>x.faction==='Living Geodes'&&x.iid!==u.iid&&!seen.has(x.iid));if(cand.length){const count=p.board.some(x=>x.id==='GEO-026'&&x.cracked)&&!p.statuses.aurexFracture?Math.min(2,cand.length):1;if(count===2)p.statuses.aurexFracture=true;shuffle(cand).slice(0,count).forEach(t=>{const s=new Set(seen);s.add(t.iid);gainPressure(t,1,'Fracture',s);});p.passiveTriggers++;}}
- if(!p.board.includes(u))return;if(!u.cracked&&u.pressure>=u.crack)crackUnit(u,source);else if(u.cracked&&u.pressure>=u.fold)foldUnit(u);}}
-function crackUnit(u,source='effect'){if(!u||u.cracked||!state.players[u.owner].board.includes(u))return;const p=state.players[u.owner],marked=getMaxHp(u)-u.currentHp;u.cracked=true;u.pressure=0;u.baseStr=u.crackedStr??u.baseStr;u.baseHp=u.crackedHp??u.baseHp;u.currentHp=getMaxHp(u)-marked;state.log.push(`<strong>${u.name} CRACKS.</strong>`);onCrack(u);if(p.passive==='Kimberlite'){let amount=1;if(p.board.some(x=>x.id==='GEO-026'&&x.cracked)&&!p.statuses.aurexKimberlite){p.statuses.aurexKimberlite=true;amount=2;}p.board.filter(x=>x.faction==='Living Geodes'&&x.iid!==u.iid).slice().forEach(x=>gainPressure(x,amount,'Kimberlite'));p.passiveTriggers++;}if(p.board.includes(u)&&u.currentHp<=0)destroyUnit(u,null,{reason:'post-crack-lethal'});}
-function foldUnit(u){if(u&&state.players[u.owner].board.includes(u))destroyUnit(u,null,{reason:'fold'});}
-function forceCrack(u){if(u&&!u.cracked){u.pressure=u.crack;crackUnit(u,'forced');}}
-function onCrack(u){const p=state.players[u.owner];if(u.id==='GEO-001'){const e=chooseEnemy(u.owner);if(e)applyDamage(e,2,u);}if(u.id==='GEO-004')distributeHeal(p,3);if(u.id==='GEO-006'){const e=state.players[1-u.owner].board;if(e.length)u.tempStr+=Math.min(4,Math.max(...e.map(x=>x.baseStr)));}if(u.id==='GEO-007')healUnit(u,2,'Deepcore');if(u.id==='GEO-008')u.extraActions++;if(u.id==='GEO-009')drawOne(p);if(u.id==='GEO-011'){drawOne(p);drawOne(p);bottomWorst(p);}if(u.id==='GEO-025'&&p.board.length<maxSlots(p))p.board.push(makeToken(p.index,'Shardling',0,3,{id:'GEO-T01',faction:'Living Geodes',crack:1,fold:2,crackedStr:3,crackedHp:3}));p.board.filter(x=>x.id==='GEO-026'&&x.iid!==u.iid).forEach(x=>healUnit(x,1,'Aurex'));}
+ if(u.statuses.lastBeforeFirst){shiftSequence(p,1);if(p.sequence===5)drawOne(p);}
+ if(u.statuses.lastBite&&source&&source.owner!==u.owner){applyDamage(source,2,u,{reason:'Last Bite'});const b=p.board.find(isBloodied);if(b)addPermStats(b,0,2);}
+ if(state.flags.has('deadMajor')&&!u.echo)offerDeadlandsEcho(p.index);state.log.push(`${u.name} leaves play.`);syncDynamicHp(p);
+}
+function gainPressure(){return 0;}
+function foldUnit(){return false;}
+function prismChosenMode(pr){return pr?.modes?.find(m=>m.color===pr.chosenColor)||null;}
+function recipeColors(u){
+ const out=[];for(const pr of u.prisms||[]){const cs=pr.recipeColors?.length?pr.recipeColors:[pr.chosenColor];cs.filter(Boolean).forEach(x=>out.push(x));}(u.tempPrismColors||[]).forEach(x=>out.push(x));return out;
+}
+function recipeSatisfied(u){
+ if(!u||u.cracked||!Array.isArray(u.crackRecipe)||!u.crackRecipe.length)return false;
+ if(u.crackRecipe.length===1&&u.crackRecipe[0]==='Any')return recipeColors(u).length>0;
+ const req=[...u.crackRecipe],avail=recipeColors(u),used=new Set;
+ for(let i=0;i<avail.length;i++){const j=req.indexOf(avail[i]);if(j>=0){req.splice(j,1);used.add(i);}}
+ let wild=0;for(let i=0;i<avail.length;i++)if(!used.has(i)&&avail[i]==='White')wild++;
+ while(req.length&&wild>0){req.shift();wild--;}return req.length===0;
+}
+function missingRecipeColors(u){
+ if(!u?.crackRecipe)return[];if(u.crackRecipe[0]==='Any')return recipeColors(u).length?[]:['Any'];
+ const req=[...u.crackRecipe],avail=recipeColors(u),used=new Set;
+ for(let i=0;i<avail.length;i++){const j=req.indexOf(avail[i]);if(j>=0){req.splice(j,1);used.add(i);}}
+ let wild=0;for(let i=0;i<avail.length;i++)if(!used.has(i)&&avail[i]==='White')wild++;
+ while(req.length&&wild>0){req.shift();wild--;}return req;
+}
+function addTempPrismColor(u,color,source='effect'){
+ if(!u||u.cracked||!state.players[u.owner].board.includes(u)||!color)return;u.tempPrismColors=u.tempPrismColors||[];u.tempPrismColors.push(color);state.log.push(`${u.name} temporarily gains ${color}.`);if(recipeSatisfied(u))crackUnit(u,source);
+}
+function attachPrism(p,c,target,color){
+ if(!target||target.owner!==p.index||target.faction!=='Living Geodes'||target.prisms.length>=3)return false;
+ const oldMax=getMaxHp(target);c.zone='prism';c.chosenColor=color;c.recipeColors=[color];
+ if(p.passive==='Fracture'&&!p.statuses.fractureUsed){p.statuses.fractureUsed=true;c.recipeColors=[...c.colors];c.dualRecipe=true;}
+ target.prisms.push(c);syncDynamicHp(p);if(getMaxHp(target)>oldMax)target.currentHp+=getMaxHp(target)-oldMax;
+ if(target.id==='GEO-009')target.tempStr++;
+ if(target.id==='GEO-021'&&!target.statuses.seedPrism){target.statuses.seedPrism=true;healUnit(target,1,'Seed of the Deep');}
+ p.board.filter(x=>x.id==='GEO-010'&&x.cracked&&x.iid!==target.iid&&(x.statuses.choirAttach||0)<3).forEach(x=>{x.statuses.choirAttach=(x.statuses.choirAttach||0)+1;x.tempStr++;});
+ if(c.dualRecipe&&p.board.some(x=>x.id==='GEO-026'&&x.cracked)&&!p.statuses.aurexFracture){p.statuses.aurexFracture=true;addPermStats(target,1,1);}
+ state.log.push(`${p.name} attaches <strong>${c.name}</strong> to ${target.name} as ${color}.`);if(recipeSatisfied(target))crackUnit(target,'Prism');return true;
+}
+function switchPrismColor(u,pr,color){
+ if(!u||!pr||!pr.colors?.includes(color))return false;const p=state.players[u.owner],oldMax=getMaxHp(u);pr.chosenColor=color;if(!pr.dualRecipe)pr.recipeColors=[color];syncDynamicHp(p);const next=getMaxHp(u);if(next>oldMax)u.currentHp+=next-oldMax;else u.currentHp=Math.min(u.currentHp,next);state.log.push(`${pr.name} refracts to ${color} on ${u.name}.`);if(recipeSatisfied(u))crackUnit(u,'Refraction');return true;
+}
+function checkCrackRecipe(u){if(recipeSatisfied(u))crackUnit(u,'Recipe');}
+function crackUnit(u,source='effect'){
+ if(!u||u.cracked||!state.players[u.owner].board.includes(u))return;const p=state.players[u.owner],marked=getMaxHp(u)-u.currentHp;u.cracked=true;u.baseStr=u.crackedStr??u.baseStr;u.baseHp=u.crackedHp??u.baseHp;u.currentHp=getMaxHp(u)-marked;state.log.push(`<strong>${u.name} CRACKS.</strong>`);onCrack(u);
+ const fused=(u.prisms||[]).map(x=>x.chosenColor).filter(Boolean),echoCount=p.board.some(x=>x.id==='GEO-026'&&x.cracked)&&!p.statuses.aurexKimberlite?2:1;
+ if(p.passive==='Kimberlite'&&fused.length){if(echoCount===2)p.statuses.aurexKimberlite=true;p.board.filter(x=>x.faction==='Living Geodes'&&!x.cracked&&x.iid!==u.iid&&!x.statuses.kimberliteEcho).slice().forEach(x=>{x.statuses.kimberliteEcho=true;fused.slice(0,echoCount).forEach(color=>addTempPrismColor(x,color,'Kimberlite'));});p.passiveTriggers++;}
+ if(fused.length)p.board.filter(x=>x.faction==='Living Geodes'&&!x.cracked&&x.iid!==u.iid&&x.prisms?.some(pr=>pr.id==='GEO-016'&&pr.chosenColor==='Violet')).forEach(x=>addTempPrismColor(x,fused[0],'Amethyst Relay'));
+ p.board.filter(x=>x.id==='GEO-023'&&x.iid!==u.iid).forEach(x=>x.tempStr+=2);if(p.board.includes(u)&&u.currentHp<=0)destroyUnit(u,null,{reason:'post-crack-lethal'});
+}
+function forceCrack(u){if(u&&!u.cracked)crackUnit(u,'forced');}
+function onCrack(u){
+ const p=state.players[u.owner];
+ if(u.id==='GEO-001'){const e=chooseEnemy(u.owner);if(e)applyDamage(e,2,u);}
+ if(u.id==='GEO-004')distributeHeal(p,3);
+ if(u.id==='GEO-006'){const e=state.players[1-u.owner].board;if(e.length)u.tempStr+=Math.min(4,Math.max(...e.map(x=>x.baseStr)));}
+ if(u.id==='GEO-007')healUnit(u,2,'Deepcore');
+ if(u.id==='GEO-008')u.extraActions++;
+ if(u.id==='GEO-009')drawOne(p);
+ if(u.id==='GEO-011'){drawOne(p);drawOne(p);bottomWorst(p);}
+ if(u.id==='GEO-012')healUnit(u,4,'Worldheart');
+ if(u.id==='GEO-024')healUnit(u,2,'Glassjaw');
+ if(u.id==='GEO-025'&&p.board.length<maxSlots(p))p.board.push(makeToken(p.index,'Shardling',0,3,{id:'GEO-T01',faction:'Living Geodes',crackRecipe:['Any'],crackedStr:3,crackedHp:3}));
+ if(u.id==='GEO-026'){drawOne(p);drawOne(p);}
+ for(const pr of u.prisms||[]){if(pr.id==='GEO-014'&&pr.chosenColor==='Yellow'&&!u.acted)u.extraActions++;if(pr.id==='GEO-016'&&pr.chosenColor==='Yellow'){drawOne(p);bottomWorst(p);}if(pr.id==='GEO-018'&&pr.chosenColor==='Violet')drawOne(p);}
+}
 function distributeHeal(p,n){let left=n;while(left--){const h=p.board.filter(x=>x.currentHp<getMaxHp(x)).sort((a,b)=>a.currentHp/getMaxHp(a)-b.currentHp/getMaxHp(b))[0];if(!h)return;healUnit(h,1,'distributed');}}
 function formationJoined(p,fid){if(p.faction!=='Eliteborn'||fid==null)return;const m=formationMembers(p,fid),fs=formationSize(p,fid);if(p.passive==='Rise as One. Die as One.'&&fs>=3){let n=1;if(p.board.some(x=>x.id==='ELI-026')&&!p.statuses.caedrynRise){p.statuses.caedrynRise=true;n=2;}m.forEach(x=>addPermStats(x,n,n));p.passiveTriggers++;state.log.push(`Rise: Formation ${fid} reaches ${fs}; members gain +${n}/+${n}.`);}if(fs===3){const a=m.find(x=>x.id==='ELI-006'&&!x.statuses.formed3);if(a){a.statuses.formed3=true;drawOne(p);bottomWorst(p);}}syncDynamicHp(p);}
 function ensureFormation(p,u,join=null){if(p.faction!=='Eliteborn')return;u.formation=join?.formation??p.nextFormation++;}
