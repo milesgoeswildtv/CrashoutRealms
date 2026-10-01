@@ -543,7 +543,7 @@ window.REALMS_DATA = {
         "cost": 4,
         "resource": 2,
         "statsText": "Dormant 2/6 — Crack Blue+Red → Cracked 5/7",
-        "rules": "When Faultborn Sentinel enters play, you may move one Prism from another friendly Dormant Geode onto it, keeping that Prism's chosen color. Cracked — The first damage it takes each round is reduced by 1.",
+        "rules": "Crack — Gain Shield 2. Cracked — The first damage Faultborn Sentinel takes each round is reduced by 1.",
         "faction": "Living Geodes",
         "code": "GEO",
         "str": 2,
@@ -668,7 +668,7 @@ window.REALMS_DATA = {
         "cost": 5,
         "resource": 1,
         "statsText": "-",
-        "rules": "Move one Prism from a friendly Geode to another friendly Dormant Geode, keeping its chosen color. Then restore 2 HP to both Geodes.",
+        "rules": "Choose a friendly Dormant Geode. Restore 2 HP to it. The next Prism attached to it this round contributes both of its printed colors toward its Crack Recipe.",
         "faction": "Living Geodes",
         "code": "GEO"
       },
