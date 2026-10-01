@@ -732,6 +732,7 @@ function attachPrism(p,c,u,color){
   state.log.push(`${p.name} attaches <strong>${c.name}</strong> to ${u.name} as <strong>${color}</strong>.`);
   triggerPrismFollowers(p);
   const cracked=!u.cracked&&recipeSatisfied(u)?crackUnit(u,'Prism recipe'):false;
+  if(fracture)a.countsColors=[a.chosenColor];
   if(!cracked&&p.traps.some(t=>t.id==='GEO-030')&&recipeMissing(u)===1){
     consumeTrap(p,'GEO-030');drawOne(p);p.prismDiscount=Math.max(p.prismDiscount,1);
     state.log.push('Perfect Alignment triggers.');
