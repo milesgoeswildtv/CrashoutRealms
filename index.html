@@ -114,6 +114,7 @@
         <p><strong>Deckout:</strong> each failed draw deals 1 Health in this prototype.</p>
         <p><strong>Crystal Isle:</strong> at the end of every even-numbered round, Polarity simultaneously swaps every creature's current STR and current HP. Permanent, temporary, Equip, Prism, and other ongoing modifier layers remain attached and continue to function after the swap. A creature whose new HP is 0 is destroyed by Polarity. Each player tracks their own Polarity-caused deaths; reaching 5 loses the match. If both players reach 5 during the same Polarity Shift, the match is a draw.</p>
         <p><strong>Upper Strata:</strong> <strong>Overcharge</strong> resolves at end of round: each player loses 1 Health for every 2 unspent resources, rounded up. <strong>Chain Link</strong> is active while you control at least 3 creatures; when an enemy creature would deal combat damage directly to you, half that damage rounded down is assigned as evenly as possible across your creatures and the rest hits you. If Chain Link breaks while redirected packets are still unresolved, those packets return to you instead of disappearing.</p>
+        <p><strong>Blood Moon:</strong> the Major activates at the start of Round 5. From Round 5 onward, destroyed creatures are banished instead of entering discard or Deadlands Grave State. The Minor gives the Initiative player the first two legal Action activations consecutively; if that player cannot take the second activation, the unused opening privilege expires immediately and is never banked for later.</p>
         <p><strong>Deadlands:</strong> when one of your non-Echo creatures dies, you may raise one creature from the shared Grave State as a 1/1 Grave Echo; either player may choose a creature originally owned by either player. Grave Echoes retain the original printed ability text and do not return to Grave State or retrigger Deadlands Realm effects when they leave play. <strong>Absorption:</strong> once during your Placement each round, if you control a Grave Echo, you may play a Creature from hand over it for that Creature's normal printed cost; the new Creature permanently absorbs the Echo's current STR and HP, not its printed effect text.</p>
         <p><strong>Alpha coverage:</strong> core faction systems and common card effects are automated. The referee controls remain available for edge-case text while the full 150-card implementation is hardened.</p>
       </div>
@@ -128,7 +129,7 @@
   <div id="boot" class="boot"><div><b>REALMS v0.9</b><small>Loading signature systems alpha…</small></div></div>
   <script>
   (async()=>{
-    const V='v09-upper-alpha5';
+    const V='v09-blood-alpha6';
     const fail=err=>{
       const msg=String(err?.message||err||'Unknown boot error');
       document.body.innerHTML='<div class="boot"><div><b>REALMS v0.9 failed to load</b><small>'+msg.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))+'</small></div></div>';

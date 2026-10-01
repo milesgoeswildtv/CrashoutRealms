@@ -1,4 +1,4 @@
-const CACHE='realms-v09-upper-alpha5';
+const CACHE='realms-v09-blood-alpha6';
 const SHELL=[
   './',
   './index.html',

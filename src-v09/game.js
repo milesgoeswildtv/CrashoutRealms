@@ -89,10 +89,11 @@ function dealPlayerDamage(i,n,source=null,combat=false){
  else p.health-=Math.max(0,Math.floor(n));
  checkWinner();
 }
-function destroyUnit(u,source=null,{reason='death',formationCascade=false}={}){const p=state.players[u.owner];if(!p.board.includes(u))return;const fid=u.formation;if(u.equip){u.equip.zone='discard';p.discard.push(u.equip);u.equip=null;}p.board=p.board.filter(x=>x.iid!==u.iid);const blood=state.flags.has('bloodMajor')&&state.round>=5;if(u.echo||blood){u.zone='banished';p.banished.push(u);}else if(state.flags.has('deadMajor')){u.zone='graveState';state.graveState.push(u);}else{u.zone='discard';p.discard.push(u);}
+function bloodMoonBanishmentActive(){return !!(state?.flags?.has('bloodMajor')&&state.round>=5);}
+function destroyUnit(u,source=null,{reason='death',formationCascade=false}={}){const p=state.players[u.owner];if(!p.board.includes(u))return;const fid=u.formation;if(u.equip){u.equip.zone='discard';p.discard.push(u.equip);u.equip=null;}p.board=p.board.filter(x=>x.iid!==u.iid);const blood=bloodMoonBanishmentActive();if(u.echo||blood){u.zone='banished';p.banished.push(u);}else if(state.flags.has('deadMajor')){u.zone='graveState';state.graveState.push(u);}else{u.zone='discard';p.discard.push(u);}
  if(p.faction==='Harvest'&&p.passive==='Regurgitate'&&p.board.length){const t=[...p.board].sort((a,b)=>(getStr(b)+getMaxHp(b))-(getStr(a)+getMaxHp(a)));if(p.board.some(x=>x.id==='HAR-026')&&!p.statuses.elderRegurg&&t[1]){p.statuses.elderRegurg=true;addPermStats(t[0],1,1);addPermStats(t[1],1,1);}else addPermStats(t[0],1,1);p.passiveTriggers++;}
  if(p.faction==='Eliteborn'&&p.passive==='Rise as One. Die as One.'&&fid!=null&&!formationCascade){const others=formationMembers(p,fid).slice();if(others.length)state.log.push(`<strong>Formation ${fid} collapses.</strong>`);others.forEach(x=>destroyUnit(x,null,{reason:'formation-wipe',formationCascade:true}));}
- if(state.flags.has('deadMajor')&&!u.echo)offerDeadlandsEcho(p.index);state.log.push(`${u.name} leaves play${reason==='fold'?' — <strong>FOLDED</strong>':''}.`);syncDynamicHp(p);}
+ if(u.zone==='graveState'&&!u.echo)offerDeadlandsEcho(p.index);state.log.push(`${u.name} leaves play${reason==='fold'?' — <strong>FOLDED</strong>':''}.`);syncDynamicHp(p);}
 function gainPressure(u,n=1,source='effect',chain=null){if(!u||u.faction!=='Living Geodes'||!state.players[u.owner].board.includes(u))return;const p=state.players[u.owner];for(let i=0;i<n;i++){if(!p.board.includes(u))return;u.pressure++;const wasCracked=u.cracked;if(wasCracked&&p.passive==='Fracture'){const seen=chain||new Set([u.iid]),cand=p.board.filter(x=>x.faction==='Living Geodes'&&x.iid!==u.iid&&!seen.has(x.iid));if(cand.length){const count=p.board.some(x=>x.id==='GEO-026'&&x.cracked)&&!p.statuses.aurexFracture?Math.min(2,cand.length):1;if(count===2)p.statuses.aurexFracture=true;shuffle(cand).slice(0,count).forEach(t=>{const s=new Set(seen);s.add(t.iid);gainPressure(t,1,'Fracture',s);});p.passiveTriggers++;}}
  if(!p.board.includes(u))return;if(!u.cracked&&u.pressure>=u.crack)crackUnit(u,source);else if(u.cracked&&u.pressure>=u.fold)foldUnit(u);}}
 function crackUnit(u,source='effect'){if(!u||u.cracked||!state.players[u.owner].board.includes(u))return;const p=state.players[u.owner],marked=getMaxHp(u)-u.currentHp;u.cracked=true;u.pressure=0;u.baseStr=u.crackedStr??u.baseStr;u.baseHp=u.crackedHp??u.baseHp;u.currentHp=getMaxHp(u)-marked;state.log.push(`<strong>${u.name} CRACKS.</strong>`);onCrack(u);if(p.passive==='Kimberlite'){let amount=1;if(p.board.some(x=>x.id==='GEO-026'&&x.cracked)&&!p.statuses.aurexKimberlite){p.statuses.aurexKimberlite=true;amount=2;}p.board.filter(x=>x.faction==='Living Geodes'&&x.iid!==u.iid).slice().forEach(x=>gainPressure(x,amount,'Kimberlite'));p.passiveTriggers++;}if(p.board.includes(u)&&u.currentHp<=0)destroyUnit(u,null,{reason:'post-crack-lethal'});}
@@ -221,11 +222,38 @@ function useSkipAhead(p,ai=false){const max=p.board.some(x=>x.id==='CON-026')?2:
 function useConsume(p,ai=false){if(p.faction!=='Harvest'||p.passive!=='Consume'||p.consumeUsed||p.board.length<2)return false;const finish=(s,t,stat)=>{let n=s.cost+(p.board.some(x=>x.id==='HAR-026')?2:0);n=Math.min(9,n);destroyUnit(s,null,{reason:'consume'});if(p.board.includes(t))addPermStats(t,stat==='str'?n:0,stat==='hp'?n:0);p.consumeUsed=true;state.log.push(`${p.name} Consumes ${s.name}; ${t.name} gains +${n} ${stat.toUpperCase()}.`);};if(ai){const s=chooseFriendly(p,'weak'),t=p.board.find(x=>x.iid!==s.iid);if(t)finish(s,t,'hp');return !!t;}showOptions('Consume','Choose ally to consume.',p.board.map(x=>({label:`${x.name} — Cost ${x.cost}`,value:x.iid})),sid=>{const s=p.board.find(x=>x.iid===sid);if(!s)return;showOptions('Consume','Choose survivor.',p.board.filter(x=>x.iid!==sid).map(x=>({label:x.name,value:x.iid})),tid=>{const t=p.board.find(x=>x.iid===tid);if(!t)return;showOptions('Consume','Choose stat.',[{label:'STR',value:'str'},{label:'HP',value:'hp'}],stat=>{finish(s,t,stat);render();});});});return true;}
 function passPlacement(i){if(state.phase!=='placement'||state.active!==i)return;state.placementPasses++;state.log.push(`${state.players[i].name} passes Placement.`);if(state.placementPasses>=2)beginCombat();else{state.active=1-i;render();maybeAI();}}
 function advancePlacement(i){state.active=1-i;render();maybeAI();}
-function beginCombat(){state.phase='combat';state.active=state.initiative;state.players.forEach(p=>p.board.forEach(u=>u.acted=false));state.bloodOpeningLeft=state.flags.has('bloodMinor')?2:0;state.bloodOpeningPlayer=state.initiative;state.log.push('<strong>Combat begins.</strong>');render();maybeAI();}
+function beginCombat(){
+ state.phase='combat';
+ state.players.forEach(p=>p.board.forEach(u=>u.acted=false));
+ state.bloodOpeningPlayer=state.initiative;
+ const opener=state.players[state.initiative],other=state.players[1-state.initiative];
+ const openerReady=readyUnits(opener).length>0;
+ state.bloodOpeningLeft=state.flags.has('bloodMinor')&&openerReady?2:0;
+ state.active=openerReady?state.initiative:(readyUnits(other).length?1-state.initiative:state.initiative);
+ state.log.push('<strong>Combat begins.</strong>');
+ if(state.bloodOpeningLeft)state.log.push(`<strong>Blood Moon:</strong> ${opener.name} receives the first two Action activations while legal activations remain.`);
+ render();maybeAI();
+}
 function readyUnits(p){return p.board.filter(x=>!x.acted||x.extraActions>0);}
 function combatAttack(a,t=null){if(state.phase!=='combat'||state.active!==a.owner||!state.players[a.owner].board.includes(a)||(a.acted&&a.extraActions<=0))return false;const p=state.players[a.owner],e=state.players[1-a.owner];if(!t&&hasTaunt(e)){toast('Taunt must be attacked.');return false;}if(t&&hasTaunt(e)&&!unitHasTaunt(t)){toast('Taunt must be attacked.');return false;}if(a.acted&&a.extraActions>0)a.extraActions--;else a.acted=true;a.statuses.attacking=true;a.statuses.attackTarget=t;let atk=getStr(a)+(a.statuses.nextDamageBonus||0);a.statuses.nextDamageBonus=0;if(!t){dealPlayerDamage(e.index,atk,a,true);moondemonDealtDamage(a,atk,false);state.log.push(`${a.name} attacks ${e.name} for ${atk}.`);}else{const ret=getStr(t),tb=t.currentHp,ab=a.currentHp,noRet=a.id==='MON-024'&&isBloodied(a)&&t.currentHp<getMaxHp(t);applyDamage(t,atk,a,{combat:true});if(p.board.includes(a)&&!noRet)applyDamage(a,ret,t,{combat:true});if(p.board.includes(a))moondemonDealtDamage(a,Math.min(atk,Math.max(0,tb)),true);if(!noRet&&e.board.includes(t))moondemonDealtDamage(t,Math.min(ret,Math.max(0,ab)),true);state.log.push(`${a.name} attacks ${t.name}: ${atk}${noRet?' / no retaliation':` / ${ret} retaliation`}.`);if(a.statuses.moonrage&&p.board.includes(a))applyDamage(a,1,null,{reason:'self'});}delete a.statuses.attacking;delete a.statuses.attackTarget;advanceCombat(a.owner);return true;}
 function passCombat(i){const p=state.players[i],u=readyUnits(p)[0];if(u){if(u.acted&&u.extraActions>0)u.extraActions--;else u.acted=true;}advanceCombat(i);}
-function advanceCombat(i){if(state.winner!==null)return;const p=state.players[i],o=state.players[1-i];if(!readyUnits(p).length&&!readyUnits(o).length)return endRound();if(state.bloodOpeningPlayer===i&&state.bloodOpeningLeft>0){state.bloodOpeningLeft--;state.active=state.bloodOpeningLeft>0&&readyUnits(p).length?i:(readyUnits(o).length?1-i:i);}else state.active=readyUnits(o).length?1-i:i;render();maybeAI();}
+function advanceCombat(i){
+ if(state.winner!==null)return;
+ const p=state.players[i],o=state.players[1-i];
+ if(!readyUnits(p).length&&!readyUnits(o).length)return endRound();
+ if(state.bloodOpeningPlayer===i&&state.bloodOpeningLeft>0){
+  state.bloodOpeningLeft--;
+  if(state.bloodOpeningLeft>0&&readyUnits(p).length){
+   state.active=i;
+  }else{
+   // The Blood Moon opening privilege cannot be banked for later. If the
+   // Initiative player has no legal second activation, the opening ends now.
+   state.bloodOpeningLeft=0;
+   state.active=readyUnits(o).length?1-i:i;
+  }
+ }else state.active=readyUnits(o).length?1-i:i;
+ render();maybeAI();
+}
 function endRound(){state.log.push(`<strong>Round ${state.round} ends.</strong>`);for(const p of state.players){p.board.slice().forEach(u=>{if(u.statuses.forcedBloom&&p.board.includes(u))applyDamage(u,1,null,{reason:'self'});});if(p.faction==='Harvest')p.board.slice().forEach(u=>{if(p.board.includes(u)&&!u.nourished)applyDamage(u,1,null,{reason:'wither'});});if(p.faction==='Moondemons'&&p.passive==='Bloodthirst')p.board.slice().forEach(u=>{if(p.board.includes(u)&&isBloodied(u)){u.currentHp--;if(u.currentHp<=0){const n=p.board.some(x=>x.id==='MON-026')&&!p.statuses.vesperaBT?3:2;if(n===3)p.statuses.vesperaBT=true;destroyUnit(u,null,{reason:'bloodthirst'});p.board.slice().forEach(x=>addPermStats(x,n,n));}}});}
 if(state.flags.has('crystalMajor')&&state.round%2===0)polarity();if(state.winner!==null)return render();if(state.flags.has('upperMajor'))resolveUpperStrataOvercharge();checkWinner();if(state.winner!==null)return render();state.round++;state.initiative=1-state.initiative;state.phase='mulligan';state.selected=null;beginMulligan(0);}
 function checkPolarityLoss(){
@@ -1154,6 +1182,12 @@ shiftSequence=function(p,steps=1,{towardZero=false,causer=null}={}){
 };
 
 prepareRound=function(){
+  if(state.flags.has('bloodMajor')&&state.round>=5&&!state.bloodMoonActivated){
+    state.bloodMoonActivated=true;
+    state.log.push('<strong>Blood Moon rises:</strong> destroyed creatures are banished from Round 5 onward.');
+    pushUIEvent?.('realm','BLOOD MOON RISES','Destroyed creatures are banished from Round 5 onward.');
+    queueBeat?.('BLOOD MOON RISES','Round 5+ banishment is active.','realm');
+  }
   for(const p of state.players){
     p.statuses={};p.effects={};p.skipUsed=0;p.consumeUsed=false;p.endlessShiftUsed=false;p.deadlandsAbsorbUsed=false;p.preventNextDamage=0;p.shatterproof=false;p.cascadeRemaining=0;
     p.board.slice().forEach(u=>{u.acted=false;u.extraActions=0;u.tempStr=0;u.tempHp=0;u.damageTakenThisRound=0;u.statuses={};if(u.faction==='Harvest')u.nourished=false;});
@@ -1392,5 +1426,5 @@ handleRef=function(x){
 };
 
 
-window.REALMS_DEBUG={getState:()=>state,startGame,playCard,combatAttack,gainPressure,shiftSequence,addShield,recipeMissing,checkFlux,polarity,checkPolarityLoss,resolveUpperStrataOvercharge,resolveUpperStrataChainLink,deadlands:{canRaise:canUseDeadlandsEcho,raise:summonEcho,useRaise:useDeadlandsEcho,canAbsorb:canUseDeadlandsAbsorption,absorb:absorbDeadlandsEcho,useAbsorb:useDeadlandsAbsorption,grave:()=>state?.graveState||[]}};populateSetup();render();
+window.REALMS_DEBUG={getState:()=>state,startGame,playCard,combatAttack,gainPressure,shiftSequence,addShield,recipeMissing,checkFlux,polarity,checkPolarityLoss,resolveUpperStrataOvercharge,resolveUpperStrataChainLink,bloodMoonBanishmentActive,deadlands:{canRaise:canUseDeadlandsEcho,raise:summonEcho,useRaise:useDeadlandsEcho,canAbsorb:canUseDeadlandsAbsorption,absorb:absorbDeadlandsEcho,useAbsorb:useDeadlandsAbsorption,grave:()=>state?.graveState||[]}};populateSetup();render();
 })();
