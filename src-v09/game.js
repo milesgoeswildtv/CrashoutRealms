@@ -628,7 +628,7 @@ startGame=function(c){
 function addShield(u,n,source=''){
   if(!u||n<=0||!state.players[u.owner].board.includes(u))return 0;
   u.shield=(u.shield||0)+n;
-  if(source)state.log.push(\`\${u.name} gains <strong>Shield \${n}</strong> (\${source}).\`);
+  if(source)state.log.push(`${u.name} gains <strong>Shield ${n}</strong> (${source}).`);
   return n;
 }
 function prismMode(att){return att?.card?.prismModes?.[att.chosenColor]||null;}
@@ -706,7 +706,7 @@ crackUnit=function(u,source='Prism'){
   u.baseStr=u.crackedStr??u.baseStr;
   u.baseHp=u.crackedHp??u.baseHp;
   u.currentHp=getMaxHp(u)-marked;
-  state.log.push(\`<strong>\${u.name} CRACKS.</strong> \${source}\`);
+  state.log.push(`<strong>${u.name} CRACKS.</strong> ${source}`);
   pushUIEvent?.('crack',u.name+' CRACKS','Prism recipe completed.');
   queueBeat?.('CRACK!',u.name,'crack');
   v09OnGeodeCrack(u);
@@ -729,7 +729,7 @@ function attachPrism(p,c,u,color){
   }
   if(u.statuses.doubleNextPrism)delete u.statuses.doubleNextPrism;
   u.prisms.push(a);c.zone='prism';
-  state.log.push(\`\${p.name} attaches <strong>\${c.name}</strong> to \${u.name} as <strong>\${color}</strong>.\`);
+  state.log.push(`${p.name} attaches <strong>${c.name}</strong> to ${u.name} as <strong>${color}</strong>.`);
   triggerPrismFollowers(p);
   const cracked=!u.cracked&&recipeSatisfied(u)?crackUnit(u,'Prism recipe'):false;
   if(!cracked&&p.traps.some(t=>t.id==='GEO-030')&&recipeMissing(u)===1){
@@ -742,14 +742,14 @@ function revealSigil(u,label=''){
   if(!u?.sigil)return null;
   const c=u.sigil;u.sigil=null;
   const p=state.players[u.owner];c.zone='discard';p.discard.push(c);
-  state.log.push(\`<strong>\${c.name}</strong> Sigil reveals\${label?' — '+label:''}.\`);
+  state.log.push(`<strong>${c.name}</strong> Sigil reveals${label?' — '+label:''}.`);
   queueBeat?.('SIGIL!',c.name,'effect');
   return c;
 }
 function activateGrowth(u){
   if(!u?.growth||u.growth.active)return false;
   u.growth.active=true;u.growth.turns=2;u.growth.activatedRound=state.round;
-  state.log.push(\`<strong>\${u.growth.card.name}</strong> BLOOMS on \${u.name}.\`);
+  state.log.push(`<strong>${u.growth.card.name}</strong> BLOOMS on ${u.name}.`);
   queueBeat?.('BLOOM!',u.growth.card.name,'effect');
   return true;
 }
@@ -842,7 +842,7 @@ applyDamage=function(u,amount,source=null,opts={}){
 
   if((u.shield||0)>0&&amount>0){
     const block=Math.min(u.shield,amount);u.shield-=block;amount-=block;
-    if(block)state.log.push(\`\${u.name}'s Shield prevents \${block} damage.\`);
+    if(block)state.log.push(`${u.name}'s Shield prevents ${block} damage.`);
     if(amount<=0)return 0;
   }
 
@@ -869,7 +869,7 @@ destroyUnit=function(u,source=null,opts={}){
   if(!u||!state.players[u.owner].board.includes(u))return;
   const nonDamage=new Set(['consume','formation-wipe','frenzy-full','bloodthirst','polarity']);
   if(u.growth&&!u.growth.active&&u.growth.card.growthEffect==='rejuvenation'&&!nonDamage.has(opts.reason)){
-    u.currentHp=1;activateGrowth(u);state.log.push(\`\${u.name} survives at 1 HP through Rejuvenation.\`);return;
+    u.currentHp=1;activateGrowth(u);state.log.push(`${u.name} survives at 1 HP through Rejuvenation.`);return;
   }
   const p=state.players[u.owner],was=p.board.includes(u);
   _v09DestroyUnit(u,source,opts);
@@ -903,7 +903,7 @@ function fluxPatternMatched(p,c){
 }
 function activateFlux(p,c){
   p.flux=p.flux.filter(x=>x.iid!==c.iid);c.zone='discard';p.discard.push(c);
-  state.log.push(\`<strong>FLUX — \${c.name}</strong> activates.\`);
+  state.log.push(`<strong>FLUX — ${c.name}</strong> activates.`);
   queueBeat?.('FLUX!',c.name,'sequence');
   switch(c.fluxEffect){
     case'freezeAt4':p.freezeUntilRound=Math.max(p.freezeUntilRound,state.round+3);break;
@@ -937,12 +937,12 @@ shiftSequence=function(p,steps=1,{towardZero=false,causer=null}={}){
     }else next=(old+1)%6;
 
     if(p.freezeUntilRound>=state.round&&old===4&&next===5){
-      state.log.push(\`\${p.name} Sequence is <strong>Frozen in Balance at 4</strong>.\`);
+      state.log.push(`${p.name} Sequence is <strong>Frozen in Balance at 4</strong>.`);
       p.sequenceHistory.push(4);checkFlux(p);continue;
     }
 
     p.sequence=next;
-    state.log.push(\`\${p.name} Sequence \${old} → \${p.sequence}.\`);
+    state.log.push(`${p.name} Sequence ${old} → ${p.sequence}.`);
     p.sequenceHistory.push(p.sequence);
     syncDynamicHp(p);
     if(p.sequence===5&&old!==5)sequenceComplete(p,causer);
@@ -1018,7 +1018,7 @@ formationJoined=function(p,fid){
   const m=formationMembers(p,fid),fs=formationSize(p,fid);
   if(p.passive==='Rise as One. Die as One.'&&fs>=2){
     let n=1;if(p.board.some(x=>x.id==='ELI-026')&&!p.statuses.caedrynRise){p.statuses.caedrynRise=true;n=2;}
-    m.forEach(x=>addPermStats(x,n,n));p.passiveTriggers++;state.log.push(\`Rise: Formation \${fid} reaches \${fs}; members gain +\${n}/+\${n}.\`);
+    m.forEach(x=>addPermStats(x,n,n));p.passiveTriggers++;state.log.push(`Rise: Formation ${fid} reaches ${fs}; members gain +${n}/+${n}.`);
   }
   if(fs===3){const a=m.find(x=>x.id==='ELI-006'&&!x.statuses.formed3);if(a){a.statuses.formed3=true;drawOne(p);bottomWorst(p);}}
   syncDynamicHp(p);
@@ -1041,7 +1041,7 @@ resolveSpell=function(c,p){
     const u=selectedFriendly(p)||chooseFriendly(p);
     if(u?.faction==='Living Geodes'&&u.prisms.length){
       const a=u.prisms[u.prisms.length-1],other=a.card.colors.find(x=>x!==a.chosenColor);
-      if(other){a.chosenColor=other;a.countsColors=[other];state.log.push(\`\${a.card.name} refracts to \${other}.\`);if(!u.cracked&&recipeSatisfied(u))crackUnit(u,'Refract');}
+      if(other){a.chosenColor=other;a.countsColors=[other];state.log.push(`${a.card.name} refracts to ${other}.`);if(!u.cracked&&recipeSatisfied(u))crackUnit(u,'Refract');}
     }
     return;
   }
@@ -1080,7 +1080,7 @@ playCard=function(i,iid,opts={}){
 
   if(c.type==='FLUX'){
     c.zone='flux';c.fluxArmedAt=Math.max(0,(p.sequenceHistory?.length||1)-1);p.flux.push(c);
-    state.log.push(\`\${p.name} arms <strong>FLUX — \${c.name}</strong>.\`);
+    state.log.push(`${p.name} arms <strong>FLUX — ${c.name}</strong>.`);
     finishSignaturePlay(p,c);checkFlux(p);return true;
   }
 
@@ -1088,14 +1088,14 @@ playCard=function(i,iid,opts={}){
     let u=opts.v09TargetId?p.board.find(x=>x.iid===opts.v09TargetId):null,color=opts.v09Color;
     if(opts.ai){u=u||p.board.filter(x=>x.faction==='Living Geodes'&&x.prisms.length<4).sort((a,b)=>recipeMissing(a)-recipeMissing(b))[0];color=color||c.colors.find(x=>(u.crackRecipe||[]).includes(x))||c.colors[0];}
     if(!opts.ai&&!u){
-      showOptions('Choose Geode',c.name,p.board.filter(x=>x.faction==='Living Geodes'&&x.prisms.length<4).map(x=>({label:\`\${x.name} — needs \${geodeRecipeText(x)}\`,value:x.iid})),id=>playCard(i,iid,{v09TargetId:id}));
+      showOptions('Choose Geode',c.name,p.board.filter(x=>x.faction==='Living Geodes'&&x.prisms.length<4).map(x=>({label:`${x.name} — needs ${geodeRecipeText(x)}`,value:x.iid})),id=>playCard(i,iid,{v09TargetId:id}));
       return true;
     }
     if(!opts.ai&&!color){
-      showOptions('Choose Prism Color',c.name,c.colors.map(x=>({label:\`\${x} — \${c.prismText[x]}\`,value:x})),x=>playCard(i,iid,{v09TargetId:u.iid,v09Color:x}));
+      showOptions('Choose Prism Color',c.name,c.colors.map(x=>({label:`${x} — ${c.prismText[x]}`,value:x})),x=>playCard(i,iid,{v09TargetId:u.iid,v09Color:x}));
       return true;
     }
-    const cost=signatureCost(p,c);if(p.resource<cost){if(!opts.ai)toast(\`Need \${cost} resources.\`);return false;}
+    const cost=signatureCost(p,c);if(p.resource<cost){if(!opts.ai)toast(`Need ${cost} resources.`);return false;}
     p.resource-=cost;p.prismDiscount=0;p.hand=p.hand.filter(x=>x.iid!==c.iid);
     attachPrism(p,c,u,color);state.placementPasses=0;state.selected=null;checkWinner();if(state.winner===null)advancePlacement(i);return true;
   }
@@ -1103,17 +1103,17 @@ playCard=function(i,iid,opts={}){
   if(c.type==='Sigil'){
     let u=opts.v09TargetId?p.board.find(x=>x.iid===opts.v09TargetId):null;
     if(opts.ai)u=u||p.board.filter(x=>x.faction==='Moondemons'&&!x.sigil).sort((a,b)=>getStr(b)-getStr(a))[0];
-    if(!opts.ai&&!u){showOptions('Choose Sigil Ally',c.name,p.board.filter(x=>x.faction==='Moondemons'&&!x.sigil).map(x=>({label:\`\${x.name} — HP \${x.currentHp}/\${getMaxHp(x)}\`,value:x.iid})),id=>playCard(i,iid,{v09TargetId:id}));return true;}
+    if(!opts.ai&&!u){showOptions('Choose Sigil Ally',c.name,p.board.filter(x=>x.faction==='Moondemons'&&!x.sigil).map(x=>({label:`${x.name} — HP ${x.currentHp}/${getMaxHp(x)}`,value:x.iid})),id=>playCard(i,iid,{v09TargetId:id}));return true;}
     const cost=signatureCost(p,c);p.resource-=cost;p.hand=p.hand.filter(x=>x.iid!==c.iid);c.zone='sigil';u.sigil=c;
-    state.log.push(\`\${p.name} places a face-down Sigil on \${u.name}.\`);state.placementPasses=0;state.selected=null;advancePlacement(i);return true;
+    state.log.push(`${p.name} places a face-down Sigil on ${u.name}.`);state.placementPasses=0;state.selected=null;advancePlacement(i);return true;
   }
 
   if(c.type==='Growth'){
     let u=opts.v09TargetId?p.board.find(x=>x.iid===opts.v09TargetId):null;
     if(opts.ai)u=u||p.board.filter(x=>x.faction==='Harvest'&&!x.growth).sort((a,b)=>getStr(b)+getMaxHp(b)-getStr(a)-getMaxHp(a))[0];
-    if(!opts.ai&&!u){showOptions('Choose Growth Ally',c.name,p.board.filter(x=>x.faction==='Harvest'&&!x.growth).map(x=>({label:\`\${x.name} — HP \${x.currentHp}/\${getMaxHp(x)}\`,value:x.iid})),id=>playCard(i,iid,{v09TargetId:id}));return true;}
+    if(!opts.ai&&!u){showOptions('Choose Growth Ally',c.name,p.board.filter(x=>x.faction==='Harvest'&&!x.growth).map(x=>({label:`${x.name} — HP ${x.currentHp}/${getMaxHp(x)}`,value:x.iid})),id=>playCard(i,iid,{v09TargetId:id}));return true;}
     const cost=signatureCost(p,c);p.resource-=cost;p.hand=p.hand.filter(x=>x.iid!==c.iid);c.zone='growth';u.growth={card:c,active:false,turns:0,activatedRound:null};
-    state.log.push(\`\${p.name} plants <strong>\${c.name}</strong> on \${u.name}.\`);state.placementPasses=0;state.selected=null;advancePlacement(i);return true;
+    state.log.push(`${p.name} plants <strong>${c.name}</strong> on ${u.name}.`);state.placementPasses=0;state.selected=null;advancePlacement(i);return true;
   }
   return false;
 };
@@ -1163,13 +1163,13 @@ cardHTML=function(c,zone,hidden=false){
   html=html.replace(/<div class="pressure-meter [^"]*"><div class="pressure-copy">[\s\S]*?<\/div><div class="pressure-pips">[\s\S]*?<\/div><\/div>/g,'');
   if(zone==='board'&&c.type.includes('Creature')){
     let extra='';
-    if((c.shield||0)>0)extra+=\`<span class="badge shield">SHIELD \${c.shield}</span>\`;
+    if((c.shield||0)>0)extra+=`<span class="badge shield">SHIELD ${c.shield}</span>`;
     if(c.faction==='Living Geodes'){
       const cols=(c.prisms||[]).map(a=>a.chosenColor[0]).join(' • ')||'none';
-      extra+=\`<div class="prism-recipe \${c.cracked?'done':''}"><b>\${c.cracked?'CRACKED':'CRACK '+esc(geodeRecipeText(c))}</b><span>Prisms: \${esc(cols)} • \${c.prisms.length}/4</span></div>\`;
+      extra+=`<div class="prism-recipe ${c.cracked?'done':''}"><b>${c.cracked?'CRACKED':'CRACK '+esc(geodeRecipeText(c))}</b><span>Prisms: ${esc(cols)} • ${c.prisms.length}/4</span></div>`;
     }
     if(c.sigil)extra+='<span class="badge sigil-set">SIGIL SET</span>';
-    if(c.growth)extra+=\`<span class="badge growth-set">\${c.growth.active?'BLOOMING':'GROWTH'} • \${esc(c.growth.card.name)}</span>\`;
+    if(c.growth)extra+=`<span class="badge growth-set">${c.growth.active?'BLOOMING':'GROWTH'} • ${esc(c.growth.card.name)}</span>`;
     html=html.replace('</article>',extra+'</article>');
   }
   return html;
@@ -1179,7 +1179,7 @@ const _v09PlayerHTML=playerHTML;
 playerHTML=function(p){
   let html=_v09PlayerHTML(p);
   if(p.faction==='Continuum'){
-    const row=\`<div class="signature-zone"><div class="zone-label"><span>FLUX ZONE</span><span>\${p.flux.length}/2</span></div><div class="flux-row">\${p.flux.map(c=>\`<div class="flux-chip"><strong>\${esc(c.name)}</strong><span>\${esc((c.fluxPattern||[]).join(' → '))}</span></div>\`).join('')||'<span class="player-sub">No FLUX armed</span>'}</div></div>\`;
+    const row=`<div class="signature-zone"><div class="zone-label"><span>FLUX ZONE</span><span>${p.flux.length}/2</span></div><div class="flux-row">${p.flux.map(c=>`<div class="flux-chip"><strong>${esc(c.name)}</strong><span>${esc((c.fluxPattern||[]).join(' → '))}</span></div>`).join('')||'<span class="player-sub">No FLUX armed</span>'}</div></div>`;
     html=html.replace('<div class="hand-wrap">',row+'<div class="hand-wrap">');
   }
   return html;
