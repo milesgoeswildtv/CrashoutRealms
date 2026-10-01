@@ -16,7 +16,7 @@
   <div id="app" class="app-shell">
     <header class="topbar">
       <div>
-        <div class="eyebrow">REALMS • v0.8 • Gameplay Readability R1</div>
+        <div class="eyebrow">REALMS • v0.9 • Signature Systems Alpha</div>
         <h1>REALMS</h1>
       </div>
       <div class="top-actions">
@@ -72,7 +72,7 @@
 
       <div class="prototype-note">
         <strong>iPhone-ready:</strong> after this is hosted, open it in Safari and use <strong>Share → Add to Home Screen</strong> to launch it like an app. No App Store or TestFlight is required for this alpha.<br><br>
-        <strong>Alpha build:</strong> core economy, simultaneous combat, the five v0.8 faction systems, Realm rules, Deadlands shared grave, Formation + Equips, and common card effects are automated. A built-in referee panel remains available for edge-case or disputed card text during this alpha.
+        <strong>v0.9 alpha:</strong> the signature-card rewrite is live: Geodes build Prism color recipes, Continuum arms FLUX patterns, Moondemons hide Sigils on allies, Harvest plants Growths that Bloom, and Eliteborn keeps Equips + Formations. Core economy and simultaneous retaliation combat are unchanged for this test.
       </div>
       <button id="startBtn" class="btn primary large" type="button">Start Match</button>
     </div>
@@ -96,7 +96,7 @@
       <div class="modal-head">
         <div>
           <div class="eyebrow">Prototype rulings</div>
-          <h2 id="rulesTitle">REALMS v0.8 engine</h2>
+          <h2 id="rulesTitle">REALMS v0.9 engine</h2>
         </div>
         <button class="icon-btn" data-close="rulesModal" type="button">×</button>
       </div>
@@ -105,11 +105,11 @@
         <p><strong>Resources:</strong> after the hand cycle, total the +1/+2 resource values on the five cards in hand. That is the round pool. Played cards do not reduce the already-generated total except by paying their cost. Unspent resource expires.</p>
         <p><strong>Placement:</strong> players alternate one play/pass at a time. Two consecutive passes move to Combat. Creatures may act the round they enter in this alpha.</p>
         <p><strong>Combat:</strong> players alternate one creature activation. Creature-vs-creature damage is simultaneous: attacker STR and retaliation STR are snapshotted before either damage packet resolves.</p>
-        <p><strong>Living Geodes:</strong> damage gives Pressure while Dormant or Cracked. Dormant reaching its Crack threshold transforms; Cracked reaching its Fold threshold dies. <em>Provisional test rule:</em> a Fracture chain cannot revisit the same Geode during that chain.</p>
-        <p><strong>Harvest:</strong> creatures must gain STR or maximum HP from a friendly effect each round to remain Nourished; otherwise they Wither for 1 at round end. Regurgitate redistributes death; Consume concentrates printed Cost into STR or HP.</p>
-        <p><strong>Continuum:</strong> Sequence is a persistent 0–5 clock advanced by new rounds and card effects, never by combat. Skip Ahead accelerates toward completion; Loop Back reverses after 5 for the 4 → 5 → 4 High Sequence window.</p>
-        <p><strong>Moondemons:</strong> below max HP means Bloodied. Dealing damage to another target restores 2 HP. Frenzied grows while Bloodied but dies on returning to full HP; Bloodthirst bleeds Bloodied creatures and rewards natural bleed-out deaths.</p>
-        <p><strong>Eliteborn:</strong> Creatures and attached Equips count toward Formation size. Each Creature can hold only one Equip. WST gets 7 creature slots and Disperse at Formation 5+; Rise grows Formations at size 3+ but one Creature death wipes that Formation.</p>
+        <p><strong>Living Geodes:</strong> Pressure/Fold is retired. Prism cards cost 3, show exactly two colors, and attach to friendly Geodes. Choose one color when attached. Complete the Geode's printed color recipe to Crack it permanently; fused Prisms remain attached and active.</p>
+        <p><strong>Harvest:</strong> Lifeblood/Nourished remains. Growth cards cost 3 and attach dormant to an ally. When their prerequisite happens they Bloom into multi-turn effects. Regurgitate and Consume remain the faction's two Major identities.</p>
+        <p><strong>Continuum:</strong> Sequence remains a persistent 0–5 clock. FLUX cards cost 0 and sit armed in a visible Flux Zone. If their exact Sequence pattern happens during one round, they activate immediately. Up to 2 FLUX may be armed at once.</p>
+        <p><strong>Moondemons:</strong> Bloodied and the universal 2-HP restore remain. Sigils cost 3 and attach face-down to a friendly Moondemon. Opponents know a Sigil is set, but it reveals only when its prerequisite is fulfilled.</p>
+        <p><strong>Eliteborn:</strong> Equips remain their signature type. Creatures and attached Equips count toward Formation size. WST keeps 7 creature slots and Disperse; Rise now begins growing a Formation once it reaches size 2.</p>
         <p><strong>Initiative:</strong> determines the first Combat activation and alternates each round. Blood Moon can override the opening cadence.</p>
         <p><strong>Deckout:</strong> each failed draw deals 1 Health in this prototype.</p>
         <p><strong>Deadlands:</strong> half-cost is rounded up, minimum 1. Grave Echoes are 1/1, retain printed ability text, are accessible from the shared Grave State by either player, and never retrigger Deadlands Realm effects when leaving play.</p>
@@ -123,13 +123,13 @@
     .boot{min-height:100vh;display:grid;place-items:center;padding:24px;text-align:center}
     .boot b{letter-spacing:.18em}.boot small{display:block;color:#95a0ae;margin-top:10px}
   </style>
-  <div id="boot" class="boot"><div><b>REALMS v0.8</b><small>Loading faction identity alpha…</small></div></div>
+  <div id="boot" class="boot"><div><b>REALMS v0.9</b><small>Loading signature systems alpha…</small></div></div>
   <script>
   (async()=>{
-    const V='v08-readability-r1-spell-target-fix1';
-    const cssParts=['src-v08/styles-css-00.part','src-v08/styles-css-01.part','src-v08/styles-css-02.part'];
-    const cardParts=['src-v08/cards-js-00.part','src-v08/cards-js-01.part','src-v08/cards-js-02.part','src-v08/cards-js-03.part','src-v08/cards-js-04.part','src-v08/cards-js-05.part','src-v08/cards-js-06.part','src-v08/cards-js-07.part','src-v08/cards-js-08.part','src-v08/cards-js-09.part'];
-    const gameParts=['src-v08/game-js-00.part','src-v08/game-js-01.part','src-v08/game-js-02.part','src-v08/game-js-03.part','src-v08/game-js-04.part','src-v08/game-js-05.part','src-v08/game-js-06.part','src-v08/game-js-07.part'];
+    const V='v09-signature-systems-alpha1';
+    const cssParts=['src-v09/styles.css'];
+    const cardParts=['src-v09/cards.js'];
+    const gameParts=['src-v09/game.js'];
     async function load(parts){
       const chunks=await Promise.all(parts.map(async p=>{
         const r=await fetch(p+'?v='+V,{cache:'no-store'});
