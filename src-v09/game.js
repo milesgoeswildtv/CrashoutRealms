@@ -317,101 +317,139 @@ function effectiveCost(p,c,consume=false){
 function selectedFriendly(p){return state.selected?p.board.find(x=>x.iid===state.selected.iid)||null:null;}
 function selectedEnemy(p){return state.selected?state.players[1-p.index].board.find(x=>x.iid===state.selected.iid)||null:null;}
 function spellTargetPlan(c,p){
- const single=new Set(['GEO-014','GEO-015','GEO-017','HAR-008','HAR-009','MON-013','MON-017']);
- if(single.has(c.id))return {kind:'single'};
- if(c.id==='GEO-013')return {kind:'multi',count:2,optionalSecond:true};
- if(c.id==='HAR-019')return {kind:'multi',count:2,optionalSecond:false};
- if(c.id==='ELI-016')return {kind:'formation'};
- if(c.id==='MON-015')return {kind:'heal3'};
- if(c.id==='ELI-017')return {kind:'reinforce'};
+ const id=c.id;
+ const singleFriendly=new Set(['GEO-027','GEO-028','GEO-030','HAR-020','HAR-030','CON-019','CON-020','MON-019','MON-020','MON-027']);
+ const singleEnemy=new Set(['CON-030']);
+ if(singleFriendly.has(id))return {kind:'single',scope:'friendly'};
+ if(singleEnemy.has(id))return {kind:'single',scope:'enemy'};
+ if(id==='HAR-019'||id==='HAR-027'||id==='HAR-028'||id==='HAR-029')return {kind:'multi',scope:'friendly',count:2};
+ if(id==='MON-028')return {kind:'multi',scope:'friendly',count:3,optional:true};
+ if(id==='MON-030')return {kind:'dual'};
+ if(id==='ELI-016')return {kind:'formation'};
+ if(id==='ELI-017')return {kind:'reinforce'};
  return null;
 }
-function spellCandidates(c,p){
- if(c.id.startsWith('GEO-'))return p.board.filter(x=>x.faction==='Living Geodes');
- if(c.id.startsWith('MON-'))return p.board.filter(x=>x.faction==='Moondemons');
- return p.board.slice();
+function legalSpellCandidates(c,p,scope){
+ let a=scope==='enemy'?state.players[1-p.index].board:p.board;
+ if(c.id.startsWith('GEO-'))a=a.filter(x=>x.faction==='Living Geodes'&&!x.cracked);
+ if(c.id==='GEO-027'||c.id==='GEO-030')a=a.filter(x=>x.prisms?.length);
+ if(c.id.startsWith('MON-'))a=a.filter(x=>x.faction==='Moondemons');
+ if(c.id==='MON-019'||c.id==='MON-020'||c.id==='MON-027'||c.id==='MON-030')a=a.filter(isBloodied);
+ if(c.id==='HAR-030')a=a.filter(x=>x.permStr>0||x.permHp>0);
+ return a;
 }
 function requestSpellTargets(p,c,done){
  const plan=spellTargetPlan(c,p);if(!plan)return done([]);
  if(plan.kind==='single'){
-  const a=spellCandidates(c,p);if(!a.length){toast('No legal target for '+c.name+'.');return false;}
+  const a=legalSpellCandidates(c,p,plan.scope);if(!a.length){toast('No legal target for '+c.name+'.');return false;}
   showOptions('Choose Target',c.name,a.map(x=>({label:`${x.name} — STR ${getStr(x)} • HP ${x.currentHp}/${getMaxHp(x)}`,value:x.iid})),id=>done([id]));return true;
  }
  if(plan.kind==='multi'){
-  const a=spellCandidates(c,p),need=plan.optionalSecond?1:2;
-  if(a.length<need){toast(c.name+(need===2?' needs two friendly creatures.':' has no legal target.'));return false;}
-  showOptions('Choose First Target',c.name,a.map(x=>({label:`${x.name} — STR ${getStr(x)} • HP ${x.currentHp}/${getMaxHp(x)}`,value:x.iid})),first=>{
-   const left=a.filter(x=>x.iid!==first);
-   if(!left.length)return done([first]);
-   const opts=left.map(x=>({label:`${x.name} — STR ${getStr(x)} • HP ${x.currentHp}/${getMaxHp(x)}`,value:x.iid}));
-   if(plan.optionalSecond)opts.push({label:'Cast with one target',value:'__done__'});
-   showOptions('Choose Second Target',c.name,opts,second=>done(second==='__done__'?[first]:[first,second]));
-  });return true;
+  const a=legalSpellCandidates(c,p,plan.scope),need=plan.optional?1:plan.count;if(a.length<need){toast('Not enough legal targets for '+c.name+'.');return false;}
+  const picks=[];const chooseN=step=>{
+   const left=a.filter(x=>!picks.includes(x.iid)),opts=left.map(x=>({label:`${x.name} — ${getStr(x)}/${x.currentHp}`,value:x.iid}));
+   if(plan.optional&&step>1)opts.push({label:'Finish choosing',value:'__done__'});
+   showOptions(`Choose Target ${step}`,c.name,opts,v=>{if(v==='__done__')return done(picks);picks.push(v);if(step>=plan.count||left.length===1)done(picks);else chooseN(step+1);});
+  };chooseN(1);return true;
+ }
+ if(plan.kind==='dual'){
+  const friends=legalSpellCandidates(c,p,'friendly'),enemies=state.players[1-p.index].board.filter(x=>x.currentHp<getMaxHp(x));
+  if(!friends.length||!enemies.length){toast('No legal target pair for '+c.name+'.');return false;}
+  showOptions('Choose Attacker',c.name,friends.map(x=>({label:x.name,value:x.iid})),fid=>showOptions('Choose Enemy',c.name,enemies.map(x=>({label:x.name,value:x.iid})),eid=>done([fid,eid])));return true;
  }
  if(plan.kind==='formation'){
-  const ids=[...new Set(p.board.map(x=>x.formation).filter(x=>x!=null))];
-  if(!ids.length){toast('No Formation to target.');return false;}
+  const ids=[...new Set(p.board.map(x=>x.formation).filter(x=>x!=null))];if(!ids.length){toast('No Formation to target.');return false;}
   showOptions('Choose Formation',c.name,ids.map(fid=>({label:`Formation ${fid} — size ${formationSize(p,fid)}`,value:'F:'+fid})),id=>done([id]));return true;
- }
- if(plan.kind==='heal3'){
-  const a=p.board.filter(x=>x.faction==='Moondemons');if(!a.length){toast('No friendly Moondemon to target.');return false;}
-  const picks=[];
-  const choosePoint=step=>{
-   const opts=[];
-   for(const x of a){
-    opts.push({label:`Heal 1 → ${x.name} — HP ${x.currentHp}/${getMaxHp(x)}`,value:'H:'+x.iid});
-    if(isBloodied(x))opts.push({label:`+1 MAX HP → ${x.name} — no healing`,value:'M:'+x.iid});
-   }
-   showOptions('Feed the Pack',`Assign point ${step} of 3`,opts,v=>{picks.push(v);if(step<3)choosePoint(step+1);else done(picks);});
-  };
-  choosePoint(1);return true;
  }
  if(plan.kind==='reinforce'){
   const slots=Math.min(2,maxSlots(p)-p.board.length);if(slots<=0){toast('No open creature slot for Reinforce.');return false;}
-  const ids=[...new Set(p.board.map(x=>x.formation).filter(x=>x!=null))],picks=[];
-  const chooseRecruit=step=>{
+  const ids=[...new Set(p.board.map(x=>x.formation).filter(x=>x!=null))],picks=[];const chooseRecruit=step=>{
    const opts=ids.map(fid=>({label:`Join Formation ${fid} — size ${formationSize(p,fid)}`,value:'R:'+fid}));
-   if(step===2&&picks[0]==='NEW')opts.push({label:'Join Recruit 1\'s new Formation',value:'FIRST'});
+   if(step===2&&picks[0]==='NEW')opts.push({label:"Join Recruit 1's new Formation",value:'FIRST'});
    opts.push({label:'Stand alone — new Formation (1)',value:'NEW'});
    showOptions('Reinforce',`Place Recruit ${step} of ${slots}`,opts,v=>{picks.push(v);if(step<slots)chooseRecruit(step+1);else done(picks);});
-  };
-  chooseRecruit(1);return true;
+  };chooseRecruit(1);return true;
  }
  return done([]);
 }
-function playCard(i,iid,{ai=false,formationChoice=undefined,equipTargetId=null,spellTargetsReady=false}={}){if(state.phase!=='placement'||state.active!==i||state.winner!==null)return false;const p=state.players[i],c=p.hand.find(x=>x.iid===iid);if(!c)return false;const cost=effectiveCost(p,c,false);if(p.resource<cost){if(!ai)toast(`Need ${cost} resources.`);return false;}if(c.type.includes('Creature')&&p.board.length>=maxSlots(p)){if(!ai)toast('No creature slot.');return false;}
+function playCard(i,iid,{ai=false,formationChoice=undefined,equipTargetId=null,spellTargetsReady=false,attachTargetId=null,prismColor=null}={}){
+ if(state.phase!=='placement'||state.active!==i||state.winner!==null)return false;
+ const p=state.players[i],c=p.hand.find(x=>x.iid===iid);if(!c)return false;const cost=effectiveCost(p,c,false);
+ if(p.resource<cost){if(!ai)toast(`Need ${cost} resources.`);return false;}
+ if(c.type.includes('Creature')&&p.board.length>=maxSlots(p)){if(!ai)toast('No creature slot.');return false;}
  if(c.type==='Spell'&&!ai&&!spellTargetsReady&&spellTargetPlan(c,p)){const opened=requestSpellTargets(p,c,ids=>{c.statuses.castTargets=ids;playCard(i,iid,{spellTargetsReady:true});});return opened!==false;}
- if(p.faction==='Eliteborn'&&c.type.includes('Creature')&&!ai&&formationChoice===undefined){const ids=[...new Set(p.board.map(x=>x.formation).filter(x=>x!=null))],opts=ids.map(fid=>({label:`Join Formation ${fid} — size ${formationSize(p,fid)}`,value:String(fid)}));opts.push({label:'Stand alone — start Formation (1)',value:'new'});showOptions('Eliteborn Formation',`Where does ${c.name} connect?`,opts,v=>playCard(i,iid,{formationChoice:v}));return true;}
- if(c.type==='Equip'&&!ai&&!equipTargetId){const opts=p.board.filter(x=>!x.equip).map(x=>({label:`${x.name} — Formation ${formationSize(p,x)} — ${getStr(x)}/${x.currentHp}`,value:x.iid}));if(!opts.length){toast('Every creature already has an Equip.');return false;}showOptions('Eliteborn Equip',`Attach ${c.name} to which creature?`,opts,v=>playCard(i,iid,{equipTargetId:v}));return true;}
- let target=null;if(c.type==='Equip'){target=ai?p.board.filter(x=>!x.equip).sort((a,b)=>formationSize(p,b)-formationSize(p,a)||getStr(b)-getStr(a))[0]:p.board.find(x=>x.iid===equipTargetId);if(!target||target.equip){if(!ai)toast('Each creature may have only one Equip.');return false;}}
- p.resource-=effectiveCost(p,c,true);p.hand=p.hand.filter(x=>x.iid!==iid);state.placementPasses=0;if(c.type.includes('Creature')){c.zone='board';c.baseStr=c.str??0;c.baseHp=c.hp??1;c.currentHp=c.baseHp;c.nourished=true;if(p.faction==='Eliteborn'){let join=null;if(ai)join=p.board.filter(x=>x.formation!=null).sort((a,b)=>formationSize(p,b)-formationSize(p,a))[0]||null;else if(formationChoice!=='new')join=p.board.find(x=>String(x.formation)===String(formationChoice))||null;ensureFormation(p,c,join);}p.board.push(c);state.log.push(`${p.name} plays <strong>${c.name}</strong>${c.formation!=null?` in Formation ${c.formation}`:''}.`);onPlay(c,p);if(c.formation!=null)formationJoined(p,c.formation);}else if(c.type==='Equip'){attachEquip(p,c,target);}else if(c.type==='Trap'){c.zone='trap';p.traps.push(c);state.log.push(`${p.name} sets ${c.name}.`);}else{c.zone='discard';resolveSpell(c,p);p.discard.push(c);state.log.push(`${p.name} casts <strong>${c.name}</strong>.`);}state.selected=null;checkWinner();if(state.winner===null)advancePlacement(i);return true;}
-function onPlay(c,p){if(c.id==='GEO-001')applyDamage(c,1,null,{reason:'self'});if(c.id==='GEO-022'){applyDamage(c,1,null,{reason:'self'});const o=p.board.filter(x=>x.iid!==c.iid&&x.faction==='Living Geodes');if(o.length)applyDamage(sample(o),1,c);}if(c.id==='GEO-026')p.board.filter(x=>x.faction==='Living Geodes').slice().forEach(x=>applyDamage(x,1,c));if(c.id==='CON-012')shiftSequence(p,1);if(c.id==='CON-021')shiftSequence(p,1,{causer:c.id});}
+ if(p.faction==='Eliteborn'&&c.type.includes('Creature')&&!ai&&formationChoice===undefined){
+  const ids=[...new Set(p.board.map(x=>x.formation).filter(x=>x!=null))],opts=ids.map(fid=>({label:`Join Formation ${fid} — size ${formationSize(p,fid)}`,value:String(fid)}));opts.push({label:'Stand alone — start Formation (1)',value:'new'});showOptions('Eliteborn Formation',`Where does ${c.name} connect?`,opts,v=>playCard(i,iid,{formationChoice:v}));return true;
+ }
+ if(c.type==='Equip'&&!ai&&!equipTargetId){
+  const opts=p.board.filter(x=>!x.equip).map(x=>({label:`${x.name} — Formation ${formationSize(p,x)} — ${getStr(x)}/${x.currentHp}`,value:x.iid}));if(!opts.length){toast('Every creature already has an Equip.');return false;}showOptions('Eliteborn Equip',`Attach ${c.name} to which creature?`,opts,v=>playCard(i,iid,{equipTargetId:v}));return true;
+ }
+ if(c.type==='Prism'&&!ai&&!attachTargetId){
+  const a=p.board.filter(x=>x.faction==='Living Geodes'&&x.prisms.length<3);if(!a.length){toast('No Geode has an open Prism slot.');return false;}
+  showOptions('Choose Geode',c.name,a.map(x=>({label:`${x.name} — ${x.cracked?'CRACKED':'Needs '+missingRecipeColors(x).join(' + ')}`,value:x.iid})),id=>playCard(i,iid,{attachTargetId:id}));return true;
+ }
+ if(c.type==='Prism'&&!ai&&attachTargetId&&!prismColor){
+  showOptions('Choose Prism Color',c.name,c.modes.map(m=>({label:`${m.color.toUpperCase()} — ${m.text.replace(/^[A-Z]+ — /,'')}`,value:m.color})),color=>playCard(i,iid,{attachTargetId,prismColor:color}));return true;
+ }
+ if((c.type==='Sigil'||c.type==='Growth')&&!ai&&!attachTargetId){
+  const a=p.board.filter(x=>c.type==='Sigil'?(x.faction==='Moondemons'&&!x.sigil):(x.faction==='Harvest'&&!x.growth));if(!a.length){toast('No legal ally attachment slot.');return false;}
+  showOptions(c.type,`Attach ${c.name}`,a.map(x=>({label:`${x.name} — ${getStr(x)}/${x.currentHp}`,value:x.iid})),id=>playCard(i,iid,{attachTargetId:id}));return true;
+ }
+ let target=null;
+ if(c.type==='Equip'){target=ai?p.board.filter(x=>!x.equip).sort((a,b)=>formationSize(p,b)-formationSize(p,a)||getStr(b)-getStr(a))[0]:p.board.find(x=>x.iid===equipTargetId);if(!target||target.equip)return false;}
+ if(c.type==='Prism'){
+  target=ai?p.board.filter(x=>x.faction==='Living Geodes'&&x.prisms.length<3).sort((a,b)=>Number(a.cracked)-Number(b.cracked)||missingRecipeColors(a).length-missingRecipeColors(b).length)[0]:p.board.find(x=>x.iid===attachTargetId);
+  if(!target)return false;if(ai){const miss=missingRecipeColors(target),m=c.modes.find(x=>miss.includes(x.color))||c.modes[0];prismColor=m.color;}
+ }
+ if(c.type==='Sigil'||c.type==='Growth'){target=ai?p.board.filter(x=>c.type==='Sigil'?(x.faction==='Moondemons'&&!x.sigil):(x.faction==='Harvest'&&!x.growth)).sort((a,b)=>(getStr(b)+getMaxHp(b))-(getStr(a)+getMaxHp(a)))[0]:p.board.find(x=>x.iid===attachTargetId);if(!target)return false;}
+ p.resource-=effectiveCost(p,c,true);p.hand=p.hand.filter(x=>x.iid!==iid);state.placementPasses=0;
+ if(c.type.includes('Creature')){
+  c.zone='board';c.baseStr=c.str??0;c.baseHp=c.hp??1;c.currentHp=c.baseHp;c.nourished=true;
+  if(p.faction==='Eliteborn'){let join=null;if(ai)join=p.board.filter(x=>x.formation!=null).sort((a,b)=>formationSize(p,b)-formationSize(p,a))[0]||null;else if(formationChoice!=='new')join=p.board.find(x=>String(x.formation)===String(formationChoice))||null;ensureFormation(p,c,join);}
+  p.board.push(c);state.log.push(`${p.name} plays <strong>${c.name}</strong>${c.formation!=null?` in Formation ${c.formation}`:''}.`);onPlay(c,p);if(c.formation!=null)formationJoined(p,c.formation);
+ }else if(c.type==='Equip')attachEquip(p,c,target);
+ else if(c.type==='Prism')attachPrism(p,c,target,prismColor);
+ else if(c.type==='Sigil'){target.sigil=c;c.zone='sigil';state.log.push(`${p.name} sets a face-down Sigil on ${target.name}.`);}
+ else if(c.type==='Growth'){target.growth=c;c.zone='growth';c.bloomed=false;c.progress=0;state.log.push(`${p.name} plants <strong>${c.name}</strong> on ${target.name}.`);}
+ else if(c.type==='Flux'){c.zone='flux';p.fluxes.push(c);state.log.push(`${p.name} arms <strong>FLUX — ${c.name}</strong>.`);checkFluxes(p);}
+ else{c.zone='discard';resolveSpell(c,p);p.discard.push(c);state.log.push(`${p.name} casts <strong>${c.name}</strong>.`);}
+ state.selected=null;checkWinner();if(state.winner===null)advancePlacement(i);return true;
+}
+function onPlay(c,p){
+ if(c.id==='GEO-022'&&p.board.some(x=>x.iid!==c.iid&&x.prisms?.length))c.shield+=2;
+ if(c.id==='CON-012')shiftSequence(p,1);
+ if(c.id==='CON-021')shiftSequence(p,1,{causer:c.id});
+}
 function resolveSpell(c,p){
- const targetIds=c.statuses.castTargets||[];
- const chosen=targetIds.map(id=>p.board.find(x=>x.iid===id)).filter(Boolean);
- const f=chosen[0]||(p.ai?chooseFriendly(p):selectedFriendly(p));
- const e=selectedEnemy(p)||(p.ai?chooseEnemy(p.index):null);
+ const ids=c.statuses.castTargets||[],own=id=>p.board.find(x=>x.iid===id),enemy=id=>state.players[1-p.index].board.find(x=>x.iid===id);
+ const chosen=ids.map(own).filter(Boolean),f=chosen[0]||null;
  switch(c.id){
-  case'GEO-013':{const list=chosen.length?chosen:shuffle(p.board.filter(x=>x.faction==='Living Geodes')).slice(0,2);for(const x of list){if(!p.board.includes(x))continue;const was=x.cracked;applyDamage(x,1,null,{reason:'self'});if(p.board.includes(x)&&!was&&x.cracked)addPermStats(x,1,1);}break;}
-  case'GEO-014':if(f){const d=!f.cracked;applyDamage(f,1,null,{reason:'self'});if(p.board.includes(f))healUnit(f,d&&f.cracked?6:4,'Tempering');}break;
-  case'GEO-015':if(f){applyDamage(f,1,null,{reason:'self'});if(p.board.includes(f))f.tempStr+=f.cracked?5:3;}break;
-  case'GEO-017':if(f)p.shatterproof=f.iid;break;
-  case'GEO-027':p.board.slice().forEach(x=>applyDamage(x,1,null,{reason:'self'}));break;
-  case'GEO-029':p.cascadeRemaining=3;break;
-  case'HAR-008':if(f){addTempStats(f,3,0);f.statuses.forcedBloom=true;}break;
-  case'HAR-009':if(f){addPermStats(f,0,4);f.acted=true;}break;
-  case'HAR-019':{const list=chosen.length>=2?chosen.slice(0,2):p.board.slice(0,2);list.forEach(x=>addPermStats(x,1,1));break;}
-  case'CON-013':shiftSequence(p,1,{causer:c.id});if(p.sequence>=4)drawOne(p);break;
-  case'CON-015':shiftSequence(p,1,{causer:c.id});break;
-  case'CON-016':shiftSequence(p,1,{towardZero:true});break;
-  case'CON-027':shiftSequence(p,1,{causer:c.id});break;
-  case'MON-013':if(f){applyDamage(f,1,null,{reason:'self'});if(p.board.includes(f)&&isBloodied(f))f.tempStr+=3;}break;
-  case'MON-015':{if(targetIds.length){for(const v of targetIds){const mode=v.slice(0,1),id=v.slice(2),u=p.board.find(x=>x.iid===id);if(!u)continue;if(mode==='H')healUnit(u,1,'Feed the Pack');else if(mode==='M'&&isBloodied(u))u.permHp+=1;}}else distributeHeal(p,3);break;}
-  case'MON-017':if(f&&isBloodied(f))f.tempStr+=Math.min(4,Math.floor((getMaxHp(f)-f.currentHp)/2));break;
-  case'MON-027':p.health-=2;p.resource+=3;checkWinner();break;
+  case'GEO-019':{const x=drawOne(p);if(x?.type==='Prism')x.statuses.tempCostReduction=1;break;}
+  case'GEO-020':{const a=p.discard.filter(x=>x.type==='Prism');if(a.length){const take=x=>{p.discard=p.discard.filter(y=>y.iid!==x.iid);x.zone='hand';p.hand.push(x);p.effects.prismDiscountCount=1;p.effects.prismDiscountAmount=1;};if(p.ai)take(a[a.length-1]);else showOptions('Crystal Recall','Return which Prism?',a.map(x=>({label:x.name,value:x.iid})),id=>{const x=a.find(y=>y.iid===id);if(x)take(x);render();});}break;}
+  case'GEO-027':if(f&&f.prisms.length){const choose=pr=>{const other=pr.colors.find(x=>x!==pr.chosenColor)||pr.colors[0];switchPrismColor(f,pr,other);};if(p.ai)choose(f.prisms[0]);else showOptions('Refraction Shift','Switch which Prism?',f.prisms.map(x=>({label:`${x.name} — ${x.chosenColor}`,value:x.iid})),id=>{const pr=f.prisms.find(x=>x.iid===id);if(pr)choose(pr);render();});}break;
+  case'GEO-028':if(f){const colors=['Red','Blue','Green','Yellow','Violet','White'];if(p.ai)addTempPrismColor(f,(missingRecipeColors(f)[0]||'Red'),'Spectrum Bridge');else showOptions('Spectrum Bridge','Choose temporary color.',colors.map(x=>({label:x,value:x})),x=>{addTempPrismColor(f,x,'Spectrum Bridge');render();});}break;
+  case'GEO-029':p.effects.prismDiscountCount=2;p.effects.prismDiscountAmount=2;break;
+  case'GEO-030':if(f){const miss=missingRecipeColors(f);if(miss.length){if(p.ai)addTempPrismColor(f,miss[0],'Perfect Facet');else showOptions('Perfect Facet','Satisfy which missing color?',[...new Set(miss)].map(x=>({label:x,value:x})),x=>{addTempPrismColor(f,x,'Perfect Facet');render();});}}break;
+  case'HAR-019':chosen.slice(0,2).forEach(x=>addPermStats(x,1,1));break;
+  case'HAR-020':if(f)f.statuses.brambleReserve=true;break;
+  case'HAR-027':if(chosen.length>=2){const [a,b]=chosen;if(a.permStr>=a.permHp&&a.permStr>0)addPermStats(b,1,0);else if(a.permHp>0)addPermStats(b,0,1);}break;
+  case'HAR-028':if(chosen.length>=2){destroyUnit(chosen[0],null,{reason:'Cull and Compost'});drawOne(p);drawOne(p);if(p.board.includes(chosen[1]))addPermStats(chosen[1],0,2);}break;
+  case'HAR-029':if(chosen.length>=2){const [a,b]=chosen;let n=Math.min(4,a.permStr+a.permHp),s=Math.min(n,a.permStr);a.permStr-=s;n-=s;const h=Math.min(n,a.permHp);a.permHp-=h;a.currentHp=Math.min(a.currentHp,getMaxHp(a));addPermStats(b,s,h);}break;
+  case'HAR-030':if(f)f.statuses.deepRoots=true;break;
+  case'CON-019':if(f)f.statuses.phaseShelter=true;break;
+  case'CON-020':if(f)f.statuses.lastBeforeFirst=true;break;
+  case'CON-027':shiftSequence(p,1,{causer:c.id});if(p.sequence>=4)p.effects.tripleDiscount=3;break;
+  case'CON-028':shiftSequence(p,2,{causer:c.id});break;
+  case'CON-029':if(p.sequence===5){p.sequence=0;recordSequence(p,0);drawOne(p);drawOne(p);p.effects.nextDiscount=Math.max(p.effects.nextDiscount||0,2);}break;
+  case'CON-030':{shiftSequence(p,1,{causer:c.id});const e=enemy(ids[0]);if(e&&(p.sequence===4||p.sequence===5))e.tempStr-=3;break;}
+  case'MON-019':if(f){f.statuses.nextDamageBonus=(f.statuses.nextDamageBonus||0)+2;f.statuses.bloodInWater=true;}break;
+  case'MON-020':if(f)f.statuses.lastBite=true;break;
+  case'MON-027':p.health-=2;p.resource+=3;if(f&&isBloodied(f))f.tempStr+=2;checkWinner();break;
+  case'MON-028':chosen.forEach(x=>{if(isBloodied(x)){healUnit(x,1,'Pack Feeding');x.permHp+=1;}else healUnit(x,2,'Pack Feeding');});break;
   case'MON-029':p.board.filter(isBloodied).forEach(x=>{x.tempStr+=2;x.statuses.moonrage=true;});break;
-  case'ELI-016':{let fid=null;if(targetIds[0]?.startsWith('F:'))fid=+targetIds[0].slice(2);if(fid==null&&p.ai){const ids=[...new Set(p.board.map(x=>x.formation).filter(x=>x!=null))];fid=ids.sort((a,b)=>formationSize(p,b)-formationSize(p,a))[0];}if(fid!=null){const n=formationSize(p,fid)>=4?2:1;formationMembers(p,fid).forEach(x=>x.tempStr+=n);}break;}
-  case'ELI-017':{if(targetIds.length){let firstRecruit=null;for(let j=0;j<targetIds.length&&p.board.length<maxSlots(p);j++){const pick=targetIds[j],u=makeToken(p.index,'Recruit',1,1,{faction:'Eliteborn'});let join=null;if(pick.startsWith('R:')){const fid=+pick.slice(2);join=p.board.find(x=>x.formation===fid)||null;}else if(pick==='FIRST')join=firstRecruit;ensureFormation(p,u,join);p.board.push(u);if(j===0)firstRecruit=u;formationJoined(p,u.formation);}}else for(let j=0;j<2&&p.board.length<maxSlots(p);j++){const u=makeToken(p.index,'Recruit',1,1,{faction:'Eliteborn'});ensureFormation(p,u,p.board[0]);p.board.push(u);formationJoined(p,u.formation);}break;}
+  case'MON-030':{const a=own(ids[0]),e=enemy(ids[1]);if(a&&e&&isBloodied(a)&&!a.acted)combatAttack(a,e);break;}
+  case'ELI-016':{let fid=null;if(ids[0]?.startsWith('F:'))fid=+ids[0].slice(2);if(fid==null&&p.ai){const fs=[...new Set(p.board.map(x=>x.formation).filter(x=>x!=null))];fid=fs.sort((a,b)=>formationSize(p,b)-formationSize(p,a))[0];}if(fid!=null){const n=formationSize(p,fid)>=4?2:1;formationMembers(p,fid).forEach(x=>x.tempStr+=n);}break;}
+  case'ELI-017':{if(ids.length){let first=null;for(let j=0;j<ids.length&&p.board.length<maxSlots(p);j++){const pick=ids[j],u=makeToken(p.index,'Recruit',1,1,{faction:'Eliteborn'});let join=null;if(pick.startsWith('R:'))join=p.board.find(x=>x.formation===+pick.slice(2))||null;else if(pick==='FIRST')join=first;ensureFormation(p,u,join);p.board.push(u);if(j===0)first=u;formationJoined(p,u.formation);}}else for(let j=0;j<2&&p.board.length<maxSlots(p);j++){const u=makeToken(p.index,'Recruit',1,1,{faction:'Eliteborn'});ensureFormation(p,u,p.board[0]);p.board.push(u);formationJoined(p,u.formation);}break;}
   default:break;
  }
  delete c.statuses.castTargets;
