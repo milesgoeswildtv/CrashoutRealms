@@ -46,7 +46,49 @@ function applyDamage(u,amount,source=null,{combat=false,noDisperse=false,reason=
  const before=u.currentHp;u.currentHp-=amount;const dealt=Math.min(amount,Math.max(0,before));u.damageTakenThisRound+=amount;if(u.faction==='Moondemons'&&u.currentHp<getMaxHp(u))u.everBloodied=true;if(u.faction==='Living Geodes'&&p.board.includes(u))gainPressure(u,1,'damage');if(!p.board.includes(u))return dealt;
  if(combat&&u.currentHp>0){if(u.id==='HAR-002'&&!u.statuses.briar){u.statuses.briar=true;addPermStats(u,0,1);}if(p.traps.some(t=>t.id==='HAR-010')){consumeTrap(p,'HAR-010');addPermStats(u,1,1);}if(p.traps.some(t=>t.id==='HAR-020')){consumeTrap(p,'HAR-020');addPermStats(u,0,2);}}
  if(u.currentHp<=0){if(p.shatterproof===u.iid){p.shatterproof=false;u.currentHp+=2;if(u.currentHp<=0)destroyUnit(u,source,{combat,reason});}else destroyUnit(u,source,{combat,reason});}return dealt;}
-function dealPlayerDamage(i,n,source=null,combat=false){const p=state.players[i];if(combat&&state.flags.has('upperMinor')&&p.board.length>=3){const red=Math.floor(n/2);p.health-=n-red;let left=red,units=[...p.board],k=0;while(left>0&&units.length){const u=units[k++%units.length];if(p.board.includes(u))applyDamage(u,1,source,{combat:true});left--;}}else p.health-=n;checkWinner();}
+function resolveUpperStrataOvercharge(){
+ if(!state?.flags?.has('upperMajor')||state.winner!==null)return [0,0];
+ const losses=state.players.map(p=>{
+  const loss=Math.ceil(Math.max(0,p.resource||0)/2);
+  if(loss>0){
+   p.health-=loss;
+   state.log.push(`<strong>Upper Strata — Overcharge:</strong> ${p.name} loses ${loss} Health from ${p.resource} unspent resource${p.resource===1?'':'s'}.`);
+  }
+  return loss;
+ });
+ return losses;
+}
+function resolveUpperStrataChainLink(p,n,source=null){
+ const incoming=Math.max(0,Math.floor(n));
+ if(!incoming)return {incoming:0,playerDamage:0,redirected:0,returned:0};
+ const units=[...p.board];
+ const redirected=Math.floor(incoming/2);
+ let playerDamage=incoming-redirected,returned=0;
+ if(redirected<=0||units.length<3){
+  p.health-=incoming;
+  return {incoming,playerDamage:incoming,redirected:0,returned:0};
+ }
+ const q=Math.floor(redirected/units.length),r=redirected%units.length;
+ const shares=units.map((u,index)=>({u,amount:q+(index<r?1:0)})).filter(x=>x.amount>0);
+ for(const share of shares){
+  const {u,amount}=share;
+  // Chain Link breaks immediately below three creatures. Any already-assigned
+  // redirect that can no longer resolve returns to the player; it never vanishes.
+  if(p.board.length<3||!p.board.includes(u)){
+   playerDamage+=amount;returned+=amount;continue;
+  }
+  applyDamage(u,amount,source,{combat:true,reason:'chain-link'});
+ }
+ p.health-=playerDamage;
+ state.log.push(`<strong>Upper Strata — Chain Link:</strong> ${incoming} direct damage → ${playerDamage} to ${p.name}, ${redirected-returned} redirected${returned?` • ${returned} returned after Chain Link broke`:''}.`);
+ return {incoming,playerDamage,redirected:redirected-returned,returned};
+}
+function dealPlayerDamage(i,n,source=null,combat=false){
+ const p=state.players[i];
+ if(combat&&state.flags.has('upperMinor')&&p.board.length>=3)resolveUpperStrataChainLink(p,n,source);
+ else p.health-=Math.max(0,Math.floor(n));
+ checkWinner();
+}
 function destroyUnit(u,source=null,{reason='death',formationCascade=false}={}){const p=state.players[u.owner];if(!p.board.includes(u))return;const fid=u.formation;if(u.equip){u.equip.zone='discard';p.discard.push(u.equip);u.equip=null;}p.board=p.board.filter(x=>x.iid!==u.iid);const blood=state.flags.has('bloodMajor')&&state.round>=5;if(u.echo||blood){u.zone='banished';p.banished.push(u);}else if(state.flags.has('deadMajor')){u.zone='graveState';state.graveState.push(u);}else{u.zone='discard';p.discard.push(u);}
  if(p.faction==='Harvest'&&p.passive==='Regurgitate'&&p.board.length){const t=[...p.board].sort((a,b)=>(getStr(b)+getMaxHp(b))-(getStr(a)+getMaxHp(a)));if(p.board.some(x=>x.id==='HAR-026')&&!p.statuses.elderRegurg&&t[1]){p.statuses.elderRegurg=true;addPermStats(t[0],1,1);addPermStats(t[1],1,1);}else addPermStats(t[0],1,1);p.passiveTriggers++;}
  if(p.faction==='Eliteborn'&&p.passive==='Rise as One. Die as One.'&&fid!=null&&!formationCascade){const others=formationMembers(p,fid).slice();if(others.length)state.log.push(`<strong>Formation ${fid} collapses.</strong>`);others.forEach(x=>destroyUnit(x,null,{reason:'formation-wipe',formationCascade:true}));}
@@ -185,7 +227,7 @@ function combatAttack(a,t=null){if(state.phase!=='combat'||state.active!==a.owne
 function passCombat(i){const p=state.players[i],u=readyUnits(p)[0];if(u){if(u.acted&&u.extraActions>0)u.extraActions--;else u.acted=true;}advanceCombat(i);}
 function advanceCombat(i){if(state.winner!==null)return;const p=state.players[i],o=state.players[1-i];if(!readyUnits(p).length&&!readyUnits(o).length)return endRound();if(state.bloodOpeningPlayer===i&&state.bloodOpeningLeft>0){state.bloodOpeningLeft--;state.active=state.bloodOpeningLeft>0&&readyUnits(p).length?i:(readyUnits(o).length?1-i:i);}else state.active=readyUnits(o).length?1-i:i;render();maybeAI();}
 function endRound(){state.log.push(`<strong>Round ${state.round} ends.</strong>`);for(const p of state.players){p.board.slice().forEach(u=>{if(u.statuses.forcedBloom&&p.board.includes(u))applyDamage(u,1,null,{reason:'self'});});if(p.faction==='Harvest')p.board.slice().forEach(u=>{if(p.board.includes(u)&&!u.nourished)applyDamage(u,1,null,{reason:'wither'});});if(p.faction==='Moondemons'&&p.passive==='Bloodthirst')p.board.slice().forEach(u=>{if(p.board.includes(u)&&isBloodied(u)){u.currentHp--;if(u.currentHp<=0){const n=p.board.some(x=>x.id==='MON-026')&&!p.statuses.vesperaBT?3:2;if(n===3)p.statuses.vesperaBT=true;destroyUnit(u,null,{reason:'bloodthirst'});p.board.slice().forEach(x=>addPermStats(x,n,n));}}});}
-if(state.flags.has('crystalMajor')&&state.round%2===0)polarity();if(state.winner!==null)return render();if(state.flags.has('upperMajor'))state.players.forEach(p=>{if(p.resource>0)p.health-=Math.ceil(p.resource/2);});checkWinner();if(state.winner!==null)return render();state.round++;state.initiative=1-state.initiative;state.phase='mulligan';state.selected=null;beginMulligan(0);}
+if(state.flags.has('crystalMajor')&&state.round%2===0)polarity();if(state.winner!==null)return render();if(state.flags.has('upperMajor'))resolveUpperStrataOvercharge();checkWinner();if(state.winner!==null)return render();state.round++;state.initiative=1-state.initiative;state.phase='mulligan';state.selected=null;beginMulligan(0);}
 function checkPolarityLoss(){
  if(!state?.flags?.has('crystalMinor')||state.winner!==null)return false;
  const a=(state.polarityDeaths?.[0]||0)>=5,b=(state.polarityDeaths?.[1]||0)>=5;
@@ -1350,5 +1392,5 @@ handleRef=function(x){
 };
 
 
-window.REALMS_DEBUG={getState:()=>state,startGame,playCard,combatAttack,gainPressure,shiftSequence,addShield,recipeMissing,checkFlux,polarity,checkPolarityLoss,deadlands:{canRaise:canUseDeadlandsEcho,raise:summonEcho,useRaise:useDeadlandsEcho,canAbsorb:canUseDeadlandsAbsorption,absorb:absorbDeadlandsEcho,useAbsorb:useDeadlandsAbsorption,grave:()=>state?.graveState||[]}};populateSetup();render();
+window.REALMS_DEBUG={getState:()=>state,startGame,playCard,combatAttack,gainPressure,shiftSequence,addShield,recipeMissing,checkFlux,polarity,checkPolarityLoss,resolveUpperStrataOvercharge,resolveUpperStrataChainLink,deadlands:{canRaise:canUseDeadlandsEcho,raise:summonEcho,useRaise:useDeadlandsEcho,canAbsorb:canUseDeadlandsAbsorption,absorb:absorbDeadlandsEcho,useAbsorb:useDeadlandsAbsorption,grave:()=>state?.graveState||[]}};populateSetup();render();
 })();
