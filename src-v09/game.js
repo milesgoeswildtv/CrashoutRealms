@@ -1054,7 +1054,7 @@ shiftSequence=function(p,steps=1,{towardZero=false,causer=null}={}){
 
 prepareRound=function(){
   for(const p of state.players){
-    p.statuses={};p.effects={};p.skipUsed=0;p.consumeUsed=false;p.endlessShiftUsed=false;p.preventNextDamage=0;p.shatterproof=false;p.cascadeRemaining=0;
+    p.statuses={};p.effects={};p.skipUsed=0;p.consumeUsed=false;p.endlessShiftUsed=false;p.deadlandsAbsorbUsed=false;p.preventNextDamage=0;p.shatterproof=false;p.cascadeRemaining=0;
     p.board.slice().forEach(u=>{u.acted=false;u.extraActions=0;u.tempStr=0;u.tempHp=0;u.damageTakenThisRound=0;u.statuses={};if(u.faction==='Harvest')u.nourished=false;});
     syncDynamicHp(p);
     if(p.faction==='Continuum'){p.sequenceHistory=[p.sequence];p.flux.forEach(x=>x.fluxArmedAt=0);shiftSequence(p,1);}
