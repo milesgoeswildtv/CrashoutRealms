@@ -198,7 +198,8 @@ function polarity(){
  if(!state?.flags?.has('crystalMajor')||state.winner!==null)return false;
  const snaps=[];
  for(const p of state.players)for(const u of p.board.slice()){
-  snaps.push({u,owner:u.owner,targetStr:getStr(u),targetHp:u.currentHp});
+  const oldStr=getStr(u),oldHp=u.currentHp;
+  snaps.push({u,owner:u.owner,oldStr,oldHp,newStr:oldHp,newHp:oldStr});
  }
  state.log.push('<strong>Crystal Isle: Polarity Shift.</strong>');
  if(!snaps.length){
@@ -210,9 +211,9 @@ function polarity(){
  // permanent, temporary, Equip, Prism and static modifier layers.
  for(const s of snaps){
   const u=s.u;
-  u.currentHp=s.targetStr;
-  u.baseStr=s.targetStr;
-  u.baseHp=Math.max(1,s.targetHp);
+  u.currentHp=s.newHp;
+  u.baseStr=s.newStr;
+  u.baseHp=Math.max(1,s.newHp);
  }
  // Static bonuses can depend on other creatures. Solve the whole board
  // together before any Polarity deaths leave play.
@@ -220,17 +221,17 @@ function polarity(){
   for(const s of snaps){
    const u=s.u;
    if(!state.players[u.owner].board.includes(u))continue;
-   u.baseStr+=s.targetStr-getStr(u);
-   if(s.targetStr>0)u.baseHp+=s.targetStr-getMaxHp(u);
-   u.currentHp=s.targetStr;
+   u.baseStr+=s.newStr-getStr(u);
+   if(s.newHp>0)u.baseHp+=s.newHp-getMaxHp(u);
+   u.currentHp=s.newHp;
   }
  }
  const dead=[];
  for(const s of snaps){
   const u=s.u;
   if(!state.players[u.owner].board.includes(u))continue;
-  u.currentHp=s.targetStr;
-  if(s.targetStr<=0)dead.push(u);
+  u.currentHp=s.newHp;
+  if(s.newHp<=0)dead.push(u);
  }
  // Deaths are resolved only after every creature has been inverted, making
  // Polarity one simultaneous Realm event rather than a sequential stat cascade.
