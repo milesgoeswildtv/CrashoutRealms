@@ -185,8 +185,67 @@ function combatAttack(a,t=null){if(state.phase!=='combat'||state.active!==a.owne
 function passCombat(i){const p=state.players[i],u=readyUnits(p)[0];if(u){if(u.acted&&u.extraActions>0)u.extraActions--;else u.acted=true;}advanceCombat(i);}
 function advanceCombat(i){if(state.winner!==null)return;const p=state.players[i],o=state.players[1-i];if(!readyUnits(p).length&&!readyUnits(o).length)return endRound();if(state.bloodOpeningPlayer===i&&state.bloodOpeningLeft>0){state.bloodOpeningLeft--;state.active=state.bloodOpeningLeft>0&&readyUnits(p).length?i:(readyUnits(o).length?1-i:i);}else state.active=readyUnits(o).length?1-i:i;render();maybeAI();}
 function endRound(){state.log.push(`<strong>Round ${state.round} ends.</strong>`);for(const p of state.players){p.board.slice().forEach(u=>{if(u.statuses.forcedBloom&&p.board.includes(u))applyDamage(u,1,null,{reason:'self'});});if(p.faction==='Harvest')p.board.slice().forEach(u=>{if(p.board.includes(u)&&!u.nourished)applyDamage(u,1,null,{reason:'wither'});});if(p.faction==='Moondemons'&&p.passive==='Bloodthirst')p.board.slice().forEach(u=>{if(p.board.includes(u)&&isBloodied(u)){u.currentHp--;if(u.currentHp<=0){const n=p.board.some(x=>x.id==='MON-026')&&!p.statuses.vesperaBT?3:2;if(n===3)p.statuses.vesperaBT=true;destroyUnit(u,null,{reason:'bloodthirst'});p.board.slice().forEach(x=>addPermStats(x,n,n));}}});}
-if(state.flags.has('crystalMajor')&&state.round%2===0)polarity();if(state.flags.has('upperMajor'))state.players.forEach(p=>{if(p.resource>0)p.health-=Math.ceil(p.resource/2);});checkWinner();if(state.winner!==null)return render();state.round++;state.initiative=1-state.initiative;state.phase='mulligan';state.selected=null;beginMulligan(0);}
-function polarity(){state.log.push('<strong>Crystal Isle: Polarity Shift.</strong>');for(const p of state.players)for(const u of p.board.slice()){const s=getStr(u),hp=u.currentHp;u.baseStr=hp;u.baseHp=s;u.permStr=u.permHp=u.tempStr=u.tempHp=0;u.currentHp=s;if(u.currentHp<=0){state.polarityDeaths[u.owner]++;destroyUnit(u,null,{reason:'polarity'});}}}
+if(state.flags.has('crystalMajor')&&state.round%2===0)polarity();if(state.winner!==null)return render();if(state.flags.has('upperMajor'))state.players.forEach(p=>{if(p.resource>0)p.health-=Math.ceil(p.resource/2);});checkWinner();if(state.winner!==null)return render();state.round++;state.initiative=1-state.initiative;state.phase='mulligan';state.selected=null;beginMulligan(0);}
+function checkPolarityLoss(){
+ if(!state?.flags?.has('crystalMinor')||state.winner!==null)return false;
+ const a=(state.polarityDeaths?.[0]||0)>=5,b=(state.polarityDeaths?.[1]||0)>=5;
+ if(a&&b){endGame('draw','Both players reached 5 Polarity deaths during the same Crystal Isle resolution.');return true;}
+ if(a){endGame(1,'Player 1 reached 5 Polarity deaths.');return true;}
+ if(b){endGame(0,'Player 2 reached 5 Polarity deaths.');return true;}
+ return false;
+}
+function polarity(){
+ if(!state?.flags?.has('crystalMajor')||state.winner!==null)return false;
+ const snaps=[];
+ for(const p of state.players)for(const u of p.board.slice()){
+  const oldStr=getStr(u),oldHp=u.currentHp;
+  snaps.push({u,owner:u.owner,oldStr,oldHp,newStr:oldHp,newHp:oldStr});
+ }
+ state.log.push('<strong>Crystal Isle: Polarity Shift.</strong>');
+ if(!snaps.length){
+  state.log.push('Polarity finds no creatures to invert.');
+  return false;
+ }
+
+ // Swap visible current STR and current HP while preserving the underlying
+ // permanent, temporary, Equip, Prism and static modifier layers.
+ for(const s of snaps){
+  const u=s.u;
+  u.currentHp=s.newHp;
+  u.baseStr=s.newStr;
+  u.baseHp=Math.max(1,s.newHp);
+ }
+ // Static bonuses can depend on other creatures. Solve the whole board
+ // together before any Polarity deaths leave play.
+ for(let pass=0;pass<6;pass++){
+  for(const s of snaps){
+   const u=s.u;
+   if(!state.players[u.owner].board.includes(u))continue;
+   u.baseStr+=s.newStr-getStr(u);
+   if(s.newHp>0)u.baseHp+=s.newHp-getMaxHp(u);
+   u.currentHp=s.newHp;
+  }
+ }
+ const dead=[];
+ for(const s of snaps){
+  const u=s.u;
+  if(!state.players[u.owner].board.includes(u))continue;
+  u.currentHp=s.newHp;
+  if(s.newHp<=0)dead.push(u);
+ }
+ // Deaths are resolved only after every creature has been inverted, making
+ // Polarity one simultaneous Realm event rather than a sequential stat cascade.
+ for(const u of dead){
+  if(!state.players[u.owner].board.includes(u))continue;
+  state.polarityDeaths[u.owner]=(state.polarityDeaths[u.owner]||0)+1;
+  destroyUnit(u,null,{reason:'polarity'});
+ }
+ state.log.push(`Polarity deaths — P1 ${state.polarityDeaths[0]||0}/5 • P2 ${state.polarityDeaths[1]||0}/5.`);
+ pushUIEvent?.('realm','POLARITY SHIFT',`P1 ${state.polarityDeaths[0]||0}/5 • P2 ${state.polarityDeaths[1]||0}/5`);
+ queueBeat?.('POLARITY SHIFT',`Deaths: P1 ${state.polarityDeaths[0]||0}/5 • P2 ${state.polarityDeaths[1]||0}/5`,'realm');
+ checkPolarityLoss();
+ return true;
+}
 function checkWinner(){if(!state)return;const a=state.players[0].health<=0,b=state.players[1].health<=0;if(a&&b)endGame('draw','Both players reached 0.');else if(a)endGame(1,'Player 1 reached 0.');else if(b)endGame(0,'Player 2 reached 0.');}
 function endGame(w,why){if(state.winner!==null)return;state.winner=w;state.phase='gameover';state.log.push(`<strong>${w==='draw'?'DRAW':state.players[w].name+' WINS'}.</strong> ${why}`);render();}
 function offerDeadlandsEcho(i){
@@ -286,7 +345,7 @@ function deadlandsGraveHTML(){
 function maybeAI(){if(!state||state.winner!==null)return;const p=state.players[state.active];if(!p?.ai)return;setTimeout(()=>{if(!state||state.winner!==null||state.active!==p.index)return;if(state.phase==='placement')aiPlacement(p);else if(state.phase==='combat')aiCombat(p);},120);}
 function aiPlacement(p){if(p.faction==='Harvest'&&p.passive==='Consume'&&!p.consumeUsed&&p.board.length>=2&&Math.random()<.12){if(useConsume(p,true)){state.active=1-p.index;render();maybeAI();return;}}if(p.faction==='Continuum'&&p.passive==='Skip Ahead'&&p.sequence>=3&&Math.random()<.35){if(useSkipAhead(p,true)){state.active=1-p.index;render();maybeAI();return;}}const a=p.hand.filter(c=>effectiveCost(p,c)<=p.resource&&(!c.type.includes('Creature')||p.board.length<maxSlots(p))&&(c.type!=='Equip'||p.board.some(x=>!x.equip)));if(!a.length)return passPlacement(p.index);a.sort((x,y)=>(y.type.includes('Creature')?10:5)+(y.str||0)+(y.hp||0)*.5-y.cost*.2-((x.type.includes('Creature')?10:5)+(x.str||0)+(x.hp||0)*.5-x.cost*.2));playCard(p.index,a[0].iid,{ai:true});}
 function aiCombat(p){const r=readyUnits(p).sort((a,b)=>getStr(b)-getStr(a));if(!r.length)return passCombat(p.index);const a=r[0],e=state.players[1-p.index],taunt=e.board.filter(unitHasTaunt);let t=taunt[0]||e.board.filter(x=>x.currentHp<=getStr(a)).sort((x,y)=>x.currentHp-y.currentHp)[0]||null;if(!t&&e.board.length&&Math.random()<.45)t=chooseEnemy(p.index);combatAttack(a,t);}
-function realmDescription(){if(state.realm==='Crystal Isle')return 'Every 2 rounds: Polarity Shift. Five Polarity deaths loses.';if(state.realm==='Blood Moon')return 'Round 5+: destroyed creatures are banished. Initiative gets first two combat actions.';if(state.realm==='Upper Strata')return 'End round: 1 Health per 2 unspent RES. 3+ creatures redirect half direct combat damage.';if(state.realm==='Deadlands')return 'Deaths enter the shared Grave State. A death grants its owner a Grave-Echo raise; Absorption may replace one Echo with a normally-paid creature once per round.';return `Borrowed: ${state.borrowed.join(' + ')}.`;}
+function realmDescription(){if(state.realm==='Crystal Isle')return `Every 2 rounds, Polarity swaps each creature's current STR and HP. Five Polarity deaths loses. P1 ${state.polarityDeaths?.[0]||0}/5 • P2 ${state.polarityDeaths?.[1]||0}/5.`;if(state.realm==='Blood Moon')return 'Round 5+: destroyed creatures are banished. Initiative gets first two combat actions.';if(state.realm==='Upper Strata')return 'End round: 1 Health per 2 unspent RES. 3+ creatures redirect half direct combat damage.';if(state.realm==='Deadlands')return 'Deaths enter the shared Grave State. A death grants its owner a Grave-Echo raise; Absorption may replace one Echo with a normally-paid creature once per round.';return `Borrowed: ${state.borrowed.join(' + ')}.`;}
 function cardHTML(c,zone,hidden=false){if(hidden)return `<div class="card-back">CARD</div>`;const cr=c.type.includes('Creature'),p=state.players[c.owner],sel=state.selected?.iid===c.iid?' selected':'',acted=c.acted&&c.extraActions<=0?' acted':'',legend=c.legendary?' legendary':'';const badges=cr?`<span class="badge str">STR ${getStr(c)}</span><span class="badge hp">HP ${c.currentHp}/${getMaxHp(c)}</span>${c.faction==='Living Geodes'?`<span class="badge pressure">P ${c.pressure}/${c.cracked?c.fold:c.crack}</span>${c.cracked?'<span class="badge cracked">CRACKED</span>':''}`:''}${isBloodied(c)?'<span class="badge danger">BLOODIED</span>':''}${c.formation!=null?`<span class="badge">F${formationSize(p,c)}</span>`:''}${c.equip?`<span class="badge">EQ ${esc(c.equip.name)}</span>`:''}`:'';return `<article class="card ${CLASSES[c.faction]}${sel}${acted}${legend}" data-card="1" data-iid="${c.iid}" data-owner="${c.owner}" data-zone="${zone}"><div class="card-head"><div class="card-name">${esc(c.name)}</div><div class="card-meta"><span>${esc(c.type)}</span><span>${esc(c.id)}</span></div></div><span class="card-cost">${c.cost}</span><div class="card-body"><div class="card-rules">${esc(c.rules)}</div><div class="card-stats">${badges}</div></div>${zone==='hand'?`<span class="card-resource">+${c.resource} RES</span>`:''}</article>`;}
 function playerHTML(p){const visible=state.mode==='hotseat'?state.active===p.index:p.index===0,slots=[];for(let i=0;i<7;i++){const u=p.board[i],locked=i>=maxSlots(p);slots.push(`<div class="slot ${u?'':'empty'}" ${locked?'style="opacity:.25"':''}>${u?cardHTML(u,'board'):''}</div>`);}return `<section class="player-zone${state.active===p.index?' active':''}"><header class="player-header"><div class="player-id"><span class="faction-dot" style="background:${COLORS[p.faction]}"></span><div><div class="player-name">${esc(p.name)} — ${esc(p.faction)}</div><div class="player-sub">${esc(p.passive)}</div></div></div><div class="statbar"><span class="stat">♥ <b>${p.health}</b></span><span class="stat">RES <b>${p.resource}</b>/${p.resourceStart}</span>${p.faction==='Continuum'?`<span class="stat">SEQ <b>${p.sequence}</b> ${p.passive==='Loop Back'?(p.sequenceDir>0?'→':'←'):''}</span>`:''}<span class="stat">Deck <b>${p.deck.length}</b></span></div></header><div class="board-wrap"><div class="zone-label"><span>Battlefield</span><span>${p.board.length}/${maxSlots(p)}</span></div><div class="board-grid">${slots.join('')}</div><div class="zone-label"><span>Traps</span><span>${p.traps.length}</span></div><div class="trap-row">${p.traps.map(t=>`<button class="trap-chip">${visible?esc(t.name):'FACE-DOWN TRAP'}</button>`).join('')||'<span class="player-sub">No traps</span>'}</div></div><div class="hand-wrap"><div class="zone-label"><span>${visible?'Hand':'Hidden Hand'}</span><span>${p.hand.length}</span></div><div class="hand">${visible?p.hand.map(c=>cardHTML(c,'hand')).join(''):`<div class="card-back">${p.hand.length} CARDS</div>`}</div></div></section>`;}
 function getSelected(){if(!state?.selected)return null;for(const p of state.players){const c=[...p.board,...p.hand].find(x=>x.iid===state.selected.iid);if(c)return c;}return null;}
@@ -1291,5 +1350,5 @@ handleRef=function(x){
 };
 
 
-window.REALMS_DEBUG={getState:()=>state,startGame,playCard,combatAttack,gainPressure,shiftSequence,addShield,recipeMissing,checkFlux,deadlands:{canRaise:canUseDeadlandsEcho,raise:summonEcho,useRaise:useDeadlandsEcho,canAbsorb:canUseDeadlandsAbsorption,absorb:absorbDeadlandsEcho,useAbsorb:useDeadlandsAbsorption,grave:()=>state?.graveState||[]}};populateSetup();render();
+window.REALMS_DEBUG={getState:()=>state,startGame,playCard,combatAttack,gainPressure,shiftSequence,addShield,recipeMissing,checkFlux,polarity,checkPolarityLoss,deadlands:{canRaise:canUseDeadlandsEcho,raise:summonEcho,useRaise:useDeadlandsEcho,canAbsorb:canUseDeadlandsAbsorption,absorb:absorbDeadlandsEcho,useAbsorb:useDeadlandsAbsorption,grave:()=>state?.graveState||[]}};populateSetup();render();
 })();
