@@ -67,7 +67,7 @@ function moondemonDealtDamage(source,dealt,combat=false){if(!source||dealt<=0||s
 function chooseEndless(){const a=['crystalMajor','crystalMinor','bloodMajor','bloodMinor','upperMajor','upperMinor','deadMajor','deadMinor'];while(true){const x=sample(a),y=sample(a.filter(z=>z!==x));if(y==='crystalMinor'&&x!=='crystalMajor')continue;if(y==='deadMinor'&&x!=='deadMajor')continue;if(x==='crystalMinor'&&y!=='crystalMajor')continue;if(x==='deadMinor'&&y!=='deadMajor')continue;return[x,y];}}
 function realmFlags(r,b=[]){const s=new Set;if(r==='Crystal Isle'){s.add('crystalMajor');s.add('crystalMinor');}if(r==='Blood Moon'){s.add('bloodMajor');s.add('bloodMinor');}if(r==='Upper Strata'){s.add('upperMajor');s.add('upperMinor');}if(r==='Deadlands'){s.add('deadMajor');s.add('deadMinor');}if(r==='The Endless')b.forEach(x=>s.add(x));return s;}
 function startGame(c){uid=1;const realm=c.realm==='Random'?sample(REALMS):c.realm,borrowed=realm==='The Endless'?chooseEndless():[];state={version:'0.8-mechanics-alpha',realm,borrowed,flags:realmFlags(realm,borrowed),mode:c.mode,round:1,phase:'mulligan',initiative:rand(2),active:0,placementPasses:0,winner:null,selected:null,graveState:[],polarityDeaths:[0,0],log:[],preparedRound:0,players:[buildPlayer(0,c.p1Faction,c.p1Passive,c.mode==='watch'),buildPlayer(1,c.p2Faction,c.p2Passive,c.mode!=='hotseat')]};setupModal.classList.remove('open');state.log.push(`${state.players[state.initiative].name} has Initiative. Realm: <strong>${realm}</strong>.`);state.players.forEach(p=>{for(let i=0;i<5;i++)drawOne(p);});beginMulligan(0);}
-function prepareRound(){for(const p of state.players){p.statuses={};p.effects={};p.skipUsed=0;p.consumeUsed=false;p.endlessShiftUsed=false;p.preventNextDamage=0;p.shatterproof=false;p.cascadeRemaining=0;p.board.slice().forEach(u=>{u.acted=false;u.extraActions=0;u.tempStr=0;u.tempHp=0;u.damageTakenThisRound=0;u.statuses={};if(u.faction==='Harvest')u.nourished=false;});syncDynamicHp(p);if(p.faction==='Continuum')shiftSequence(p,1);if(p.faction==='Harvest'){p.board.filter(x=>x.id==='HAR-006').forEach(o=>p.board.filter(x=>x.iid!==o.iid).slice(0,2).forEach(x=>addPermStats(x,0,1)));}if(p.faction==='Eliteborn')p.board.slice().forEach(u=>{const fs=formationSize(p,u);if((u.id==='ELI-008'&&fs===4)||(u.id==='ELI-022'&&fs===3))distributeHeal({board:formationMembers(p,u.formation)},2);});}}
+function prepareRound(){for(const p of state.players){p.statuses={};p.effects={};p.skipUsed=0;p.consumeUsed=false;p.endlessShiftUsed=false;p.deadlandsAbsorbUsed=false;p.preventNextDamage=0;p.shatterproof=false;p.cascadeRemaining=0;p.board.slice().forEach(u=>{u.acted=false;u.extraActions=0;u.tempStr=0;u.tempHp=0;u.damageTakenThisRound=0;u.statuses={};if(u.faction==='Harvest')u.nourished=false;});syncDynamicHp(p);if(p.faction==='Continuum')shiftSequence(p,1);if(p.faction==='Harvest'){p.board.filter(x=>x.id==='HAR-006').forEach(o=>p.board.filter(x=>x.iid!==o.iid).slice(0,2).forEach(x=>addPermStats(x,0,1)));}if(p.faction==='Eliteborn')p.board.slice().forEach(u=>{const fs=formationSize(p,u);if((u.id==='ELI-008'&&fs===4)||(u.id==='ELI-022'&&fs===3))distributeHeal({board:formationMembers(p,u.formation)},2);});}}
 function beginMulligan(i){if(state.winner!==null)return;if(i===0&&state.preparedRound!==state.round){prepareRound();state.preparedRound=state.round;}if(i>1)return finishMulligans();const p=state.players[i];state.active=i;if(p.ai){aiMulligan(p);return beginMulligan(i+1);}showMulligan(p,()=>beginMulligan(i+1));}
 function aiMulligan(p){drawToFive(p);const ret=p.hand.filter(c=>c.cost>8&&c.resource===1).slice(0,2);p.hand=p.hand.filter(c=>!ret.includes(c));ret.forEach(c=>{c.zone='deck';p.deck.push(c)});p.deck=shuffle(p.deck);drawToFive(p);}
 function showMulligan(p,done){choiceEyebrow.textContent=state.round===1?'Opening hand':`Round ${state.round}`;choiceTitle.textContent=`${p.name}: keep or return`;const sel=new Set;choiceBody.innerHTML=`<p class="player-sub">Return any cards, then refill to 5. Your final five generate resources.</p><div class="mulligan-grid">${p.hand.map(c=>`<button class="mulligan-card" data-iid="${c.iid}"><strong>${esc(c.name)}</strong><div class="mini">Cost ${c.cost} • +${c.resource} RES</div></button>`).join('')}</div>`;choiceActions.innerHTML='<button class="btn primary" id="keepHandBtn">Confirm Hand</button>';choiceModal.classList.add('open');choiceBody.querySelectorAll('[data-iid]').forEach(b=>b.onclick=()=>{sel.has(b.dataset.iid)?sel.delete(b.dataset.iid):sel.add(b.dataset.iid);b.classList.toggle('return');});$('#keepHandBtn').onclick=()=>{const ret=p.hand.filter(c=>sel.has(c.iid));p.hand=p.hand.filter(c=>!sel.has(c.iid));ret.forEach(c=>{c.zone='deck';p.deck.push(c)});p.deck=shuffle(p.deck);drawToFive(p);closeChoice();done();};}
@@ -189,19 +189,111 @@ if(state.flags.has('crystalMajor')&&state.round%2===0)polarity();if(state.flags.
 function polarity(){state.log.push('<strong>Crystal Isle: Polarity Shift.</strong>');for(const p of state.players)for(const u of p.board.slice()){const s=getStr(u),hp=u.currentHp;u.baseStr=hp;u.baseHp=s;u.permStr=u.permHp=u.tempStr=u.tempHp=0;u.currentHp=s;if(u.currentHp<=0){state.polarityDeaths[u.owner]++;destroyUnit(u,null,{reason:'polarity'});}}}
 function checkWinner(){if(!state)return;const a=state.players[0].health<=0,b=state.players[1].health<=0;if(a&&b)endGame('draw','Both players reached 0.');else if(a)endGame(1,'Player 1 reached 0.');else if(b)endGame(0,'Player 2 reached 0.');}
 function endGame(w,why){if(state.winner!==null)return;state.winner=w;state.phase='gameover';state.log.push(`<strong>${w==='draw'?'DRAW':state.players[w].name+' WINS'}.</strong> ${why}`);render();}
-function offerDeadlandsEcho(i){const p=state.players[i];if(state.graveState.length)p.statuses.echoOffer=true;}
-function summonEcho(p,c){const cost=Math.max(1,Math.ceil(c.cost/2));if(p.resource<cost||p.board.length>=maxSlots(p))return;p.resource-=cost;const e=makeToken(p.index,`Echo: ${c.name}`,1,1,{id:c.id,echo:true,rules:c.rules,faction:c.faction});p.board.push(e);state.log.push(`${p.name} summons Grave Echo — ${c.name}.`);}
+function offerDeadlandsEcho(i){
+ const p=state.players[i];
+ if(!p||!state.flags.has('deadMajor')||!state.graveState.length)return false;
+ p.deadlandsEchoReady=true;
+ state.log.push(`<strong>Deadlands:</strong> ${p.name} may raise a Grave Echo from the shared Grave State.`);
+ return true;
+}
+function canUseDeadlandsEcho(p){
+ return !!(p&&state.phase==='placement'&&state.active===p.index&&state.flags.has('deadMajor')&&p.deadlandsEchoReady&&state.graveState.length&&p.board.length<maxSlots(p));
+}
+function summonEcho(p,c){
+ if(!p||!c||!canUseDeadlandsEcho(p)||!state.graveState.includes(c))return null;
+ state.graveState=state.graveState.filter(x=>x!==c);
+ const e=makeToken(p.index,`Echo: ${c.name}`,1,1,{id:c.id,echo:true,rules:c.rules,faction:c.faction});
+ e.echoSourceOwner=c.owner;
+ e.echoSourceIid=c.iid;
+ e.echoPrintedName=c.name;
+ e.echoPrintedCost=c.cost;
+ if(p.faction==='Eliteborn')ensureFormation(p,e,null);
+ p.board.push(e);
+ if(e.formation!=null)formationJoined(p,e.formation);
+ p.deadlandsEchoReady=false;
+ state.log.push(`<strong>Deadlands:</strong> ${p.name} raises ${c.name} as a 1/1 Grave Echo.`);
+ pushUIEvent?.('realm',p.name+' raises a Grave Echo',c.name);
+ queueBeat?.('GRAVE ECHO',c.name,'realm');
+ return e;
+}
+function useDeadlandsEcho(p,ai=false){
+ if(!canUseDeadlandsEcho(p))return false;
+ const finish=c=>{const e=summonEcho(p,c);if(!e)return false;state.selected=null;advancePlacement(p.index);return true;};
+ if(ai){
+  const c=[...state.graveState].sort((a,b)=>(b.cost||0)-(a.cost||0))[0];
+  return !!c&&finish(c);
+ }
+ showOptions('DEADLANDS — SHARED GRAVE STATE','Raise which creature as a 1/1 Grave Echo?',state.graveState.map(c=>({label:`${c.name} • ${c.faction} • Cost ${c.cost} • original P${c.owner+1}`,value:c.iid})),iid=>{const c=state.graveState.find(x=>x.iid===iid);if(c)finish(c);});
+ return true;
+}
+function canUseDeadlandsAbsorption(p){
+ if(!p||state.phase!=='placement'||state.active!==p.index||!state.flags.has('deadMinor')||p.deadlandsAbsorbUsed)return false;
+ if(!p.board.some(x=>x.echo))return false;
+ return p.hand.some(c=>c.type.includes('Creature')&&c.cost<=p.resource);
+}
+function removeEchoForAbsorption(p,e){
+ if(!p||!e||!e.echo||!p.board.includes(e))return false;
+ if(e.equip){e.equip.zone='discard';p.discard.push(e.equip);e.equip=null;}
+ if(Array.isArray(e.prisms))for(const a of e.prisms){const c=a.card||a;if(c){c.zone='discard';p.discard.push(c);}}
+ if(e.sigil){e.sigil.zone='discard';p.discard.push(e.sigil);e.sigil=null;}
+ if(e.growth?.card){e.growth.card.zone='discard';p.discard.push(e.growth.card);e.growth=null;}
+ p.board=p.board.filter(x=>x.iid!==e.iid);
+ e.zone='banished';p.banished.push(e);
+ return true;
+}
+function absorbDeadlandsEcho(p,e,c){
+ if(!p||!e||!c||!canUseDeadlandsAbsorption(p)||!e.echo||!p.board.includes(e)||!p.hand.includes(c)||!c.type.includes('Creature')||c.cost>p.resource)return false;
+ const echoStr=getStr(e),echoHp=Math.max(0,e.currentHp),fid=e.formation;
+ p.resource-=c.cost;
+ p.hand=p.hand.filter(x=>x.iid!==c.iid);
+ removeEchoForAbsorption(p,e);
+ c.zone='board';
+ c.baseStr=c.str??0;c.baseHp=c.hp??1;c.permStr=(c.permStr||0)+echoStr;c.permHp=(c.permHp||0)+echoHp;
+ c.tempStr=0;c.tempHp=0;c.currentHp=c.baseHp+c.permHp;c.acted=false;c.extraActions=0;c.nourished=true;
+ if(p.faction==='Eliteborn'){
+  c.formation=fid??p.nextFormation++;
+ }
+ p.board.push(c);
+ onPlay(c,p);
+ if(c.formation!=null)formationJoined(p,c.formation);
+ p.deadlandsAbsorbUsed=true;
+ state.log.push(`<strong>Deadlands — Absorption:</strong> ${p.name} plays ${c.name} over ${e.name}; it absorbs +${echoStr} STR / +${echoHp} HP.`);
+ pushUIEvent?.('realm',p.name+' uses Absorption',c.name+` gains +${echoStr}/+${echoHp}`);
+ queueBeat?.('ABSORPTION',c.name,'realm');
+ syncDynamicHp(p);
+ return true;
+}
+function useDeadlandsAbsorption(p,ai=false){
+ if(!canUseDeadlandsAbsorption(p))return false;
+ const echoes=p.board.filter(x=>x.echo),creatures=p.hand.filter(c=>c.type.includes('Creature')&&c.cost<=p.resource);
+ const finish=(e,c)=>{if(!absorbDeadlandsEcho(p,e,c))return false;state.selected=null;advancePlacement(p.index);return true;};
+ if(ai){
+  const e=[...echoes].sort((a,b)=>(getStr(b)+b.currentHp)-(getStr(a)+a.currentHp))[0];
+  const c=[...creatures].sort((a,b)=>(b.cost-a.cost)||((b.str||0)+(b.hp||0)-(a.str||0)-(a.hp||0)))[0];
+  return !!(e&&c)&&finish(e,c);
+ }
+ showOptions('DEADLANDS — ABSORPTION','Choose the Grave Echo to absorb.',echoes.map(e=>({label:`${e.name} • current ${getStr(e)}/${e.currentHp}`,value:e.iid})),eid=>{
+  const e=p.board.find(x=>x.iid===eid&&x.echo);if(!e)return;
+  showOptions('DEADLANDS — ABSORPTION','Play which creature over it at normal cost?',creatures.map(c=>({label:`${c.name} • Cost ${c.cost} • ${c.str||0}/${c.hp||0}`,value:c.iid})),cid=>{const c=p.hand.find(x=>x.iid===cid);if(c)finish(e,c);});
+ });
+ return true;
+}
+function deadlandsGraveHTML(){
+ if(!state?.flags?.has('deadMajor'))return '';
+ const cards=state.graveState||[];
+ return `<section class="signature-zone grave-zone"><div class="zone-label"><span>SHARED GRAVE STATE</span><span>${cards.length}</span></div><div class="grave-row">${cards.length?cards.map(c=>`<div class="grave-chip"><strong>${esc(c.name)}</strong><span>${esc(c.faction)} • original P${c.owner+1}</span></div>`).join(''):'<span class="player-sub">The grave is empty.</span>'}</div></section>`;
+}
 function maybeAI(){if(!state||state.winner!==null)return;const p=state.players[state.active];if(!p?.ai)return;setTimeout(()=>{if(!state||state.winner!==null||state.active!==p.index)return;if(state.phase==='placement')aiPlacement(p);else if(state.phase==='combat')aiCombat(p);},120);}
 function aiPlacement(p){if(p.faction==='Harvest'&&p.passive==='Consume'&&!p.consumeUsed&&p.board.length>=2&&Math.random()<.12){if(useConsume(p,true)){state.active=1-p.index;render();maybeAI();return;}}if(p.faction==='Continuum'&&p.passive==='Skip Ahead'&&p.sequence>=3&&Math.random()<.35){if(useSkipAhead(p,true)){state.active=1-p.index;render();maybeAI();return;}}const a=p.hand.filter(c=>effectiveCost(p,c)<=p.resource&&(!c.type.includes('Creature')||p.board.length<maxSlots(p))&&(c.type!=='Equip'||p.board.some(x=>!x.equip)));if(!a.length)return passPlacement(p.index);a.sort((x,y)=>(y.type.includes('Creature')?10:5)+(y.str||0)+(y.hp||0)*.5-y.cost*.2-((x.type.includes('Creature')?10:5)+(x.str||0)+(x.hp||0)*.5-x.cost*.2));playCard(p.index,a[0].iid,{ai:true});}
 function aiCombat(p){const r=readyUnits(p).sort((a,b)=>getStr(b)-getStr(a));if(!r.length)return passCombat(p.index);const a=r[0],e=state.players[1-p.index],taunt=e.board.filter(unitHasTaunt);let t=taunt[0]||e.board.filter(x=>x.currentHp<=getStr(a)).sort((x,y)=>x.currentHp-y.currentHp)[0]||null;if(!t&&e.board.length&&Math.random()<.45)t=chooseEnemy(p.index);combatAttack(a,t);}
-function realmDescription(){if(state.realm==='Crystal Isle')return 'Every 2 rounds: Polarity Shift. Five Polarity deaths loses.';if(state.realm==='Blood Moon')return 'Round 5+: destroyed creatures are banished. Initiative gets first two combat actions.';if(state.realm==='Upper Strata')return 'End round: 1 Health per 2 unspent RES. 3+ creatures redirect half direct combat damage.';if(state.realm==='Deadlands')return 'Destroyed creatures enter one shared Grave State.';return `Borrowed: ${state.borrowed.join(' + ')}.`;}
+function realmDescription(){if(state.realm==='Crystal Isle')return 'Every 2 rounds: Polarity Shift. Five Polarity deaths loses.';if(state.realm==='Blood Moon')return 'Round 5+: destroyed creatures are banished. Initiative gets first two combat actions.';if(state.realm==='Upper Strata')return 'End round: 1 Health per 2 unspent RES. 3+ creatures redirect half direct combat damage.';if(state.realm==='Deadlands')return 'Deaths enter the shared Grave State. A death grants its owner a Grave-Echo raise; Absorption may replace one Echo with a normally-paid creature once per round.';return `Borrowed: ${state.borrowed.join(' + ')}.`;}
 function cardHTML(c,zone,hidden=false){if(hidden)return `<div class="card-back">CARD</div>`;const cr=c.type.includes('Creature'),p=state.players[c.owner],sel=state.selected?.iid===c.iid?' selected':'',acted=c.acted&&c.extraActions<=0?' acted':'',legend=c.legendary?' legendary':'';const badges=cr?`<span class="badge str">STR ${getStr(c)}</span><span class="badge hp">HP ${c.currentHp}/${getMaxHp(c)}</span>${c.faction==='Living Geodes'?`<span class="badge pressure">P ${c.pressure}/${c.cracked?c.fold:c.crack}</span>${c.cracked?'<span class="badge cracked">CRACKED</span>':''}`:''}${isBloodied(c)?'<span class="badge danger">BLOODIED</span>':''}${c.formation!=null?`<span class="badge">F${formationSize(p,c)}</span>`:''}${c.equip?`<span class="badge">EQ ${esc(c.equip.name)}</span>`:''}`:'';return `<article class="card ${CLASSES[c.faction]}${sel}${acted}${legend}" data-card="1" data-iid="${c.iid}" data-owner="${c.owner}" data-zone="${zone}"><div class="card-head"><div class="card-name">${esc(c.name)}</div><div class="card-meta"><span>${esc(c.type)}</span><span>${esc(c.id)}</span></div></div><span class="card-cost">${c.cost}</span><div class="card-body"><div class="card-rules">${esc(c.rules)}</div><div class="card-stats">${badges}</div></div>${zone==='hand'?`<span class="card-resource">+${c.resource} RES</span>`:''}</article>`;}
 function playerHTML(p){const visible=state.mode==='hotseat'?state.active===p.index:p.index===0,slots=[];for(let i=0;i<7;i++){const u=p.board[i],locked=i>=maxSlots(p);slots.push(`<div class="slot ${u?'':'empty'}" ${locked?'style="opacity:.25"':''}>${u?cardHTML(u,'board'):''}</div>`);}return `<section class="player-zone${state.active===p.index?' active':''}"><header class="player-header"><div class="player-id"><span class="faction-dot" style="background:${COLORS[p.faction]}"></span><div><div class="player-name">${esc(p.name)} — ${esc(p.faction)}</div><div class="player-sub">${esc(p.passive)}</div></div></div><div class="statbar"><span class="stat">♥ <b>${p.health}</b></span><span class="stat">RES <b>${p.resource}</b>/${p.resourceStart}</span>${p.faction==='Continuum'?`<span class="stat">SEQ <b>${p.sequence}</b> ${p.passive==='Loop Back'?(p.sequenceDir>0?'→':'←'):''}</span>`:''}<span class="stat">Deck <b>${p.deck.length}</b></span></div></header><div class="board-wrap"><div class="zone-label"><span>Battlefield</span><span>${p.board.length}/${maxSlots(p)}</span></div><div class="board-grid">${slots.join('')}</div><div class="zone-label"><span>Traps</span><span>${p.traps.length}</span></div><div class="trap-row">${p.traps.map(t=>`<button class="trap-chip">${visible?esc(t.name):'FACE-DOWN TRAP'}</button>`).join('')||'<span class="player-sub">No traps</span>'}</div></div><div class="hand-wrap"><div class="zone-label"><span>${visible?'Hand':'Hidden Hand'}</span><span>${p.hand.length}</span></div><div class="hand">${visible?p.hand.map(c=>cardHTML(c,'hand')).join(''):`<div class="card-back">${p.hand.length} CARDS</div>`}</div></div></section>`;}
 function getSelected(){if(!state?.selected)return null;for(const p of state.players){const c=[...p.board,...p.hand].find(x=>x.iid===state.selected.iid);if(c)return c;}return null;}
-function controlsHTML(){if(state.winner!==null)return `<section class="controls"><div class="action-panel"><strong>${state.winner==='draw'?'DRAW':state.players[state.winner].name+' WINS'}</strong><button class="btn primary" data-action="new">New Match</button></div></section>`;const p=state.players[state.active];let a='';if(!p.ai&&state.phase==='placement'){a+='<button class="btn" data-action="pass-placement">Pass Placement</button>';if(p.faction==='Continuum'&&p.passive==='Skip Ahead'&&p.hand.length)a+='<button class="btn good" data-action="skip">Skip Ahead</button>';if(p.faction==='Harvest'&&p.passive==='Consume'&&!p.consumeUsed&&p.board.length>=2)a+='<button class="btn good" data-action="consume">Consume</button>';if(state.realm==='The Endless'&&!p.endlessShiftUsed)a+='<button class="btn" data-action="endless">Endless Shift</button>';}if(!p.ai&&state.phase==='combat'){a+='<button class="btn" data-action="pass-combat">Burn / Pass</button>';if(state.selected?.owner===p.index)a+='<button class="btn danger" data-action="attack-player">Attack Player</button>';}const c=getSelected();return `<section class="controls"><div class="action-panel">${a||'<span class="player-sub">Choose a card or action.</span>'}</div><div class="inspector"><h3>${c?esc(c.name):'v0.8 test controls'}</h3><p>${c?esc(c.rules):'Eliteborn: tap a battlefield creature first, then play a Creature to join its Formation or an Equip to attach it. No selected creature = new Formation.'}</p>${c?.type.includes('Creature')?'<div class="referee-grid"><button class="btn small" data-ref="damage">Damage 1</button><button class="btn small" data-ref="heal">Heal 1</button><button class="btn small" data-ref="pressure">+1 Shield</button><button class="btn small danger" data-ref="destroy">Destroy</button></div>':''}</div></section>`;}
-function render(){if(!state){gameRoot.innerHTML='<div class="prototype-note">Start a match to enter REALMS.</div>';return;}gameRoot.innerHTML=`<section class="realm-banner"><div><div class="eyebrow">Round ${state.round} • ${state.players[state.initiative].name} Initiative</div><strong>${esc(state.realm)}</strong></div><div class="realm-effects">${esc(realmDescription())}</div></section>${playerHTML(state.players[1])}${playerHTML(state.players[0])}${controlsHTML()}<section class="log-panel"><div class="zone-label"><span>Match Log</span><span>${state.log.length}</span></div><div class="log">${[...state.log].reverse().map(x=>`<div class="log-line">${x}</div>`).join('')}</div></section>`;wire();}
+function controlsHTML(){if(state.winner!==null)return `<section class="controls"><div class="action-panel"><strong>${state.winner==='draw'?'DRAW':state.players[state.winner].name+' WINS'}</strong><button class="btn primary" data-action="new">New Match</button></div></section>`;const p=state.players[state.active];let a='';if(!p.ai&&state.phase==='placement'){a+='<button class="btn" data-action="pass-placement">Pass Placement</button>';if(p.faction==='Continuum'&&p.passive==='Skip Ahead'&&p.hand.length)a+='<button class="btn good" data-action="skip">Skip Ahead</button>';if(p.faction==='Harvest'&&p.passive==='Consume'&&!p.consumeUsed&&p.board.length>=2)a+='<button class="btn good" data-action="consume">Consume</button>';if(canUseDeadlandsEcho(p))a+='<button class="btn good" data-action="grave-echo">Raise Grave Echo</button>';if(canUseDeadlandsAbsorption(p))a+='<button class="btn good" data-action="dead-absorb">Absorb Echo</button>';if(state.realm==='The Endless'&&!p.endlessShiftUsed)a+='<button class="btn" data-action="endless">Endless Shift</button>';}if(!p.ai&&state.phase==='combat'){a+='<button class="btn" data-action="pass-combat">Burn / Pass</button>';if(state.selected?.owner===p.index)a+='<button class="btn danger" data-action="attack-player">Attack Player</button>';}const c=getSelected();return `<section class="controls"><div class="action-panel">${a||'<span class="player-sub">Choose a card or action.</span>'}</div><div class="inspector"><h3>${c?esc(c.name):'v0.8 test controls'}</h3><p>${c?esc(c.rules):'Eliteborn: tap a battlefield creature first, then play a Creature to join its Formation or an Equip to attach it. No selected creature = new Formation.'}</p>${c?.type.includes('Creature')?'<div class="referee-grid"><button class="btn small" data-ref="damage">Damage 1</button><button class="btn small" data-ref="heal">Heal 1</button><button class="btn small" data-ref="pressure">+1 Shield</button><button class="btn small danger" data-ref="destroy">Destroy</button></div>':''}</div></section>`;}
+function render(){if(!state){gameRoot.innerHTML='<div class="prototype-note">Start a match to enter REALMS.</div>';return;}gameRoot.innerHTML=`<section class="realm-banner"><div><div class="eyebrow">Round ${state.round} • ${state.players[state.initiative].name} Initiative</div><strong>${esc(state.realm)}</strong></div><div class="realm-effects">${esc(realmDescription())}</div></section>${deadlandsGraveHTML()}${playerHTML(state.players[1])}${playerHTML(state.players[0])}${controlsHTML()}<section class="log-panel"><div class="zone-label"><span>Match Log</span><span>${state.log.length}</span></div><div class="log">${[...state.log].reverse().map(x=>`<div class="log-line">${x}</div>`).join('')}</div></section>`;wire();}
 function wire(){document.querySelectorAll('[data-card="1"]').forEach(el=>el.onclick=()=>{const p=state.players[+el.dataset.owner],c=[...p.hand,...p.board].find(x=>x.iid===el.dataset.iid);if(!c)return;if(el.dataset.zone==='hand'&&state.phase==='placement'&&state.active===p.index&&!p.ai){playCard(p.index,c.iid);return;}if(el.dataset.zone==='board'&&state.phase==='combat'&&c.owner!==state.active&&state.selected?.owner===state.active){const a=getSelected();if(a)combatAttack(a,c);return;}state.selected={iid:c.iid,owner:c.owner,zone:el.dataset.zone};render();});document.querySelectorAll('[data-action]').forEach(b=>b.onclick=()=>handleAction(b.dataset.action));document.querySelectorAll('[data-ref]').forEach(b=>b.onclick=()=>handleRef(b.dataset.ref));}
-function handleAction(x){const p=state.players[state.active];if(x==='new')setupModal.classList.add('open');if(x==='pass-placement')passPlacement(p.index);if(x==='pass-combat')passCombat(p.index);if(x==='attack-player'){const a=getSelected();if(a)combatAttack(a,null);}if(x==='skip')useSkipAhead(p);if(x==='consume')useConsume(p);if(x==='endless')useEndlessShift(p);}
+function handleAction(x){const p=state.players[state.active];if(x==='new')setupModal.classList.add('open');if(x==='pass-placement')passPlacement(p.index);if(x==='pass-combat')passCombat(p.index);if(x==='attack-player'){const a=getSelected();if(a)combatAttack(a,null);}if(x==='skip')useSkipAhead(p);if(x==='consume')useConsume(p);if(x==='grave-echo')useDeadlandsEcho(p);if(x==='dead-absorb')useDeadlandsAbsorption(p);if(x==='endless')useEndlessShift(p);}
 function handleRef(x){const c=getSelected();if(!c||!c.type.includes('Creature'))return;if(x==='damage')applyDamage(c,1);if(x==='heal')healUnit(c,1,'Ref');if(x==='pressure')gainPressure(c,1,'Ref');if(x==='destroy')destroyUnit(c);render();}
 function useEndlessShift(p){if(p.endlessShiftUsed||!p.hand.length)return;showOptions('The Endless','Banish one card, draw one.',p.hand.map(c=>({label:c.name,value:c.iid})),id=>{const c=p.hand.find(x=>x.iid===id);p.hand=p.hand.filter(x=>x.iid!==id);c.zone='banished';p.banished.push(c);drawOne(p);p.endlessShiftUsed=true;render();});}
 function showOptions(eyebrow,title,opts,pick,{cancel=true}={}){choiceEyebrow.textContent=eyebrow;choiceTitle.textContent=title;choiceBody.innerHTML=`<div class="choice-list">${opts.map(o=>`<button class="choice-option" data-val="${esc(o.value)}">${esc(o.label)}</button>`).join('')}</div>`;choiceActions.innerHTML=cancel?'<button class="btn ghost" id="choiceCancelBtn">Cancel</button>':'';choiceModal.classList.add('open');choiceBody.querySelectorAll('[data-val]').forEach(b=>b.onclick=()=>{const v=b.dataset.val;closeChoice();pick(v);});if($('#choiceCancelBtn'))$('#choiceCancelBtn').onclick=closeChoice;}
@@ -616,6 +708,8 @@ buildPlayer=function(index,faction,passive,ai=false){
   p.flux=[]; p.sequenceHistory=[]; p.sequenceCompleteRound=-1;
   p.freezeUntilRound=0; p.lingerHighUntilRound=0;
   p.prismDiscount=0;
+  p.deadlandsEchoReady=false;
+  p.deadlandsAbsorbUsed=false;
   return p;
 };
 const _v09StartGame=startGame;
@@ -960,7 +1054,7 @@ shiftSequence=function(p,steps=1,{towardZero=false,causer=null}={}){
 
 prepareRound=function(){
   for(const p of state.players){
-    p.statuses={};p.effects={};p.skipUsed=0;p.consumeUsed=false;p.endlessShiftUsed=false;p.preventNextDamage=0;p.shatterproof=false;p.cascadeRemaining=0;
+    p.statuses={};p.effects={};p.skipUsed=0;p.consumeUsed=false;p.endlessShiftUsed=false;p.deadlandsAbsorbUsed=false;p.preventNextDamage=0;p.shatterproof=false;p.cascadeRemaining=0;
     p.board.slice().forEach(u=>{u.acted=false;u.extraActions=0;u.tempStr=0;u.tempHp=0;u.damageTakenThisRound=0;u.statuses={};if(u.faction==='Harvest')u.nourished=false;});
     syncDynamicHp(p);
     if(p.faction==='Continuum'){p.sequenceHistory=[p.sequence];p.flux.forEach(x=>x.fluxArmedAt=0);shiftSequence(p,1);}
@@ -1120,6 +1214,8 @@ playCard=function(i,iid,opts={}){
 };
 
 aiPlacement=function(p){
+  if(canUseDeadlandsEcho(p)){if(useDeadlandsEcho(p,true)){render();maybeAI();return;}}
+  if(canUseDeadlandsAbsorption(p)){if(useDeadlandsAbsorption(p,true)){render();maybeAI();return;}}
   if(p.faction==='Harvest'&&p.passive==='Consume'&&!p.consumeUsed&&p.board.length>=2&&Math.random()<.12){if(useConsume(p,true)){state.active=1-p.index;render();maybeAI();return;}}
   if(p.faction==='Continuum'&&p.passive==='Skip Ahead'&&p.sequence>=3&&Math.random()<.35){if(useSkipAhead(p,true)){state.active=1-p.index;render();maybeAI();return;}}
   const a=p.hand.filter(c=>{
@@ -1195,5 +1291,5 @@ handleRef=function(x){
 };
 
 
-window.REALMS_DEBUG={getState:()=>state,startGame,playCard,combatAttack,gainPressure,shiftSequence,addShield,recipeMissing,checkFlux};populateSetup();render();
+window.REALMS_DEBUG={getState:()=>state,startGame,playCard,combatAttack,gainPressure,shiftSequence,addShield,recipeMissing,checkFlux,deadlands:{canRaise:canUseDeadlandsEcho,raise:summonEcho,useRaise:useDeadlandsEcho,canAbsorb:canUseDeadlandsAbsorption,absorb:absorbDeadlandsEcho,useAbsorb:useDeadlandsAbsorption,grave:()=>state?.graveState||[]}};populateSetup();render();
 })();

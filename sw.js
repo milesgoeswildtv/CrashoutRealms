@@ -1,4 +1,4 @@
-const CACHE='realms-v09-signature-systems-alpha2';
+const CACHE='realms-v09-deadlands-alpha3';
 const SHELL=[
   './',
   './index.html',
