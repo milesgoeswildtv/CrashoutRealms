@@ -1455,47 +1455,32 @@ const _v09ResolveSpell=resolveSpell;
 resolveSpell=function(c,p){
   if(c.id==='GEO-027'){
     const seen=p.deck.splice(Math.max(0,p.deck.length-4),4);
-    const finishBottomOrder=(rest,order=[])=>{
+    const putRestOnBottom=(rest,order=[])=>{
       if(!rest.length){
         p.deck=[...order,...p.deck];
-        delete c.statuses.searchSeen;
-        render();maybeAI();return;
+        endPendingChoice();
+        render();maybeAI();
+        return;
       }
       showOptions('PRISMATIC SEARCH',`Choose the bottom card first • ${rest.length} remaining`,rest.map(x=>({
         label:`${x.name} • ${x.type}`,
         value:x.iid
       })),iid=>{
         const x=rest.find(y=>y.iid===iid);
-        if(!x)return;
-        finishBottomOrder(rest.filter(y=>y.iid!==iid),[...order,x]);
+        if(x)putRestOnBottom(rest.filter(y=>y.iid!==iid),[...order,x]);
       },{cancel:false});
     };
     const finishWithPrism=hit=>{
       const rest=seen.filter(x=>x!==hit);
       if(hit){hit.zone='hand';p.hand.push(hit);}
+      rest.forEach(x=>x.zone='deck');
       if(p.ai){
-        rest.forEach(x=>x.zone='deck');
         p.deck=[...rest,...p.deck];
         return;
       }
-      rest.forEach(x=>x.zone='deck');
+      if(!rest.length)return;
       beginPendingChoice();
-      if(!rest.length){endPendingChoice();render();maybeAI();return;}
-      const originalFinish=finishBottomOrder;
-      const wrapped=(cards,order=[])=>{
-        if(!cards.length){
-          p.deck=[...order,...p.deck];
-          endPendingChoice();render();maybeAI();return;
-        }
-        showOptions('PRISMATIC SEARCH',`Choose the bottom card first • ${cards.length} remaining`,cards.map(x=>({
-          label:`${x.name} • ${x.type}`,
-          value:x.iid
-        })),iid=>{
-          const x=cards.find(y=>y.iid===iid);
-          if(x)wrapped(cards.filter(y=>y.iid!==iid),[...order,x]);
-        },{cancel:false});
-      };
-      wrapped(rest,[]);
+      putRestOnBottom(rest,[]);
     };
     const prisms=seen.filter(x=>x.type==='Prism');
     if(p.ai){finishWithPrism(prisms[0]||null);return;}
