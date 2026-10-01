@@ -907,6 +907,21 @@ function geodeRecipeText(u){
   if(u.cracked)return 'CRACKED';
   return (u.crackRecipe||[]).join(' + ')||'—';
 }
+function holdForHumanChoice(eyebrow,title,opts,pick){
+  if(!opts?.length)return false;
+  state.uiBusy=true;
+  gameRoot.classList.add('ui-busy');
+  showOptions(eyebrow,title,opts,value=>{
+    try{pick(value);}
+    finally{
+      state.uiBusy=false;
+      gameRoot.classList.remove('ui-busy');
+      render();
+      maybeAI();
+    }
+  },{cancel:false});
+  return true;
+}
 function triggerPrismFollowers(p){
   for(const u of p.board){
     if(u.faction!=='Living Geodes')continue;
@@ -924,7 +939,27 @@ function v09OnGeodeCrack(u){
   const p=state.players[u.owner];
   if(u.id==='GEO-001'){const e=chooseEnemy(u.owner);if(e)applyDamage(e,2,u);}
   if(u.id==='GEO-004')distributeHeal(p,3);
-  if(u.id==='GEO-006'){const e=state.players[1-u.owner].board;if(e.length)u.tempStr+=Math.min(4,Math.max(...e.map(x=>x.baseStr)));}
+  if(u.id==='GEO-006'){
+    const enemies=state.players[1-u.owner].board.slice();
+    const applyMirror=e=>{
+      if(!e||!state.players[1-u.owner].board.includes(e))return;
+      const printed=Math.max(0,e.str??e.baseStr??0);
+      const gain=Math.min(4,printed);
+      u.tempStr+=gain;
+      state.log.push(`Mirrorstone copies ${e.name}'s printed STR and gains +${gain} STR this round.`);
+    };
+    if(enemies.length){
+      if(p.ai){
+        const e=[...enemies].sort((a,b)=>(b.str??b.baseStr??0)-(a.str??a.baseStr??0))[0];
+        applyMirror(e);
+      }else{
+        holdForHumanChoice('MIRRORSTONE CRACK','Choose the enemy whose printed STR Mirrorstone copies.',enemies.map(e=>({
+          label:`${e.name} • printed STR ${e.str??e.baseStr??0}`,
+          value:e.iid
+        })),iid=>applyMirror(enemies.find(e=>e.iid===iid)));
+      }
+    }
+  }
   if(u.id==='GEO-007')healUnit(u,2,'Deepcore');
   if(u.id==='GEO-008')u.extraActions++;
   if(u.id==='GEO-009')drawOne(p);
@@ -1248,6 +1283,36 @@ beginCombat=function(){
 };
 
 const _v09EndRound=endRound;
+function resolveWorldheartEndRound(queue,done){
+  const item=queue.shift();
+  if(!item)return done();
+  const {p,u}=item;
+  if(!p.board.includes(u))return resolveWorldheartEndRound(queue,done);
+  const legal=p.board.filter(x=>x.iid!==u.iid&&x.faction==='Living Geodes');
+  if(!legal.length)return resolveWorldheartEndRound(queue,done);
+  const applyTarget=t=>{
+    if(t&&p.board.includes(t))healUnit(t,2,'Worldheart');
+    resolveWorldheartEndRound(queue,done);
+  };
+  if(p.ai){
+    const t=[...legal].sort((a,b)=>(a.currentHp/getMaxHp(a))-(b.currentHp/getMaxHp(b)))[0];
+    applyTarget(t);
+    return;
+  }
+  state.uiBusy=true;
+  gameRoot.classList.add('ui-busy');
+  showOptions('WORLDHEART','Choose another friendly Geode to restore 2 HP.',legal.map(t=>({
+    label:`${t.name} • HP ${t.currentHp}/${getMaxHp(t)}`,
+    value:t.iid
+  })),iid=>{
+    state.uiBusy=false;
+    gameRoot.classList.remove('ui-busy');
+    const t=legal.find(x=>x.iid===iid);
+    if(t&&p.board.includes(t))healUnit(t,2,'Worldheart');
+    render();
+    resolveWorldheartEndRound(queue,done);
+  },{cancel:false});
+}
 endRound=function(){
   for(const p of state.players){
     for(const u of [...p.board]){
@@ -1265,6 +1330,14 @@ endRound=function(){
         }
       }
     }
+  }
+  const worldhearts=[];
+  for(const p of state.players)for(const u of p.board){
+    if(u.id==='GEO-012'&&geodePrismAttachments(u).length>=2)worldhearts.push({p,u});
+  }
+  if(worldhearts.length){
+    resolveWorldheartEndRound(worldhearts,()=>_v09EndRound());
+    return;
   }
   return _v09EndRound();
 };
