@@ -1285,6 +1285,12 @@ spellTargetPlan=function(c,p){
   if(c.id==='GEO-028'||c.id==='GEO-029')return {kind:'single'};
   return _v09SpellTargetPlan(c,p);
 };
+const _v09SpellCandidates=spellCandidates;
+spellCandidates=function(c,p){
+  if(c.id==='GEO-028')return p.board.filter(x=>x.faction==='Living Geodes'&&!x.cracked&&Array.isArray(x.prisms)&&x.prisms.length>0);
+  if(c.id==='GEO-029')return p.board.filter(x=>x.faction==='Living Geodes'&&!x.cracked);
+  return _v09SpellCandidates(c,p);
+};
 const _v09ResolveSpell=resolveSpell;
 resolveSpell=function(c,p){
   if(c.id==='GEO-027'){
@@ -1294,16 +1300,24 @@ resolveSpell=function(c,p){
     return;
   }
   if(c.id==='GEO-028'){
-    const u=selectedFriendly(p)||chooseFriendly(p);
-    if(u?.faction==='Living Geodes'&&u.prisms.length){
-      const a=u.prisms[u.prisms.length-1],other=a.card.colors.find(x=>x!==a.chosenColor);
-      if(other){a.chosenColor=other;a.countsColors=[other];state.log.push(`${a.card.name} refracts to ${other}.`);if(!u.cracked&&recipeSatisfied(u))crackUnit(u,'Refract');}
+    const legal=spellCandidates(c,p),targetId=c.statuses?.castTargets?.[0];
+    const u=p.ai?(legal[0]||null):(legal.find(x=>x.iid===targetId)||null);
+    if(u){
+      const a=u.prisms[u.prisms.length-1],other=a?.card?.colors?.find(x=>x!==a.chosenColor);
+      if(other){
+        a.chosenColor=other;a.countsColors=[other];
+        state.log.push(`${a.card.name} refracts to ${other} on ${u.name}.`);
+        if(recipeSatisfied(u))crackUnit(u,'Refract');
+      }
     }
+    delete c.statuses.castTargets;
     return;
   }
   if(c.id==='GEO-029'){
-    const u=selectedFriendly(p)||chooseFriendly(p);
-    if(u?.faction==='Living Geodes'&&!u.cracked){healUnit(u,2,'Crystal Relay');u.statuses.doubleNextPrism=true;}
+    const legal=spellCandidates(c,p),targetId=c.statuses?.castTargets?.[0];
+    const u=p.ai?([...legal].sort((a,b)=>a.currentHp-b.currentHp)[0]||null):(legal.find(x=>x.iid===targetId)||null);
+    if(u){healUnit(u,2,'Crystal Relay');u.statuses.doubleNextPrism=true;}
+    delete c.statuses.castTargets;
     return;
   }
   return _v09ResolveSpell(c,p);
