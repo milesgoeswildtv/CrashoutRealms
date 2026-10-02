@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#080611">
+<title>REALMS Parallax Demo — Veil-Scriber Nyxaris</title>
+<style>
+:root{
+  color-scheme:dark;
+  --card-w:min(78vw,390px);
+  --card-h:calc(var(--card-w) * 1.4);
+  --rx:0deg; --ry:0deg; --px:0; --py:0;
+  --mx:50%; --my:50%; --depth:.82; --lift:0px;
+  --foil:.26; --glare:.62; --radius:27px;
+  --ink:#f7f4ff; --muted:#c6bdd3;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:#05040b;color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+body{
+  min-height:100vh;
+  overflow-x:hidden;
+  background:
+    radial-gradient(900px 620px at 50% 12%,rgba(123,70,255,.2),transparent 45%),
+    radial-gradient(680px 480px at 15% 80%,rgba(255,44,118,.1),transparent 50%),
+    linear-gradient(180deg,#090713,#05040a);
+}
+body:before{
+  content:"";position:fixed;inset:0;pointer-events:none;opacity:.26;
+  background:
+    radial-gradient(circle at 12% 18%,#fff 0 1px,transparent 1.7px),
+    radial-gradient(circle at 75% 12%,#fff 0 1px,transparent 1.7px),
+    radial-gradient(circle at 30% 70%,#fff 0 1px,transparent 1.7px),
+    radial-gradient(circle at 86% 74%,#fff 0 1px,transparent 1.7px);
+  background-size:250px 250px,290px 290px,310px 310px,270px 270px;
+}
+.page{min-height:100vh;display:grid;grid-template-columns:280px minmax(0,1fr) 240px;gap:20px;align-items:center;padding:20px}
+.panel{align-self:stretch;border:1px solid rgba(255,255,255,.11);border-radius:22px;background:rgba(9,9,18,.73);backdrop-filter:blur(18px);box-shadow:0 18px 46px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.05);padding:18px}
+.kicker{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#caaeff}
+h1{font-size:23px;line-height:1.04;margin:6px 0 10px}
+.copy,.small{font-size:13px;line-height:1.45;color:var(--muted)}
+.controls{display:grid;gap:16px}.group{display:grid;gap:9px;padding-top:13px;border-top:1px solid rgba(255,255,255,.075)}
+.group-title{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#d6c5ff}
+.row{display:flex;gap:8px}.row>*{flex:1}
+button{appearance:none;width:100%;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.035);color:#fff;border-radius:13px;padding:11px 12px;font:inherit;cursor:pointer;transition:.18s ease}
+button:hover{border-color:rgba(213,185,255,.45);transform:translateY(-1px)}
+button.active{background:linear-gradient(180deg,rgba(157,94,255,.28),rgba(98,47,188,.18));border-color:rgba(212,181,255,.58);box-shadow:0 0 22px rgba(156,98,255,.17)}
+.range-head{display:flex;justify-content:space-between;color:var(--muted);font-size:12px}
+input[type=range]{width:100%;appearance:none;height:6px;border-radius:999px;background:linear-gradient(90deg,rgba(164,105,255,.36),rgba(255,73,132,.38));outline:none}
+input[type=range]::-webkit-slider-thumb{appearance:none;width:22px;height:22px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff,#e7d8ff 36%,#9a7aff 74%);box-shadow:0 0 0 4px rgba(174,116,255,.14)}
+.stage-wrap{display:grid;place-items:center;min-height:calc(var(--card-h) + 120px);position:relative}
+.ring{position:absolute;width:min(88vw,760px);aspect-ratio:1;border-radius:50%;pointer-events:none;opacity:.7;background:radial-gradient(circle,transparent 0 52%,rgba(197,130,255,.28) 52.2% 52.7%,transparent 53.1%),radial-gradient(circle,transparent 0 67%,rgba(255,79,138,.22) 67.2% 67.7%,transparent 68.1%);filter:drop-shadow(0 0 24px rgba(175,98,255,.15))}
+.scene{width:min(94vw,800px);display:grid;place-items:center;perspective:1500px;perspective-origin:50% 42%;padding:32px 0 44px;outline:none;touch-action:pan-y}
+.card-flip{position:relative;width:var(--card-w);height:var(--card-h);transform-style:preserve-3d;transition:transform .62s cubic-bezier(.2,.8,.2,1)}
+.card-flip.flipped{transform:rotateY(180deg)}
+.card-tilt{position:absolute;inset:0;transform-style:preserve-3d;transform:translateZ(var(--lift)) rotateX(var(--rx)) rotateY(var(--ry));transition:transform .12s ease-out;will-change:transform}
+.face{position:absolute;inset:0;border-radius:var(--radius);overflow:hidden;transform-style:preserve-3d;backface-visibility:hidden;box-shadow:0 32px 82px rgba(0,0,0,.6),0 10px 30px rgba(104,57,230,.2)}
+.face.back{transform:rotateY(180deg)}
+.layer{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:inherit;pointer-events:none;will-change:transform}
+.deep{transform:translateZ(2px) translateX(calc(var(--px) * -11px * var(--depth))) translateY(calc(var(--py) * -11px * var(--depth))) scale(1.10);filter:brightness(.7) saturate(.95);opacity:.62}
+.bg{transform:translateZ(13px) translateX(calc(var(--px) * -7px * var(--depth))) translateY(calc(var(--py) * -7px * var(--depth))) scale(1.07)}
+.character{transform:translateZ(48px) translateX(calc(var(--px) * 16px * var(--depth))) translateY(calc(var(--py) * 16px * var(--depth))) scale(1.025)}
+.vfx{transform:translateZ(72px) translateX(calc(var(--px) * 25px * var(--depth))) translateY(calc(var(--py) * 25px * var(--depth))) scale(1.04);mix-blend-mode:screen;filter:saturate(1.14) brightness(1.1)}
+.frame{transform:translateZ(88px) translateX(calc(var(--px) * 5px * var(--depth))) translateY(calc(var(--py) * 5px * var(--depth)))}
+.foil,.glare,.rim{position:absolute;inset:0;border-radius:inherit;pointer-events:none}
+.foil{transform:translateZ(96px);opacity:var(--foil);mix-blend-mode:screen;background:linear-gradient(115deg,transparent 0%,rgba(255,255,255,.05) 16%,rgba(198,112,255,.25) 29%,rgba(82,145,255,.17) 41%,rgba(255,86,146,.23) 57%,rgba(255,255,255,.06) 74%,transparent 100%),radial-gradient(circle at var(--mx) var(--my),rgba(255,255,255,.34),rgba(220,180,255,.12) 13%,transparent 43%)}
+.glare{transform:translateZ(99px);opacity:var(--glare);mix-blend-mode:screen;background:radial-gradient(circle at var(--mx) var(--my),rgba(255,255,255,.78) 0%,rgba(255,255,255,.18) 7%,rgba(251,210,247,.1) 14%,transparent 29%)}
+.rim{transform:translateZ(101px);border:1px solid rgba(255,255,255,.16);box-shadow:inset 0 0 0 1px rgba(255,255,255,.08),inset 0 0 28px rgba(255,255,255,.05),0 0 24px rgba(196,121,255,.13)}
+.back-img{transform:translateZ(8px) scale(1.015)}
+.standard{--foil:.18;--glare:.55}.foil-finish{--foil:.34;--glare:.66}.holo{--foil:.48;--glare:.76}.legendary{--foil:.42;--glare:.73}
+.legendary .foil{background:linear-gradient(115deg,transparent 0%,rgba(255,222,145,.08) 17%,rgba(255,234,164,.27) 30%,rgba(255,162,99,.18) 43%,rgba(255,238,186,.28) 58%,rgba(255,255,255,.06) 74%,transparent 100%),radial-gradient(circle at var(--mx) var(--my),rgba(255,249,220,.31),rgba(255,212,136,.15) 14%,transparent 43%)}
+.exploded .deep{transform:translateZ(1px) translateX(calc(var(--px) * -11px * var(--depth) - 38px)) translateY(calc(var(--py) * -11px * var(--depth) - 16px)) scale(1.10)}
+.exploded .bg{transform:translateZ(12px) translateX(calc(var(--px) * -7px * var(--depth) - 20px)) translateY(calc(var(--py) * -7px * var(--depth) - 7px)) scale(1.07)}
+.exploded .character{transform:translateZ(48px) translateX(calc(var(--px) * 16px * var(--depth) + 14px)) translateY(calc(var(--py) * 16px * var(--depth) + 2px)) scale(1.025)}
+.exploded .vfx{transform:translateZ(72px) translateX(calc(var(--px) * 25px * var(--depth) + 34px)) translateY(calc(var(--py) * 25px * var(--depth) - 8px)) scale(1.04)}
+.exploded .frame,.exploded .foil,.exploded .glare,.exploded .rim{transform:translateZ(96px) translateX(56px) translateY(17px)}
+.caption{margin-top:8px;text-align:center;font-size:12px;line-height:1.45;color:var(--muted)}
+.caption strong{color:#fff}
+.layers{display:grid;gap:10px}.layer-card{border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:10px;background:rgba(255,255,255,.025)}
+.layer-card b{font-size:12px}.z{float:right;color:#bfa5ff;font-size:11px}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:7px;background:#b079ff;box-shadow:0 0 12px rgba(176,121,255,.55)}
+.status{font-size:12px;color:#8fe7bb}.status:before{content:"●";margin-right:7px}
+@media(max-width:1050px){.page{grid-template-columns:1fr;align-items:start}.stage-wrap{order:1;min-height:auto}.controls{order:2}.info{order:3}:root{--card-w:min(86vw,420px)}.panel{align-self:auto}}
+@media(prefers-reduced-motion:reduce){.card-flip,.card-tilt{transition:none!important}}
+</style>
+</head>
+<body>
+<main class="page">
+  <aside class="panel controls">
+    <div>
+      <div class="kicker">REALMS / Parallax Demo</div>
+      <h1>Veil-Scriber Nyxaris</h1>
+      <div class="copy">True separated source layers: environment, Nyxaris, spell VFX, frame, foil/glare, and the REALMS back.</div>
+    </div>
+
+    <div class="group">
+      <div class="group-title">View</div>
+      <div class="row"><button id="flipBtn">Flip Card</button><button id="resetBtn">Reset</button></div>
+      <button id="explodeBtn">Explode Layers</button>
+    </div>
+
+    <div class="group">
+      <div class="group-title">Depth</div>
+      <div class="range-head"><span>Flat</span><strong id="depthValue">82%</strong><span>Deep</span></div>
+      <input id="depthSlider" type="range" min="0" max="100" value="82">
+    </div>
+
+    <div class="group">
+      <div class="group-title">Finish</div>
+      <div class="row"><button class="finish active" data-finish="standard">Standard</button><button class="finish" data-finish="foil-finish">Foil</button></div>
+      <div class="row"><button class="finish" data-finish="holo">Holographic</button><button class="finish" data-finish="legendary">Legendary</button></div>
+    </div>
+
+    <div class="group">
+      <div class="small"><b>Touch:</b> drag across the card. Vertical page scrolling is preserved.</div>
+      <div class="small"><b>Keyboard:</b> arrows tilt, Enter/Space flips, Home resets, E explodes, 1-4 change finish.</div>
+    </div>
+  </aside>
+
+  <section class="stage-wrap">
+    <div class="ring"></div>
+    <div class="scene" id="scene" tabindex="0">
+      <div class="card-flip standard" id="card">
+        <div class="card-tilt">
+          <div class="face front">
+            <img class="layer deep" src="https://pikaso.cdnpk.net/private/production/5619620145/3674741082.png?token=exp=1791331200~hmac=287353910252d06005a33fafcc9b7cb9c69d61329548e84ad360da711603054d" alt="">
+            <img class="layer bg" src="https://pikaso.cdnpk.net/private/production/5619620145/3674741082.png?token=exp=1791331200~hmac=287353910252d06005a33fafcc9b7cb9c69d61329548e84ad360da711603054d" alt="Moonlit gothic citadel">
+            <img class="layer character" src="https://pikaso.cdnpk.net/private/production/5619621039/3674741502.png?token=exp=1791331200~hmac=d66c753346eaf2b840b5811e59d1c1d6bcbce88180cb7b3800631b3910694c8d" alt="Veil-Scriber Nyxaris">
+            <img class="layer vfx" src="https://pikaso.cdnpk.net/private/production/5619621837/3674741892.png?token=exp=1791331200~hmac=c781d4ec45e1e231dab9af8cea1913c42cc5eddf699c7c83388cf9a5cd9db7d9" alt="">
+            <img class="layer frame" src="https://pikaso.cdnpk.net/private/production/5619622408/3674742182.png?token=exp=1791331200~hmac=932928100b8e60875bf6b9caf0aec2905b1897e3cc276474ba12944a62e2d213" alt="">
+            <div class="foil"></div><div class="glare"></div><div class="rim"></div>
+          </div>
+          <div class="face back">
+            <img class="layer back-img" src="https://pikaso.cdnpk.net/private/production/5619623051/3674742452.jpg?token=exp=1791331200~hmac=e7b397fdd36c2712ab3b1b1e51e578fdc6d1b401e9ba3c3ccc35291370ee1499" alt="REALMS card back">
+            <div class="foil"></div><div class="glare"></div><div class="rim"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="caption"><strong>Move over the card slowly.</strong> The citadel should lag behind while Nyxaris and the magic advance toward you.</div>
+  </section>
+
+  <aside class="panel info">
+    <div class="kicker">Live layer stack</div>
+    <div class="status">Interactive runtime active</div>
+    <div class="layers">
+      <div class="layer-card"><span class="dot"></span><b>Environment</b><span class="z">Z 13</span><div class="small">Moves opposite the subject.</div></div>
+      <div class="layer-card"><span class="dot"></span><b>Nyxaris</b><span class="z">Z 48</span><div class="small">Transparent character plane.</div></div>
+      <div class="layer-card"><span class="dot"></span><b>Spell VFX</b><span class="z">Z 72</span><div class="small">Fastest art displacement.</div></div>
+      <div class="layer-card"><span class="dot"></span><b>Frame</b><span class="z">Z 88</span><div class="small">Print plane stays restrained.</div></div>
+      <div class="layer-card"><span class="dot"></span><b>Foil / glare</b><span class="z">Z 96+</span><div class="small">Tracks pointer lighting.</div></div>
+    </div>
+  </aside>
+</main>
+
+<script>
+(function(){
+  var root=document.documentElement;
+  var scene=document.getElementById('scene');
+  var card=document.getElementById('card');
+  var flipBtn=document.getElementById('flipBtn');
+  var resetBtn=document.getElementById('resetBtn');
+  var explodeBtn=document.getElementById('explodeBtn');
+  var depthSlider=document.getElementById('depthSlider');
+  var depthValue=document.getElementById('depthValue');
+  var finishes=Array.prototype.slice.call(document.querySelectorAll('.finish'));
+  var reduced=window.matchMedia('(prefers-reduced-motion: reduce)');
+  var s={tx:0,ty:0,cx:0,cy:0,depth:.82,down:false,flipped:false,exploded:false,raf:0,startX:0,startY:0,moved:false,reduced:reduced.matches};
+
+  function setFinish(name){
+    ['standard','foil-finish','holo','legendary'].forEach(function(n){card.classList.remove(n)});
+    card.classList.add(name);
+    finishes.forEach(function(b){b.classList.toggle('active',b.getAttribute('data-finish')===name)});
+  }
+  function setFlip(on){
+    s.flipped=!!on;card.classList.toggle('flipped',s.flipped);
+    flipBtn.classList.toggle('active',s.flipped);
+    flipBtn.textContent=s.flipped?'Show Front':'Flip Card';
+  }
+  function setExploded(on){
+    s.exploded=!!on;card.classList.toggle('exploded',s.exploded);
+    explodeBtn.classList.toggle('active',s.exploded);
+    explodeBtn.textContent=s.exploded?'Collapse Layers':'Explode Layers';
+  }
+  function apply(){
+    var max=15,d=s.depth;
+    root.style.setProperty('--rx',(-s.cy*max*d).toFixed(2)+'deg');
+    root.style.setProperty('--ry',(s.cx*max*d).toFixed(2)+'deg');
+    root.style.setProperty('--px',s.cx.toFixed(4));
+    root.style.setProperty('--py',s.cy.toFixed(4));
+    root.style.setProperty('--mx',(50+s.cx*31*d).toFixed(2)+'%');
+    root.style.setProperty('--my',(50+s.cy*31*d).toFixed(2)+'%');
+    root.style.setProperty('--lift',(d*10).toFixed(2)+'px');
+    root.style.setProperty('--depth',String(d));
+  }
+  function tick(){
+    var e=s.down?.22:.12;
+    s.cx+=(s.tx-s.cx)*e;s.cy+=(s.ty-s.cy)*e;
+    if(Math.abs(s.tx-s.cx)<.0015)s.cx=s.tx;
+    if(Math.abs(s.ty-s.cy)<.0015)s.cy=s.ty;
+    apply();
+    if(s.down||Math.abs(s.tx-s.cx)>.0008||Math.abs(s.ty-s.cy)>.0008)s.raf=requestAnimationFrame(tick);else s.raf=0;
+  }
+  function animate(){if(!s.raf)s.raf=requestAnimationFrame(tick)}
+  function point(x,y){
+    if(s.reduced)return;
+    var r=scene.getBoundingClientRect();
+    s.tx=Math.max(-1,Math.min(1,((x-r.left)/r.width)*2-1));
+    s.ty=Math.max(-1,Math.min(1,((y-r.top)/r.height)*2-1));
+    animate();
+  }
+  function resetTilt(){s.tx=0;s.ty=0;animate()}
+  scene.addEventListener('pointerdown',function(e){s.down=true;s.moved=false;s.startX=e.clientX;s.startY=e.clientY;point(e.clientX,e.clientY);scene.setPointerCapture&&scene.setPointerCapture(e.pointerId)});
+  scene.addEventListener('pointermove',function(e){if(s.down&&Math.hypot(e.clientX-s.startX,e.clientY-s.startY)>8)s.moved=true;if(e.pointerType==='mouse'||s.down)point(e.clientX,e.clientY)});
+  scene.addEventListener('pointerup',function(e){s.down=false;scene.releasePointerCapture&&scene.releasePointerCapture(e.pointerId)});
+  scene.addEventListener('pointercancel',function(){s.down=false;resetTilt()});
+  scene.addEventListener('pointerleave',function(e){if(e.pointerType==='mouse'){s.down=false;resetTilt()}});
+  flipBtn.addEventListener('click',function(){setFlip(!s.flipped)});
+  explodeBtn.addEventListener('click',function(){setExploded(!s.exploded)});
+  resetBtn.addEventListener('click',function(){setFlip(false);setExploded(false);setFinish('standard');s.depth=.82;depthSlider.value='82';depthValue.textContent='82%';resetTilt()});
+  depthSlider.addEventListener('input',function(){s.depth=Number(depthSlider.value)/100;depthValue.textContent=depthSlider.value+'%';apply();animate()});
+  finishes.forEach(function(b){b.addEventListener('click',function(){setFinish(b.getAttribute('data-finish'))})});
+  scene.addEventListener('keydown',function(e){
+    var k=e.key.toLowerCase();
+    if(e.key==='Enter'||e.key===' '){e.preventDefault();setFlip(!s.flipped)}
+    else if(e.key==='Home'){e.preventDefault();resetTilt()}
+    else if(e.key==='ArrowLeft'){e.preventDefault();s.tx=Math.max(-1,s.tx-.12);animate()}
+    else if(e.key==='ArrowRight'){e.preventDefault();s.tx=Math.min(1,s.tx+.12);animate()}
+    else if(e.key==='ArrowUp'){e.preventDefault();s.ty=Math.max(-1,s.ty-.12);animate()}
+    else if(e.key==='ArrowDown'){e.preventDefault();s.ty=Math.min(1,s.ty+.12);animate()}
+    else if(k==='e'){e.preventDefault();setExploded(!s.exploded)}
+    else if(k==='f'){e.preventDefault();setFlip(!s.flipped)}
+    else if(['1','2','3','4'].indexOf(e.key)>-1){e.preventDefault();setFinish(['standard','foil-finish','holo','legendary'][Number(e.key)-1])}
+  });
+  document.addEventListener('visibilitychange',function(){if(document.hidden){s.down=false;resetTilt()}});
+  if(reduced.addEventListener)reduced.addEventListener('change',function(e){s.reduced=e.matches;if(s.reduced)resetTilt()});
+  setFinish('standard');setFlip(false);setExploded(false);apply();
+})();
+</script>
+</body>
+</html>
