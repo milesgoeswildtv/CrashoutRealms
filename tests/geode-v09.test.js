@@ -352,4 +352,101 @@ function resetBoard(runtime, ai = false) {
     'Prismatic Search preserves the explicit bottom-first order');
 }
 
+
+{
+  const runtime = loadRuntime();
+  const state = resetBoard(runtime);
+  const p = state.players[0];
+  p.prismDiscount = 1;
+  runtime.debug.geodes.prepareRound();
+  assert.equal(p.prismDiscount, 0, 'unused Prism discounts expire at the round boundary');
+}
+
+{
+  const runtime = loadRuntime();
+  const state = resetBoard(runtime);
+  const razor = unit(runtime, 'GEO-005', 0);
+  razor.cracked = true;
+  razor.baseStr = razor.crackedStr;
+  state.players[0].board = [razor];
+
+  state.phase = 'placement';
+  state.active = 0;
+  assert.equal(runtime.debug.combatAttack(razor, null), false, 'attack is illegal outside Action Phase');
+  assert.equal(razor.statuses.prismFirstCombatUsed, undefined, 'failed attack does not spend Violet Shard first-combat bonus');
+  assert.equal(razor.statuses.razorFirstCombatUsed, undefined, 'failed attack does not spend Razor first-combat bonus');
+
+  state.phase = 'combat';
+  state.active = 0;
+  assert.equal(runtime.debug.combatAttack(razor, null), true, 'legal direct attack resolves');
+  assert.equal(razor.statuses.prismFirstCombatUsed, true);
+  assert.equal(razor.statuses.razorFirstCombatUsed, true);
+}
+
+{
+  const runtime = loadRuntime();
+  const state = resetBoard(runtime);
+  const attacker = unit(runtime, 'GEO-001', 0);
+  const defender = unit(runtime, 'GEO-007', 1);
+  const prism = unit(runtime, 'GEO-014', 1);
+  const screen = unit(runtime, 'GEO-019', 1);
+  defender.prisms.push({card: prism, chosenColor: 'Red', countsColors: ['Red']});
+  state.players[0].board = [attacker];
+  state.players[1].board = [defender];
+  state.players[1].traps = [screen];
+
+  state.phase = 'placement';
+  state.active = 0;
+  assert.equal(runtime.debug.combatAttack(attacker, defender), false);
+  assert.equal(state.players[1].traps.length, 1, 'illegal attack does not consume Refraction Screen');
+
+  state.phase = 'combat';
+  state.active = 0;
+  attacker.acted = false;
+  assert.equal(runtime.debug.combatAttack(attacker, defender), true);
+  assert.equal(state.players[1].traps.length, 0, 'legal attack consumes Refraction Screen');
+}
+
+{
+  const runtime = loadRuntime();
+  const state = resetBoard(runtime);
+  const p = state.players[0];
+  const host = unit(runtime, 'GEO-007', 0);
+  const firstEcho = unit(runtime, 'GEO-018', 0);
+  const secondEcho = unit(runtime, 'GEO-018', 0);
+  host.prisms = [
+    {card: firstEcho, chosenColor: 'Violet', countsColors: ['Violet']},
+    {card: secondEcho, chosenColor: 'Violet', countsColors: ['Violet']}
+  ];
+  p.board = [host];
+  p.hand = [unit(runtime, 'GEO-001', 0), unit(runtime, 'GEO-002', 0), unit(runtime, 'GEO-003', 0)];
+
+  runtime.debug.geodes.crackUnit(host, 'test');
+  const body = runtime.elements.get('#choiceBody');
+  const firstOptions = body.querySelectorAll('[data-val]').map(x => x.dataset.val);
+  const removed = firstOptions[0];
+  runtime.click(removed);
+  const secondOptions = body.querySelectorAll('[data-val]').map(x => x.dataset.val);
+  assert.equal(secondOptions.includes(removed), false, 'queued hand-bottom choice refreshes legal options after earlier choice');
+  assert.equal(state.choicePending, true, 'second queued hand-bottom choice remains pending');
+}
+
+{
+  const runtime = loadRuntime();
+  const state = resetBoard(runtime);
+  const p = state.players[0];
+  const host = unit(runtime, 'GEO-001', 0);
+  const alignment = unit(runtime, 'GEO-030', 0);
+  const prism = unit(runtime, 'GEO-014', 0);
+  host.crackRecipe = ['Red', 'Blue'];
+  state.players[0].board = [host];
+  state.players[0].traps = [alignment];
+
+  runtime.debug.geodes.attachPrism(p, prism, host, 'Red');
+  assert.equal(state.players[0].traps.length, 0, 'Perfect Alignment triggers when the attach leaves exactly one color missing');
+  assert.equal(p.prismDiscount, 1, 'Perfect Alignment grants the next-Prism discount');
+  runtime.debug.geodes.prepareRound();
+  assert.equal(p.prismDiscount, 0, 'Perfect Alignment discount cannot carry into the next round');
+}
+
 console.log('Living Geodes v0.9 deterministic regression tests passed.');
