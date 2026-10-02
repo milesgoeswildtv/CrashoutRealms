@@ -1,0 +1,40 @@
+{
+  "version": "1.0",
+  "order": [
+    "Living Geodes",
+    "Continuum",
+    "Moondemons",
+    "Harvest",
+    "Eliteborn"
+  ],
+  "current_faction": "Living Geodes",
+  "factions": {
+    "Living Geodes": {
+      "status": "READY",
+      "cards_complete": 0,
+      "zip": null
+    },
+    "Continuum": {
+      "status": "QUEUED",
+      "cards_complete": 0,
+      "zip": null
+    },
+    "Moondemons": {
+      "status": "QUEUED",
+      "cards_complete": 0,
+      "zip": null
+    },
+    "Harvest": {
+      "status": "QUEUED",
+      "cards_complete": 0,
+      "zip": null
+    },
+    "Eliteborn": {
+      "status": "QUEUED",
+      "cards_complete": 0,
+      "zip": null
+    }
+  },
+  "last_completed_card": null,
+  "notes": "Geodes are first. A faction advances only after all 30 cards pass QA and the ZIP is produced."
+}
