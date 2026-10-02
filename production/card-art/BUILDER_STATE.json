@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "faction_order": ["Living Geodes","Continuum","Moondemons","Harvest","Eliteborn"],
+  "current_faction": "Living Geodes",
+  "completed_factions": [],
+  "last_completed_card": null,
+  "notes": "The hourly builder must update this only after a faction ZIP passes final QA."
+}
