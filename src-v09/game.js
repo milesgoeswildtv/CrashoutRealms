@@ -926,8 +926,9 @@ function endPendingChoice(){
     });
   }
 }
+function pendingChoiceOptions(opts){return typeof opts==='function'?opts():opts;}
 function holdForHumanChoice(eyebrow,title,opts,pick){
-  if(!opts?.length)return false;
+  if(!pendingChoiceOptions(opts)?.length)return false;
   beginPendingChoice();
   if(!Array.isArray(state.humanChoiceQueue))state.humanChoiceQueue=[];
   state.humanChoiceQueue.push({eyebrow,title,opts,pick});
@@ -936,9 +937,16 @@ function holdForHumanChoice(eyebrow,title,opts,pick){
 }
 function pumpHumanChoiceQueue(){
   if(state.choiceShowing||!state.humanChoiceQueue?.length)return;
-  const job=state.humanChoiceQueue.shift();
+  const job=state.humanChoiceQueue.shift(),opts=pendingChoiceOptions(job.opts);
+  if(!opts?.length){
+    endPendingChoice();
+    render();
+    pumpHumanChoiceQueue();
+    maybeAI();
+    return;
+  }
   state.choiceShowing=true;
-  showOptions(job.eyebrow,job.title,job.opts,value=>{
+  showOptions(job.eyebrow,job.title,opts,value=>{
     try{job.pick(value);}
     finally{
       state.choiceShowing=false;
@@ -1003,7 +1011,7 @@ function resolveLumenCrackHeal(p,left=3){
 function cycleCardToBottom(p,source){
   if(!p.hand.length)return;
   if(p.ai){bottomWorst(p);return;}
-  holdForHumanChoice(source,'Choose a card from your hand to put on the bottom of your deck.',p.hand.map(c=>({
+  holdForHumanChoice(source,'Choose a card from your hand to put on the bottom of your deck.',()=>p.hand.map(c=>({
     label:`${c.name} • ${c.type}`,
     value:c.iid
   })),iid=>{
@@ -1374,7 +1382,7 @@ prepareRound=function(){
     queueBeat?.('BLOOD MOON RISES','Round 5+ banishment is active.','realm');
   }
   for(const p of state.players){
-    p.statuses={};p.effects={};p.skipUsed=0;p.consumeUsed=false;p.deadlandsAbsorbUsed=false;p.preventNextDamage=0;p.shatterproof=false;p.cascadeRemaining=0;
+    p.statuses={};p.effects={};p.skipUsed=0;p.consumeUsed=false;p.deadlandsAbsorbUsed=false;p.preventNextDamage=0;p.shatterproof=false;p.cascadeRemaining=0;p.prismDiscount=0;
     p.board.slice().forEach(u=>{u.acted=false;u.extraActions=0;u.tempStr=0;u.tempHp=0;u.damageTakenThisRound=0;u.statuses={};if(u.faction==='Harvest')u.nourished=false;});
     syncDynamicHp(p);
     if(p.faction==='Continuum'){p.sequenceHistory=[p.sequence];p.flux.forEach(x=>x.fluxArmedAt=0);shiftSequence(p,1);}
@@ -1658,13 +1666,18 @@ const _v09CombatAttack=combatAttack;
 combatAttack=function(a,t=null){
   if(!a)return false;
   const defender=t,stateBeforeTarget=t?state.players[t.owner].board.includes(t):false;
-  if(t&&t.faction==='Living Geodes'&&!t.cracked&&t.prisms?.length&&state.players[t.owner].traps.some(x=>x.id==='GEO-019')){
+  const attackerPlayer=state?.players?.[a.owner],enemyPlayer=state?.players?.[1-a.owner];
+  const attackReady=state?.phase==='combat'&&state.active===a.owner&&attackerPlayer?.board.includes(a)&&(!a.acted||a.extraActions>0);
+  const targetLegal=t
+    ? !!enemyPlayer?.board.includes(t)&&(!hasTaunt(enemyPlayer)||unitHasTaunt(t))
+    : !!enemyPlayer&&!hasTaunt(enemyPlayer);
+  if(attackReady&&targetLegal&&t&&t.faction==='Living Geodes'&&!t.cracked&&t.prisms?.length&&state.players[t.owner].traps.some(x=>x.id==='GEO-019')){
     consumeTrap(state.players[t.owner],'GEO-019');addShield(t,2,'Refraction Screen');
   }
   if(a.sigil?.sigilEffect==='fang'&&isBloodied(a)){revealSigil(a,'attacks while Bloodied');a.statuses.sigilFangActive=3;}
   const out=_v09CombatAttack(a,t);
   delete a.statuses.sigilFangActive;
-  if(a.faction==='Living Geodes'){
+  if(out&&a.faction==='Living Geodes'){
     a.statuses.prismFirstCombatUsed=true;
     if(a.id==='GEO-005'&&a.cracked)a.statuses.razorFirstCombatUsed=true;
   }
