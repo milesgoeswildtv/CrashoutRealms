@@ -248,7 +248,10 @@ function resolveSpell(c,p){
 function useSkipAhead(p,ai=false){const max=p.board.some(x=>x.id==='CON-026')?2:1;if(p.faction!=='Continuum'||p.passive!=='Skip Ahead'||p.skipUsed>=max||!p.hand.length||p.sequence===5)return false;const go=c=>{p.hand=p.hand.filter(x=>x.iid!==c.iid);c.zone='discard';p.discard.push(c);p.skipUsed++;shiftSequence(p,1);state.log.push(`${p.name} uses Skip Ahead, discarding ${c.name}.`);};if(ai){go([...p.hand].sort((a,b)=>a.cost-b.cost)[0]);return true;}showOptions('Skip Ahead','Discard one card to Shift Sequence +1.',p.hand.map(c=>({label:`${c.name} — Cost ${c.cost}`,value:c.iid})),id=>{const c=p.hand.find(x=>x.iid===id);if(c){go(c);render();}});return true;}
 function useConsume(p,ai=false){if(p.faction!=='Harvest'||p.passive!=='Consume'||p.consumeUsed||p.board.length<2)return false;const finish=(s,t,stat)=>{let n=s.cost+(p.board.some(x=>x.id==='HAR-026')?2:0);n=Math.min(9,n);destroyUnit(s,null,{reason:'consume'});if(p.board.includes(t))addPermStats(t,stat==='str'?n:0,stat==='hp'?n:0);p.consumeUsed=true;state.log.push(`${p.name} Consumes ${s.name}; ${t.name} gains +${n} ${stat.toUpperCase()}.`);};if(ai){const s=chooseFriendly(p,'weak'),t=p.board.find(x=>x.iid!==s.iid);if(t)finish(s,t,'hp');return !!t;}showOptions('Consume','Choose ally to consume.',p.board.map(x=>({label:`${x.name} — Cost ${x.cost}`,value:x.iid})),sid=>{const s=p.board.find(x=>x.iid===sid);if(!s)return;showOptions('Consume','Choose survivor.',p.board.filter(x=>x.iid!==sid).map(x=>({label:x.name,value:x.iid})),tid=>{const t=p.board.find(x=>x.iid===tid);if(!t)return;showOptions('Consume','Choose stat.',[{label:'STR',value:'str'},{label:'HP',value:'hp'}],stat=>{finish(s,t,stat);render();});});});return true;}
 function passPlacement(i){if(state.phase!=='placement'||state.active!==i)return;state.placementPasses++;state.log.push(`${state.players[i].name} passes Placement.`);if(state.placementPasses>=2)beginCombat();else{state.active=1-i;render();maybeAI();}}
-function advancePlacement(i){state.active=1-i;render();maybeAI();}
+function advancePlacement(i){
+ if(state.choicePending){state.pendingPlacementAdvance=i;return;}
+ state.active=1-i;render();maybeAI();
+}
 function beginCombat(){
  state.phase='combat';
  state.players.forEach(p=>p.board.forEach(u=>u.acted=false));
@@ -713,7 +716,7 @@ render=function(){
 
 const _readabilityMaybeAI=maybeAI;
 maybeAI=function(){
-  if(state?.uiBusy)return;
+  if(state?.uiBusy||state?.choicePending)return;
   return _readabilityMaybeAI();
 };
 
@@ -888,6 +891,7 @@ function recipeMissing(u){
   const atts=geodePrismAttachments(u);
   if(req.length===1&&req[0]==='Any')return atts.length?0:1;
   const pool=[],wild=[];
+  if(u?.statuses?.emergencyFacetWild)wild.push({emergency:true});
   for(const a of atts){
     const mode=prismMode(a);
     if(mode?.kind==='wildRecipe')wild.push(a);
@@ -907,28 +911,164 @@ function geodeRecipeText(u){
   if(u.cracked)return 'CRACKED';
   return (u.crackRecipe||[]).join(' + ')||'—';
 }
-function triggerPrismFollowers(p){
+function beginPendingChoice(){
+  state.choiceDepth=(state.choiceDepth||0)+1;
+  state.choicePending=true;
+}
+function endPendingChoice(){
+  state.choiceDepth=Math.max(0,(state.choiceDepth||0)-1);
+  state.choicePending=state.choiceDepth>0;
+  if(!state.choicePending&&state.pendingPlacementAdvance!=null){
+    const i=state.pendingPlacementAdvance;
+    delete state.pendingPlacementAdvance;
+    queueMicrotask(()=>{
+      if(!state?.choicePending&&state?.phase==='placement'&&state.active===i)advancePlacement(i);
+    });
+  }
+}
+function pendingChoiceOptions(opts){return typeof opts==='function'?opts():opts;}
+function holdForHumanChoice(eyebrow,title,opts,pick){
+  if(!pendingChoiceOptions(opts)?.length)return false;
+  beginPendingChoice();
+  if(!Array.isArray(state.humanChoiceQueue))state.humanChoiceQueue=[];
+  state.humanChoiceQueue.push({eyebrow,title,opts,pick});
+  pumpHumanChoiceQueue();
+  return true;
+}
+function pumpHumanChoiceQueue(){
+  if(state.choiceShowing||!state.humanChoiceQueue?.length)return;
+  const job=state.humanChoiceQueue.shift(),opts=pendingChoiceOptions(job.opts);
+  if(!opts?.length){
+    endPendingChoice();
+    render();
+    pumpHumanChoiceQueue();
+    maybeAI();
+    return;
+  }
+  state.choiceShowing=true;
+  showOptions(job.eyebrow,job.title,opts,value=>{
+    try{job.pick(value);}
+    finally{
+      state.choiceShowing=false;
+      endPendingChoice();
+      render();
+      pumpHumanChoiceQueue();
+      maybeAI();
+    }
+  },{cancel:false});
+}
+function triggerPrismFollowers(p,recipient,newCard){
+  if(!p||!recipient)return;
+
+  // Creature listeners.
+  if(recipient.id==='GEO-009'&&recipient.statuses.stressPrismRound!==state.round){
+    recipient.statuses.stressPrismRound=state.round;
+    recipient.tempStr+=2;
+  }
+  if(recipient.id==='GEO-021'&&recipient.statuses.seedPrismRound!==state.round){
+    recipient.statuses.seedPrismRound=state.round;
+    healUnit(recipient,1,'Seed of the Deep');
+  }
+  for(const u of p.board){
+    if(u.faction!=='Living Geodes'||u.iid===recipient.iid)continue;
+    if(u.id==='GEO-010'&&u.cracked){
+      const count=u.statuses.choirPrismCount||0;
+      if(count<3){u.statuses.choirPrismCount=count+1;u.tempStr+=1;}
+    }
+    if(u.id==='GEO-023'&&u.statuses.parasitePrismRound!==state.round){
+      u.statuses.parasitePrismRound=state.round;
+      u.tempStr+=1;
+      healUnit(u,1,'Crystal Parasite');
+    }
+  }
+
+  // Existing Riftglass Violet attachments hear a later Prism attach. The
+  // Prism being attached now is explicitly not allowed to trigger itself.
   for(const u of p.board){
     if(u.faction!=='Living Geodes')continue;
     for(const a of geodePrismAttachments(u)){
+      if(a.card?.iid===newCard?.iid)continue;
       const m=prismMode(a);
-      if(m?.kind==='onPrismTempStats'&&!a.followUsedRound){
+      if(m?.kind==='onPrismTempStats'&&a.followUsedRound!==state.round){
         a.followUsedRound=state.round;
         addTempStats(u,m.str||0,m.hp||0);
-        break;
       }
     }
   }
 }
+function resolveLumenCrackHeal(p,left=3){
+  const legal=()=>p.board.filter(x=>x.currentHp<getMaxHp(x));
+  if(left<=0||!legal().length)return;
+  holdForHumanChoice('LUMEN CRACK',`Allocate healing • ${left} HP remaining`,legal().map(x=>({
+    label:`${x.name} • HP ${x.currentHp}/${getMaxHp(x)}`,
+    value:x.iid
+  })),iid=>{
+    const t=p.board.find(x=>x.iid===iid);
+    if(t)healUnit(t,1,'Lumen Nodule');
+    resolveLumenCrackHeal(p,left-1);
+  });
+}
+function cycleCardToBottom(p,source){
+  if(!p.hand.length)return;
+  if(p.ai){bottomWorst(p);return;}
+  holdForHumanChoice(source,'Choose a card from your hand to put on the bottom of your deck.',()=>p.hand.map(c=>({
+    label:`${c.name} • ${c.type}`,
+    value:c.iid
+  })),iid=>{
+    const c=p.hand.find(x=>x.iid===iid);
+    if(!c)return;
+    p.hand=p.hand.filter(x=>x.iid!==iid);
+    c.zone='deck';p.deck.unshift(c);
+  });
+}
 function v09OnGeodeCrack(u){
   const p=state.players[u.owner];
-  if(u.id==='GEO-001'){const e=chooseEnemy(u.owner);if(e)applyDamage(e,2,u);}
-  if(u.id==='GEO-004')distributeHeal(p,3);
-  if(u.id==='GEO-006'){const e=state.players[1-u.owner].board;if(e.length)u.tempStr+=Math.min(4,Math.max(...e.map(x=>x.baseStr)));}
+  if(u.id==='GEO-001'){
+    const enemies=state.players[1-u.owner].board.slice();
+    if(enemies.length){
+      if(p.ai){
+        const e=[...enemies].sort((a,b)=>a.currentHp-b.currentHp)[0];
+        applyDamage(e,2,u,{reason:'Pebbleheart Crack'});
+      }else{
+        holdForHumanChoice('PEBBLEHEART CRACK','Choose an enemy creature to take 2 damage.',enemies.map(e=>({
+          label:`${e.name} • HP ${e.currentHp}/${getMaxHp(e)}`,
+          value:e.iid
+        })),iid=>{
+          const e=enemies.find(x=>x.iid===iid);
+          if(e&&state.players[e.owner].board.includes(e))applyDamage(e,2,u,{reason:'Pebbleheart Crack'});
+        });
+      }
+    }
+  }
+  if(u.id==='GEO-004'){
+    if(p.ai)distributeHeal(p,3);
+    else if(p.board.some(x=>x.currentHp<getMaxHp(x)))resolveLumenCrackHeal(p,3);
+  }
+  if(u.id==='GEO-006'){
+    const enemies=state.players[1-u.owner].board.slice();
+    const applyMirror=e=>{
+      if(!e||!state.players[1-u.owner].board.includes(e))return;
+      const printed=Math.max(0,e.str??e.baseStr??0);
+      const gain=Math.min(4,printed);
+      u.tempStr+=gain;
+      state.log.push(`Mirrorstone copies ${e.name}'s printed STR and gains +${gain} STR this round.`);
+    };
+    if(enemies.length){
+      if(p.ai){
+        const e=[...enemies].sort((a,b)=>(b.str??b.baseStr??0)-(a.str??a.baseStr??0))[0];
+        applyMirror(e);
+      }else{
+        holdForHumanChoice('MIRRORSTONE CRACK','Choose the enemy whose printed STR Mirrorstone copies.',enemies.map(e=>({
+          label:`${e.name} • printed STR ${e.str??e.baseStr??0}`,
+          value:e.iid
+        })),iid=>applyMirror(enemies.find(e=>e.iid===iid)));
+      }
+    }
+  }
   if(u.id==='GEO-007')healUnit(u,2,'Deepcore');
-  if(u.id==='GEO-008')u.extraActions++;
+  if(u.id==='GEO-008'&&!u.acted)u.extraActions++;
   if(u.id==='GEO-009')drawOne(p);
-  if(u.id==='GEO-011'){drawOne(p);drawOne(p);bottomWorst(p);}
+  if(u.id==='GEO-011'){drawOne(p);drawOne(p);cycleCardToBottom(p,'CROWN GEODE');}
   if(u.id==='GEO-022')addShield(u,2,'Faultborn Crack');
   if(u.id==='GEO-025'&&p.board.length<maxSlots(p)){
     const t=makeToken(p.index,'Shardling',0,3,{id:'GEO-T01',faction:'Living Geodes',crackRecipe:['Any'],crackedStr:3,crackedHp:3});
@@ -937,7 +1077,7 @@ function v09OnGeodeCrack(u){
   for(const a of geodePrismAttachments(u)){
     const m=prismMode(a);
     if(m?.kind==='crackHeal')healUnit(u,m.amount||0,'Prism');
-    if(m?.kind==='crackCycle'){drawOne(p);bottomWorst(p);}
+    if(m?.kind==='crackCycle'){drawOne(p);cycleCardToBottom(p,'VERDANT ECHO PRISM');}
   }
   p.board.filter(x=>x.id==='GEO-026'&&x.iid!==u.iid).forEach(x=>healUnit(x,1,'Aurex'));
   if(p.passive==='Kimberlite'){
@@ -973,13 +1113,13 @@ function attachPrism(p,c,u,color){
   if(p.passive==='Fracture'&&!p.statuses.fractureUsed){
     p.statuses.fractureUsed=true;p.passiveTriggers++;
     if(p.board.some(x=>x.id==='GEO-026'&&x.cracked)&&!p.statuses.aurexFracture){
-      p.statuses.aurexFracture=true;drawOne(p);bottomWorst(p);
+      p.statuses.aurexFracture=true;drawOne(p);cycleCardToBottom(p,'AUREX — FAULT NETWORK');
     }
   }
   if(u.statuses.doubleNextPrism)delete u.statuses.doubleNextPrism;
   u.prisms.push(a);c.zone='prism';
   state.log.push(`${p.name} attaches <strong>${c.name}</strong> to ${u.name} as <strong>${color}</strong>.`);
-  triggerPrismFollowers(p);
+  triggerPrismFollowers(p,u,c);
   const cracked=!u.cracked&&recipeSatisfied(u)?crackUnit(u,'Prism recipe'):false;
   if(fracture)a.countsColors=[a.chosenColor];
   if(!cracked&&p.traps.some(t=>t.id==='GEO-030')&&recipeMissing(u)===1){
@@ -1031,6 +1171,7 @@ getStr=function(u){
       if(m?.kind==='firstCombatStr'&&!u.statuses.prismFirstCombatUsed)s+=m.amount||0;
       if(m?.kind==='directDamage'&&!u.statuses.attackTarget)s+=m.amount||0;
     }
+    if(u.id==='GEO-005'&&u.cracked&&!u.statuses.razorFirstCombatUsed)s+=2;
   }
   if(u?.statuses?.sigilFangActive)s+=u.statuses.sigilFangActive;
   return s;
@@ -1040,7 +1181,7 @@ unitHasTaunt=function(u){
   const p=state.players[u.owner];
   const fakeHigh=p.faction==='Continuum'&&p.lingerHighUntilRound>=state.round&&p.sequence!==4&&p.sequence!==5;
   const old=fakeHigh?p.sequence:null;if(fakeHigh)p.sequence=4;
-  const out=_v09UnitHasTaunt(u);
+  const out=(u?.id==='GEO-007'&&!u.cracked)||_v09UnitHasTaunt(u);
   if(fakeHigh)p.sequence=old;
   return out;
 };
@@ -1083,17 +1224,42 @@ applyDamage=function(u,amount,source=null,opts={}){
     }
   }
 
-  if(u.faction==='Living Geodes'&&!u.statuses.prismDamageReduced){
+  if(u.faction==='Living Geodes'){
     let reduce=0;
-    if(u.id==='GEO-022'&&u.cracked)reduce=Math.max(reduce,1);
-    if(geodePrismAttachments(u).some(a=>prismMode(a)?.kind==='firstDamageReduce'))reduce=Math.max(reduce,1);
-    if(reduce){amount=Math.max(0,amount-reduce);u.statuses.prismDamageReduced=true;}
+    if(u.id==='GEO-022'&&u.cracked&&!u.statuses.faultbornDamageReduced){
+      reduce++;
+      u.statuses.faultbornDamageReduced=true;
+    }
+    for(const a of geodePrismAttachments(u)){
+      if(prismMode(a)?.kind==='firstDamageReduce'&&a.damageReducedRound!==state.round){
+        reduce+=prismMode(a).amount||1;
+        a.damageReducedRound=state.round;
+      }
+    }
+    if(reduce)amount=Math.max(0,amount-reduce);
   }
 
   if((u.shield||0)>0&&amount>0){
     const block=Math.min(u.shield,amount);u.shield-=block;amount-=block;
     if(block)state.log.push(`${u.name}'s Shield prevents ${block} damage.`);
     if(amount<=0)return 0;
+  }
+
+  if(u.faction==='Living Geodes'&&!u.cracked&&amount>=u.currentHp&&recipeMissing(u)===1&&geodePrismAttachments(u).length&&p.traps.some(t=>t.id==='GEO-020')){
+    u.statuses.emergencyFacetWild=true;
+    const canCrack=recipeSatisfied(u);
+    delete u.statuses.emergencyFacetWild;
+    if(canCrack){
+      consumeTrap(p,'GEO-020');
+      u.statuses.emergencyFacetWild=true;
+      const cracked=crackUnit(u,'Emergency Facet');
+      delete u.statuses.emergencyFacetWild;
+      if(cracked){
+        amount=Math.max(0,amount-3);
+        state.log.push('Emergency Facet prevents 3 damage after completing the Crack.');
+        if(amount<=0)return 0;
+      }
+    }
   }
 
   const dealt=_v09ApplyDamage(u,amount,source,opts);
@@ -1107,6 +1273,7 @@ applyDamage=function(u,amount,source=null,opts={}){
   }
   if(survives&&u.growth&&!u.growth.active&&u.growth.card.growthEffect==='thornbloom'&&opts.combat&&dealt>0)activateGrowth(u);
   if(survives&&u.growth&&!u.growth.active&&u.growth.card.growthEffect==='ironbark'&&dealt>=3)activateGrowth(u);
+  if(survives&&u.id==='GEO-024'&&dealt>=3)u.tempStr+=2;
 
   if(dealt>0&&source?.growth?.active&&source.growth.card.growthEffect==='predator'&&!source.statuses.predatorGrowthUsed&&state.players[source.owner].board.includes(source)){
     source.statuses.predatorGrowthUsed=true;addPermStats(source,1,1);
@@ -1215,7 +1382,7 @@ prepareRound=function(){
     queueBeat?.('BLOOD MOON RISES','Round 5+ banishment is active.','realm');
   }
   for(const p of state.players){
-    p.statuses={};p.effects={};p.skipUsed=0;p.consumeUsed=false;p.deadlandsAbsorbUsed=false;p.preventNextDamage=0;p.shatterproof=false;p.cascadeRemaining=0;
+    p.statuses={};p.effects={};p.skipUsed=0;p.consumeUsed=false;p.deadlandsAbsorbUsed=false;p.preventNextDamage=0;p.shatterproof=false;p.cascadeRemaining=0;p.prismDiscount=0;
     p.board.slice().forEach(u=>{u.acted=false;u.extraActions=0;u.tempStr=0;u.tempHp=0;u.damageTakenThisRound=0;u.statuses={};if(u.faction==='Harvest')u.nourished=false;});
     syncDynamicHp(p);
     if(p.faction==='Continuum'){p.sequenceHistory=[p.sequence];p.flux.forEach(x=>x.fluxArmedAt=0);shiftSequence(p,1);}
@@ -1225,6 +1392,7 @@ prepareRound=function(){
     for(const u of p.board){
       if(u.faction==='Living Geodes'){
         for(const a of geodePrismAttachments(u)){const m=prismMode(a);if(m?.kind==='startHeal')healUnit(u,m.amount||0,'Prism');}
+        if(u.id==='GEO-021'&&u.cracked)healUnit(u,1,'Seed of the Deep — Cracked');
       }
       if(u.growth?.active&&state.round>u.growth.activatedRound){
         const e=u.growth.card.growthEffect;
@@ -1248,6 +1416,34 @@ beginCombat=function(){
 };
 
 const _v09EndRound=endRound;
+function resolveWorldheartEndRound(queue,done){
+  const item=queue.shift();
+  if(!item)return done();
+  const {p,u}=item;
+  if(!p.board.includes(u))return resolveWorldheartEndRound(queue,done);
+  const legal=p.board.filter(x=>x.iid!==u.iid&&x.faction==='Living Geodes');
+  if(!legal.length)return resolveWorldheartEndRound(queue,done);
+  const applyTarget=t=>{
+    if(t&&p.board.includes(t))healUnit(t,2,'Worldheart');
+    resolveWorldheartEndRound(queue,done);
+  };
+  if(p.ai){
+    const t=[...legal].sort((a,b)=>(a.currentHp/getMaxHp(a))-(b.currentHp/getMaxHp(b)))[0];
+    applyTarget(t);
+    return;
+  }
+  beginPendingChoice();
+  showOptions('WORLDHEART','Choose another friendly Geode to restore 2 HP.',legal.map(t=>({
+    label:`${t.name} • HP ${t.currentHp}/${getMaxHp(t)}`,
+    value:t.iid
+  })),iid=>{
+    endPendingChoice();
+    const t=legal.find(x=>x.iid===iid);
+    if(t&&p.board.includes(t))healUnit(t,2,'Worldheart');
+    render();
+    resolveWorldheartEndRound(queue,done);
+  },{cancel:false});
+}
 endRound=function(){
   for(const p of state.players){
     for(const u of [...p.board]){
@@ -1265,6 +1461,14 @@ endRound=function(){
         }
       }
     }
+  }
+  const worldhearts=[];
+  for(const p of state.players)for(const u of p.board){
+    if(u.id==='GEO-012'&&geodePrismAttachments(u).length>=2)worldhearts.push({p,u});
+  }
+  if(worldhearts.length){
+    resolveWorldheartEndRound(worldhearts,()=>_v09EndRound());
+    return;
   }
   return _v09EndRound();
 };
@@ -1285,25 +1489,92 @@ spellTargetPlan=function(c,p){
   if(c.id==='GEO-028'||c.id==='GEO-029')return {kind:'single'};
   return _v09SpellTargetPlan(c,p);
 };
+const _v09SpellCandidates=spellCandidates;
+spellCandidates=function(c,p){
+  if(c.id==='GEO-028')return p.board.filter(x=>x.faction==='Living Geodes'&&!x.cracked&&Array.isArray(x.prisms)&&x.prisms.length>0);
+  if(c.id==='GEO-029')return p.board.filter(x=>x.faction==='Living Geodes'&&!x.cracked);
+  return _v09SpellCandidates(c,p);
+};
 const _v09ResolveSpell=resolveSpell;
 resolveSpell=function(c,p){
   if(c.id==='GEO-027'){
-    const seen=p.deck.splice(Math.max(0,p.deck.length-4),4),hit=seen.find(x=>x.type==='Prism');
-    if(hit){seen.splice(seen.indexOf(hit),1);hit.zone='hand';p.hand.push(hit);}
-    seen.forEach(x=>{x.zone='deck';p.deck.unshift(x);});
+    const seen=p.deck.splice(Math.max(0,p.deck.length-4),4);
+    const putRestOnBottom=(rest,order=[])=>{
+      if(!rest.length){
+        p.deck=[...order,...p.deck];
+        endPendingChoice();
+        render();maybeAI();
+        return;
+      }
+      showOptions('PRISMATIC SEARCH',`Choose the bottom card first • ${rest.length} remaining`,rest.map(x=>({
+        label:`${x.name} • ${x.type}`,
+        value:x.iid
+      })),iid=>{
+        const x=rest.find(y=>y.iid===iid);
+        if(x)putRestOnBottom(rest.filter(y=>y.iid!==iid),[...order,x]);
+      },{cancel:false});
+    };
+    const finishWithPrism=hit=>{
+      const rest=seen.filter(x=>x!==hit);
+      if(hit){hit.zone='hand';p.hand.push(hit);}
+      rest.forEach(x=>x.zone='deck');
+      if(p.ai){
+        p.deck=[...rest,...p.deck];
+        return;
+      }
+      if(!rest.length)return;
+      beginPendingChoice();
+      putRestOnBottom(rest,[]);
+    };
+    const prisms=seen.filter(x=>x.type==='Prism');
+    if(p.ai){finishWithPrism(prisms[0]||null);return;}
+    if(prisms.length>1){
+      beginPendingChoice();
+      showOptions('PRISMATIC SEARCH','Choose a Prism from the top four to put into your hand.',prisms.map(x=>({
+        label:`${x.name} • ${(x.colors||[]).join('/')}`,
+        value:x.iid
+      })),iid=>{
+        endPendingChoice();
+        finishWithPrism(prisms.find(x=>x.iid===iid)||null);
+      },{cancel:false});
+    }else finishWithPrism(prisms[0]||null);
     return;
   }
   if(c.id==='GEO-028'){
-    const u=selectedFriendly(p)||chooseFriendly(p);
-    if(u?.faction==='Living Geodes'&&u.prisms.length){
-      const a=u.prisms[u.prisms.length-1],other=a.card.colors.find(x=>x!==a.chosenColor);
-      if(other){a.chosenColor=other;a.countsColors=[other];state.log.push(`${a.card.name} refracts to ${other}.`);if(!u.cracked&&recipeSatisfied(u))crackUnit(u,'Refract');}
+    const legal=spellCandidates(c,p),targetId=c.statuses?.castTargets?.[0];
+    const u=p.ai?(legal[0]||null):(legal.find(x=>x.iid===targetId)||null);
+    const refract=a=>{
+      if(!a)return;
+      const other=a.card?.colors?.find(x=>x!==a.chosenColor);
+      if(!other)return;
+      a.chosenColor=other;a.countsColors=[other];
+      state.log.push(`${a.card.name} refracts to ${other} on ${u.name}.`);
+      if(recipeSatisfied(u))crackUnit(u,'Refract');
+    };
+    if(u){
+      if(p.ai){
+        const a=[...u.prisms].sort((x,y)=>{
+          const xo=x.card?.colors?.find(c=>c!==x.chosenColor),yo=y.card?.colors?.find(c=>c!==y.chosenColor);
+          const xm=xo&&u.crackRecipe?.includes(xo)?1:0,ym=yo&&u.crackRecipe?.includes(yo)?1:0;
+          return ym-xm;
+        })[0];
+        refract(a);
+      }else if(u.prisms.length===1)refract(u.prisms[0]);
+      else{
+        holdForHumanChoice('REFRACT',`Choose the Prism on ${u.name} to switch colors.`,u.prisms.map((a,index)=>{
+          const other=a.card?.colors?.find(x=>x!==a.chosenColor)||a.chosenColor;
+          return {label:`${a.card?.name||'Prism'} • ${a.chosenColor} → ${other}`,value:String(index)};
+        }),value=>refract(u.prisms[+value]));
+      }
     }
+    delete c.statuses.castTargets;
     return;
   }
   if(c.id==='GEO-029'){
-    const u=selectedFriendly(p)||chooseFriendly(p);
-    if(u?.faction==='Living Geodes'&&!u.cracked){healUnit(u,2,'Crystal Relay');u.statuses.doubleNextPrism=true;}
+    const legal=spellCandidates(c,p),targetId=c.statuses?.castTargets?.[0];
+    const u=p.ai?([...legal].sort((a,b)=>a.currentHp-b.currentHp)[0]||null):(legal.find(x=>x.iid===targetId)||null);
+    if(u){healUnit(u,2,'Crystal Relay');u.statuses.doubleNextPrism=true;}
+    delete c.statuses.castTargets;
     return;
   }
   return _v09ResolveSpell(c,p);
@@ -1395,13 +1666,21 @@ const _v09CombatAttack=combatAttack;
 combatAttack=function(a,t=null){
   if(!a)return false;
   const defender=t,stateBeforeTarget=t?state.players[t.owner].board.includes(t):false;
-  if(t&&t.faction==='Living Geodes'&&!t.cracked&&t.prisms?.length&&state.players[t.owner].traps.some(x=>x.id==='GEO-019')){
+  const attackerPlayer=state?.players?.[a.owner],enemyPlayer=state?.players?.[1-a.owner];
+  const attackReady=state?.phase==='combat'&&state.active===a.owner&&attackerPlayer?.board.includes(a)&&(!a.acted||a.extraActions>0);
+  const targetLegal=t
+    ? !!enemyPlayer?.board.includes(t)&&(!hasTaunt(enemyPlayer)||unitHasTaunt(t))
+    : !!enemyPlayer&&!hasTaunt(enemyPlayer);
+  if(attackReady&&targetLegal&&t&&t.faction==='Living Geodes'&&!t.cracked&&t.prisms?.length&&state.players[t.owner].traps.some(x=>x.id==='GEO-019')){
     consumeTrap(state.players[t.owner],'GEO-019');addShield(t,2,'Refraction Screen');
   }
   if(a.sigil?.sigilEffect==='fang'&&isBloodied(a)){revealSigil(a,'attacks while Bloodied');a.statuses.sigilFangActive=3;}
   const out=_v09CombatAttack(a,t);
   delete a.statuses.sigilFangActive;
-  if(a.faction==='Living Geodes')a.statuses.prismFirstCombatUsed=true;
+  if(out&&a.faction==='Living Geodes'){
+    a.statuses.prismFirstCombatUsed=true;
+    if(a.id==='GEO-005'&&a.cracked)a.statuses.razorFirstCombatUsed=true;
+  }
 
   if(out&&t&&defender&&!state.players[t.owner].board.includes(t)){
     if(a.sigil?.sigilEffect==='feast'){revealSigil(a,'destroyed an enemy');healUnit(a,3,'Feast Sigil');drawOne(state.players[a.owner]);bottomWorst(state.players[a.owner]);}
@@ -1452,5 +1731,5 @@ handleRef=function(x){
 };
 
 
-window.REALMS_DEBUG={getState:()=>state,startGame,playCard,combatAttack,gainPressure,shiftSequence,addShield,recipeMissing,checkFlux,polarity,checkPolarityLoss,resolveUpperStrataOvercharge,resolveUpperStrataChainLink,bloodMoonBanishmentActive,endlessBorrowPairValid,endlessBorrowPairs,realmFlags,deadlands:{canRaise:canUseDeadlandsEcho,raise:summonEcho,useRaise:useDeadlandsEcho,canAbsorb:canUseDeadlandsAbsorption,absorb:absorbDeadlandsEcho,useAbsorb:useDeadlandsAbsorption,grave:()=>state?.graveState||[]}};populateSetup();render();
+window.REALMS_DEBUG={getState:()=>state,startGame,playCard,combatAttack,gainPressure,shiftSequence,addShield,recipeMissing,checkFlux,polarity,checkPolarityLoss,resolveUpperStrataOvercharge,resolveUpperStrataChainLink,bloodMoonBanishmentActive,endlessBorrowPairValid,endlessBorrowPairs,realmFlags,geodes:{cardById,makeInstance,crackUnit,attachPrism,applyDamage,healUnit,getStr,getMaxHp,prepareRound,endRound,resolveSpell,spellCandidates,unitHasTaunt},deadlands:{canRaise:canUseDeadlandsEcho,raise:summonEcho,useRaise:useDeadlandsEcho,canAbsorb:canUseDeadlandsAbsorption,absorb:absorbDeadlandsEcho,useAbsorb:useDeadlandsAbsorption,grave:()=>state?.graveState||[]}};populateSetup();render();
 })();
