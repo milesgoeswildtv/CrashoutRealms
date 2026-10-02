@@ -194,7 +194,7 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:22px;height:22px;b
     root.style.setProperty('--depth',String(d));
   }
   function tick(){
-    var e=s.down?.22:.12;
+    var e=s.down ? .22 : .12;
     s.cx+=(s.tx-s.cx)*e;s.cy+=(s.ty-s.cy)*e;
     if(Math.abs(s.tx-s.cx)<.0015)s.cx=s.tx;
     if(Math.abs(s.ty-s.cy)<.0015)s.cy=s.ty;
