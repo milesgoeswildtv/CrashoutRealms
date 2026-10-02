@@ -1,0 +1,15 @@
+const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+class E{constructor(d){this.document=d;this.dataset={};this.value='';this._innerHTML='';this.optionButtons=[];this.classList={add(){},remove(){},contains(){return false}};this.style={}}set innerHTML(v){this._innerHTML=v;this.optionButtons=[...String(v).matchAll(/data-val="([^"]*)"/g)].map(m=>{const b=new E(this.document);b.dataset.val=m[1];return b})}get innerHTML(){return this._innerHTML}querySelector(){return null}querySelectorAll(s){return s==='[data-val]'?this.optionButtons:[]}appendChild(){}prepend(){}insertAdjacentElement(){}remove(){}removeAttribute(){}cloneNode(){return new E(this.document)}getBoundingClientRect(){return{left:0,top:0,width:10,height:10}}}
+function load(){const es=new Map,d={body:new E(),createElement(){return new E(d)},querySelector(s){if(!s.startsWith('#'))return null;if(!es.has(s))es.set(s,new E(d));return es.get(s)},querySelectorAll(){return[]}};d.body.document=d;d.querySelector('#p1Faction').value='Harvest';d.querySelector('#p2Faction').value='Moondemons';const x={console,document:d,setTimeout(){return 0},clearTimeout(){},queueMicrotask,requestAnimationFrame(f){f()},Math};x.window=x;vm.createContext(x);vm.runInContext(fs.readFileSync('src-v09/cards.js','utf8'),x);vm.runInContext(fs.readFileSync('src-v09/game.js','utf8'),x);x.REALMS_DEBUG.startGame({mode:'hotseat',realm:'Deadlands',p1Faction:'Harvest',p1Passive:'Regurgitate',p2Faction:'Moondemons',p2Passive:'Frenzied'});return x.REALMS_DEBUG}
+const d=load(),s=d.getState(),mk=(id,o)=>d.geodes.makeInstance(d.geodes.cardById(id),o),p=s.players[0];
+s.phase='placement';s.active=0;s.winner=null;p.board=[];s.players[1].board=[];s.graveState=[];p.banished=[];
+const a=mk('HAR-001',0),b=mk('MON-001',1);p.board=[a];s.players[1].board=[b];
+d.geodes.applyDamage(b,b.currentHp,a,{reason:'test'});d.geodes.applyDamage(a,a.currentHp,b,{reason:'test'});
+assert.deepEqual(Array.from(s.graveState,x=>x.iid),[b.iid,a.iid],'ordinary deaths share one Grave State');
+assert.equal(p.deadlandsEchoReady,true);s.active=0;const e=d.deadlands.raise(p,b);
+assert.equal(e.baseStr,1);assert.equal(e.baseHp,1);assert.equal(e.rules,b.rules,'Echo retains printed ability text');
+d.geodes.applyDamage(e,1,null,{reason:'test'});assert.equal(s.graveState.includes(e),false,'Echo death bypasses Grave State');assert.equal(p.banished.includes(e),true);
+s.phase='placement';s.active=0;p.deadlandsEchoReady=true;const src=mk('MON-002',1);s.graveState.push(src);const e2=d.deadlands.raise(p,src);e2.tempStr=2;e2.currentHp=1;const c=mk('HAR-002',0);p.hand=[c];p.resource=c.cost;
+assert.equal(d.deadlands.absorb(p,e2,c),true);assert.equal(p.resource,0);assert.equal(c.permStr,3);assert.equal(c.permHp,1);assert.equal(s.graveState.includes(e2),false);assert.equal(p.deadlandsAbsorbUsed,true);assert.equal(d.deadlands.canAbsorb(p),false);
+d.geodes.prepareRound();assert.equal(p.deadlandsAbsorbUsed,false,'Absorption refreshes next round');
+console.log('Deadlands v0.9 deterministic certification tests passed.');
