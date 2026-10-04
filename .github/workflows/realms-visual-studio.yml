@@ -1,0 +1,54 @@
+name: REALMS Visual Studio QA
+
+on:
+  push:
+    branches:
+      - realms-visual-studio
+    paths:
+      - 'visual-studio/**'
+      - '.github/workflows/realms-visual-studio.yml'
+  pull_request:
+    paths:
+      - 'visual-studio/**'
+      - '.github/workflows/realms-visual-studio.yml'
+
+jobs:
+  static-qa:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: JavaScript syntax
+        run: node --check visual-studio/app.js
+
+      - name: Static file integrity
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          root = Path('visual-studio')
+          required = ['index.html', 'styles.css', 'app.js', 'README.md', '_headers']
+          missing = [name for name in required if not (root / name).exists()]
+          if missing:
+              raise SystemExit(f'Missing Visual Studio files: {missing}')
+
+          html = (root / 'index.html').read_text()
+          for ref in ('./styles.css', './app.js'):
+              if ref not in html:
+                  raise SystemExit(f'index.html does not reference {ref}')
+
+          js = (root / 'app.js').read_text()
+          ids = re.findall(r'"id":"((?:GEO|MON|ELI|HAR|CON)-00[1-5])"', js)
+          if len(set(ids)) != 25:
+              raise SystemExit(f'Expected 25 unique prototype IDs, found {len(set(ids))}')
+
+          if 'Pressure' in js or 'Fold 3' in js:
+              raise SystemExit('Retired Geode Pressure/Fold language found in Visual Studio runtime')
+
+          for token in ('Resource present', 'Cost present', 'Prototype Review', 'Template Lab', 'QA Center'):
+              if token not in js:
+                  raise SystemExit(f'Missing required studio feature marker: {token}')
+
+          print('REALMS Visual Studio static QA passed')
+          PY
