@@ -2,14 +2,42 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <meta name="theme-color" content="#0b0c0f" />
-  <meta name="description" content="Internal visual production, card template, art review and QA studio for REALMS." />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0c0d10" />
   <title>REALMS Visual Production Studio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
-  <div id="app"></div>
-  <script src="./app.js"></script>
+  <div id="app" class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">R</div>
+        <div><strong>REALMS</strong><span>VISUAL PRODUCTION STUDIO</span></div>
+      </div>
+      <nav id="nav"></nav>
+      <div class="sidebar-footer">
+        <div><span>MASTER TEMPLATE</span><strong>CHASSIS v1</strong></div>
+        <div class="local-pill">LOCAL-FIRST</div>
+      </div>
+    </aside>
+    <main class="main">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button id="mobileMenu" class="icon-btn mobile-only" aria-label="Toggle menu">☰</button>
+          <div class="global-search"><span>⌕</span><input id="globalSearch" placeholder="Search cards, IDs, rules…" /></div>
+        </div>
+        <div class="topbar-right">
+          <select id="factionFilter" aria-label="Faction filter"></select>
+          <div class="progress-chip"><span>PROTOTYPE</span><b id="progressText">0 / 25 locked</b></div>
+          <button id="presentationToggle" class="button ghost">Presentation</button>
+        </div>
+      </header>
+      <section id="view" class="workspace"></section>
+    </main>
+  </div>
+  <script type="module" src="./app.js"></script>
 </body>
 </html>
