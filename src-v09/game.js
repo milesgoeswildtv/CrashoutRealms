@@ -351,12 +351,12 @@ function endGame(w,why){if(state.winner!==null)return;state.winner=w;state.phase
 function offerDeadlandsEcho(i){
  const p=state.players[i];
  if(!p||!state.flags.has('deadMajor')||!state.graveState.length)return false;
- p.deadlandsEchoReady=true;
- state.log.push(`<strong>Deadlands:</strong> ${p.name} may raise a Grave Echo from the shared Grave State.`);
+ p.deadlandsEchoCredits=(p.deadlandsEchoCredits||0)+1;
+ state.log.push(`<strong>Deadlands:</strong> ${p.name} earns a Grave Echo raise (${p.deadlandsEchoCredits} available).`);
  return true;
 }
 function canUseDeadlandsEcho(p){
- return !!(p&&state.phase==='placement'&&state.active===p.index&&state.flags.has('deadMajor')&&p.deadlandsEchoReady&&state.graveState.length&&p.board.length<maxSlots(p));
+ return !!(p&&state.phase==='placement'&&state.active===p.index&&state.flags.has('deadMajor')&&(p.deadlandsEchoCredits||0)>0&&state.graveState.length&&p.board.length<maxSlots(p));
 }
 function summonEcho(p,c){
  if(!p||!c||!canUseDeadlandsEcho(p)||!state.graveState.includes(c))return null;
@@ -369,8 +369,8 @@ function summonEcho(p,c){
  if(p.faction==='Eliteborn')ensureFormation(p,e,null);
  p.board.push(e);
  if(e.formation!=null)formationJoined(p,e.formation);
- p.deadlandsEchoReady=false;
- state.log.push(`<strong>Deadlands:</strong> ${p.name} raises ${c.name} as a 1/1 Grave Echo.`);
+ p.deadlandsEchoCredits=Math.max(0,(p.deadlandsEchoCredits||0)-1);
+ state.log.push(`<strong>Deadlands:</strong> ${p.name} raises ${c.name} as a 1/1 Grave Echo (${p.deadlandsEchoCredits} remaining).`);
  pushUIEvent?.('realm',p.name+' raises a Grave Echo',c.name);
  queueBeat?.('GRAVE ECHO',c.name,'realm');
  return e;
@@ -866,7 +866,7 @@ buildPlayer=function(index,faction,passive,ai=false){
   p.flux=[]; p.sequenceHistory=[]; p.sequenceCompleteRound=-1;
   p.freezeUntilRound=0; p.lingerHighUntilRound=0;
   p.prismDiscount=0;
-  p.deadlandsEchoReady=false;
+  p.deadlandsEchoCredits=0;
   p.deadlandsAbsorbUsed=false;
   return p;
 };
