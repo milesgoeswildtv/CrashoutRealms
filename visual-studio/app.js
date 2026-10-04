@@ -279,11 +279,15 @@ function exportJson(){var blob=new Blob([JSON.stringify({version:VERSION,exporte
 function importJson(e){var f=e.target.files&&e.target.files[0];if(!f)return;var r=new FileReader();r.onload=function(){try{var obj=JSON.parse(String(r.result));if(!obj.state||!obj.state.overrides||!obj.state.prototype)throw new Error('Invalid backup');if(!confirm('Replace local Studio state with this backup?'))return;state=obj.state;saveState();activity('Local state imported');render();}catch(err){alert('Import failed: '+err.message);}};r.readAsText(f);}
 function resetAll(){if(!confirm('Reset every local status, note, override and QA mark? Uploaded art will remain unless removed card by card.'))return;state=defaultState();saveState();render();}
 function exportPng(){
- var target=document.querySelector('#stageCard .realms-card');if(!target){return;}
- var clone=target.cloneNode(true);var styles='<style>'+document.querySelector('style[data-export]')?.textContent+'</style>';
- var xml='<svg xmlns="http://www.w3.org/2000/svg" width="750" height="1050"><foreignObject width="100%" height="100%"><div xmlns="http://www.w3.org/1999/xhtml" style="width:750px;height:1050px;background:#090a0c">'+clone.outerHTML+'</div></foreignObject></svg>';
- var blob=new Blob([xml],{type:'image/svg+xml;charset=utf-8'}),url=URL.createObjectURL(blob),img=new Image();
- img.onload=function(){var canvas=document.createElement('canvas');canvas.width=750;canvas.height=1050;var ctx=canvas.getContext('2d');ctx.drawImage(img,0,0,750,1050);URL.revokeObjectURL(url);var a=document.createElement('a');a.href=canvas.toDataURL('image/png');a.download=selectedCard+'-'+getCard(selectedCard).name.replace(/\s+/g,'-')+'.png';a.click();};img.onerror=function(){URL.revokeObjectURL(url);alert('PNG export is not supported by this browser for this card. Use browser screenshot/print for now.');};img.src=url;
+ var target=document.querySelector('#stageCard .realms-card');
+ if(!target)return;
+ if(window.htmlToImage&&window.htmlToImage.toPng){
+  window.htmlToImage.toPng(target,{pixelRatio:3,cacheBust:true,backgroundColor:'#090a0c'})
+   .then(function(data){var a=document.createElement('a');a.href=data;a.download=selectedCard+'-'+getCard(selectedCard).name.replace(/\s+/g,'-')+'.png';a.click();})
+   .catch(function(err){alert('PNG export failed: '+err.message);});
+  return;
+ }
+ alert('PNG export library did not load. The rest of the Studio remains usable; try again while online.');
 }
 
 loadArts().finally(function(){render();});
