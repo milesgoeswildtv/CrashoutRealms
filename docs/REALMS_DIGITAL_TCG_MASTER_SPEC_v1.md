@@ -84,7 +84,7 @@ Rules:
 - Do not auto-merge accounts by matching usernames or email addresses.
 - Use the stable Crashout user ID as the external identity key.
 - Keep REALMS player profile/preferences and all REALMS gameplay data in REALMS-owned tables/namespaces.
-- Keep REALMS currency, rewards and transactions separate from Poker, SHYST, Degen, Rituals or any other destination.
+- Keep REALMS currency, rewards and transactions separate from Poker, SHYST, Degen, Rituals or any other destination. Crashout migration `0009_shop_inventory.sql` already scopes product catalogs, wallets, purchases and inventory by `game_key`; reuse the `realms` scope where its contracts fit, but do not use the generic item inventory as a substitute for a full TCG card-ownership model.
 - Never trust a user ID, balance, card ownership, pack result, deck legality or match result supplied by the browser.
 - Use server-verified identity and authorization for every write operation.
 
