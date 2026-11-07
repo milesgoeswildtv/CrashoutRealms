@@ -53,7 +53,7 @@ function homeView() {
   <div class="section-head"><div><div class="eyebrow">COMING ONLINE</div><h2>THE REST OF THE WORLD</h2></div></div>
   <section class="grid" aria-label="More platform services">
     ${tile("◇","MARKET","Card acquisition and Crashout-backed purchases.","ECONOMY PENDING",true)}
-    ${tile("◎","PLAYER RECORD","Profile, progression, match history, and social identity.","IDENTITY CONNECTED",true)}
+    ${tile("◎","PLAYER RECORD","Profile, progression, match history, and social identity.","IDENTITY SERVICE",true)}
     ${tile("⌘","REALM ATLAS","Explore the five worlds and their current inhabitants.","CANON IN PROGRESS",true)}
   </section>
   <div class="notice"><strong>Build integrity:</strong> this platform uses the shared Crashout identity. The retired v0.9 playtest is isolated; no old card definitions or rules are presented as current canon.</div>`;
@@ -98,8 +98,11 @@ function setMessage(message, kind = "info") {
   authMessage.dataset.kind = kind;
 }
 function updateAccountUI() {
-  const integrationState = snapshot.integration?.integration_state || "registry unavailable";
-  document.querySelector("#identity-status").textContent = snapshot.integration?.enabled ? "REALMS ADAPTER READY" : `REALMS ADAPTER ${integrationState.toUpperCase()}`;
+  const integrationState = snapshot.integration?.integration_state || "unavailable";
+  const stateLabels = { ready: "READY", adapter_required: "ADAPTER REQUIRED", disabled: "DISABLED", maintenance: "MAINTENANCE" };
+  document.querySelector("#identity-status").textContent = snapshot.integration?.enabled ? "REALMS ADAPTER READY" : `REALMS ${stateLabels[integrationState] || "REGISTRY UNAVAILABLE"}`;
+  const linkStatus = document.querySelector("#link-status");
+  if (linkStatus) linkStatus.textContent = snapshot.integration?.enabled ? "The central registry is ready; link activation still requires the verified browser handoff." : "Crashout currently lists REALMS as unavailable. Linking remains disabled until the adapter is verified.";
   document.querySelector("#identity-status").dataset.state = snapshot.integration?.enabled ? "ready" : "pending";
   if (!snapshot.authenticated) {
     accountButton.innerHTML = '<span class="avatar">?</span><span><b>Crashout account</b><small>Sign in to continue</small></span><i>↗</i>';
