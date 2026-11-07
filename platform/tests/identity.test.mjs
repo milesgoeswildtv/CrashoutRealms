@@ -53,7 +53,7 @@ test("destination-link response is checked and secure", async () => {
   assert.equal(result.flow, "create"); assert.equal(result.token.length, 64);
 });
 test("insecure launch URLs are rejected", async () => {
-  const { client } = makeClient({ session: { user: { id: "u1" } }, rpcData: { token: "a".repeat(64), launch_url: "http://evil.example.test", expires_at: "2099-11-07T00:10:00Z" } });
+  const { client } = makeClient({ session: { user: { id: "u1" } }, rpcData: { token: "a".repeat(64), launch_url: "http://evil.example.test", flow: "create", expires_at: "2099-11-07T00:10:00Z" } });
   await assert.rejects(createCrashoutIdentity(client).requestDestinationLink("create"), /insecure/);
 });
 test("RPC errors are not converted into successful links", async () => {
