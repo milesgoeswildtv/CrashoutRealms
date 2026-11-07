@@ -26,8 +26,8 @@ test("profile reads are scoped to the authenticated user and destination", () =>
   assert.match(identity, /eq\("id", user\.id\)/);
   assert.match(identity, /eq\("game_key", destinationKey\)/);
 });
-test("browser configuration is pinned to the shared Crashout project", () => {
+test("browser configuration is pinned to the shared Crashout project", async () => {
   assert.match(config, /qcmfnkuyinhfdxnuvneb\.supabase\.co/);
   assert.match(config, /destinationKey: "realms"/);
-  assert.match(await readFile(new URL("../app.js", import.meta.url), "utf8"), /@supabase\\/supabase-js@2\\.119\\.0/);
+  assert.ok((await readFile(new URL("../app.js", import.meta.url), "utf8")).includes("@supabase/supabase-js@2.119.0"));
 });
