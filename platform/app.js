@@ -98,6 +98,9 @@ function setMessage(message, kind = "info") {
   authMessage.dataset.kind = kind;
 }
 function updateAccountUI() {
+  const integrationState = snapshot.integration?.integration_state || "registry unavailable";
+  document.querySelector("#identity-status").textContent = snapshot.integration?.enabled ? "REALMS ADAPTER READY" : `REALMS ADAPTER ${integrationState.toUpperCase()}`;
+  document.querySelector("#identity-status").dataset.state = snapshot.integration?.enabled ? "ready" : "pending";
   if (!snapshot.authenticated) {
     accountButton.innerHTML = '<span class="avatar">?</span><span><b>Crashout account</b><small>Sign in to continue</small></span><i>↗</i>';
     signOutButton.hidden = true;
@@ -119,9 +122,6 @@ function updateAccountUI() {
   linkCreate.disabled = !canLink;
   linkExisting.textContent = snapshot.destination?.linked ? "REALMS ACCOUNT LINKED" : "LINK EXISTING REALMS ACCOUNT";
   linkCreate.textContent = snapshot.destination?.linked ? "REALMS ACCOUNT LINKED" : "CREATE + LINK REALMS ACCOUNT";
-  const integrationState = snapshot.integration?.integration_state || "registry unavailable";
-  document.querySelector("#identity-status").textContent = snapshot.integration?.enabled ? "REALMS ADAPTER READY" : `REALMS ADAPTER ${integrationState.toUpperCase()}`;
-  document.querySelector("#identity-status").dataset.state = snapshot.integration?.enabled ? "ready" : "pending";
 }
 function setBusy(busy) {
   [authSubmit, discordButton, createToggle, signOutButton].forEach(button => { if (button) button.disabled = busy; });
