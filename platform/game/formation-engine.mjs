@@ -4,6 +4,7 @@ const clone = value => structuredClone(value);
 const makeRng = seed => { let state = seed >>> 0; return () => { state = (state * 1664525 + 1013904223) >>> 0; return state / 4294967296; }; };
 const shuffle = (items, rng) => { const out=[...items]; for(let i=out.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[out[i],out[j]]=[out[j],out[i]];} return out; };
 const makeDeck = () => ELITEBORN_CARDS.map(card=>card.id);
+const prepareDeck = deck => Array.isArray(deck) ? deck.filter(id=>cardById(id)) : makeDeck();
 const player = (id,name,deck,rng) => ({id,name,health:20,deck:shuffle(deck,rng),hand:[],discard:[],board:[],resource:0,acted:false});
 const log = (state,message) => state.log.push({turn:state.turn,message});
 const draw = p => { if(!p.deck.length) return false; p.hand.push(p.deck.shift()); return true; };
@@ -20,7 +21,7 @@ function beginTurn(state,side){
   log(state,`${p.name} begins turn ${state.turn} with ${p.resource} resources.`);
 }
 export function createMatch({seed=1,deckA,deckB,realm=null}={}){
-  const rng=makeRng(seed),a=player("you","YOU",deckA||makeDeck(),rng),b=player("bot","RIVAL",deckB||makeDeck(),rng);
+  const rng=makeRng(seed),a=player("you","YOU",prepareDeck(deckA),rng),b=player("bot","RIVAL",prepareDeck(deckB),rng);
   const state={players:{you:a,bot:b},active:"you",turn:0,phase:"main",winner:null,log:[],entitySeq:0,seed,realm:realm?clone(realm):null};
   for(let i=0;i<5;i++){draw(a);draw(b);}
   beginTurn(state,"you");
