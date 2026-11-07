@@ -11,7 +11,7 @@ This is a separate, mobile-first platform entry point. It does not replace the l
 - RLS-scoped reads of the signed-in player's Crashout profile and REALMS account link.
 - A guarded destination-link request boundary that only accepts the central trusted handshake.
 - Honest unavailable states until each real service is connected.
-- No fabricated cards, inventory, wallet balances, prices, matches, or player identity.
+- No fabricated collection ownership, wallet balances, prices, multiplayer results, or player identity. The Formation Lab is an explicitly labeled local test harness, not an account-backed ranked match.
 - No dependency on the retired v0.9 faction names or gameplay data.
 
 ## Run locally
@@ -33,6 +33,12 @@ The identity adapter reads the authenticated player's own `profiles` and `game_l
 The hosted Crashout project currently has migrations 0001–0014, including the trusted destination-link gateway. REALMS is still registered as `adapter_required`, disabled, and has no launch URL. The destination server adapter, stable player-ID provisioning, existing-account ownership proof, and launch-token handoff are not yet verified. The UI therefore leaves account-link actions disabled.
 
 See [services/README.md](services/README.md) for the full trusted-link sequence and security boundaries.
+
+## Playable vertical slice
+
+Open Play → Formation Lab. The lab uses the 20 approved Eliteborn Unit definitions and 10 Formation definitions from the latest Eliteborn FRESH(2) source. It implements the locked Formation rules: exact Force requirements, sum of current STR and current HP, one Formation position, one damage recipient, and simultaneous component death when Formation HP reaches zero. The Formation card remains attached until the Formation breaks.
+
+The lab intentionally does not claim to be the final match ruleset. Its 20 starting HP, five positions, resource-from-hand test economy, simplified attack loop, and scripted opponent are test harness parameters. The complete secondary card text, Formation on-play/start/end/break effects, the open component-text ruling, and the shared cross-faction match rules are not implemented here. The UI calls these limits out rather than silently inventing rulings.
 
 ## Integration gates
 
