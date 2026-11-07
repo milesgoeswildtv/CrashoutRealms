@@ -1,0 +1,25 @@
+name: REALMS Platform Shell
+
+on:
+  pull_request:
+    paths:
+      - "platform/**"
+      - ".github/workflows/realms-platform-shell.yml"
+  push:
+    branches: [main]
+    paths:
+      - "platform/**"
+      - ".github/workflows/realms-platform-shell.yml"
+
+jobs:
+  shell:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Syntax check
+        run: node --check platform/app.js
+      - name: Platform shell regression tests
+        run: node --test platform/tests/shell.test.cjs
