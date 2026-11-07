@@ -17,7 +17,7 @@ test("all six platform destinations are declared", () => {
 test("unconnected services are presented honestly", () => {
   assert.match(js, /NOT CONNECTED YET/);
   assert.match(js, /does not create demo cards, fake ownership, sample currency/);
-  assert.match(js, /legacy v0\.9/);
+  assert.match(js, /retired v0\.9/);
 });
 
 test("platform entry point is mobile responsive and accessible", () => {
