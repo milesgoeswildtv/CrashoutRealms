@@ -16,7 +16,7 @@ This is a separate, mobile-first platform entry point. It does not replace the l
 
 ## Run locally
 
-Serve the `platform/` directory over HTTP(S); opening the HTML file directly is not supported because the app uses native ES modules. The browser loads the pinned Supabase JS client from esm.sh. The public project URL and publishable key are in `config.js`; these are public browser configuration, never server credentials.
+Serve the `platform/` directory over HTTP(S); opening the HTML file directly is not supported because the app uses native ES modules. The browser loads the pinned Supabase JS 2.119.0 client from esm.sh. The public project URL and publishable key are in `config.js`; these are public browser configuration, never server credentials.
 
 ## Crashout Auth redirect setup
 
