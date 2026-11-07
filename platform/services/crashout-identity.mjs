@@ -6,6 +6,7 @@ function requireData(result, fallback) {
 export function createCrashoutIdentity(client, options = {}) {
   if (!client?.auth || !client?.rpc || !client?.from) throw new TypeError("A configured Crashout Supabase client is required.");
   const destinationKey = options.destinationKey ?? DESTINATION_KEY;
+  const now = options.now ?? (() => Date.now());
   async function getSnapshot() {
     const sessionResult = await client.auth.getSession();
     const session = requireData(sessionResult, null)?.session ?? null;
@@ -56,7 +57,7 @@ export function createCrashoutIdentity(client, options = {}) {
     const sessionResult = await client.auth.getSession();
     if (!requireData(sessionResult, null)?.session?.user) throw new Error("Sign in to Crashout before linking REALMS.");
     const payload = requireData(await client.rpc("start_destination_link", { p_game_key: destinationKey, p_flow: flow }), null);
-    if (!payload || typeof payload.token !== "string" || typeof payload.launch_url !== "string" || typeof payload.expires_at !== "string") {
+    if (!payload || typeof payload.token !== "string" || !/^[a-f0-9]{64}$/i.test(payload.token) || typeof payload.launch_url !== "string" || typeof payload.expires_at !== "string" || payload.flow !== flow || !Number.isFinite(Date.parse(payload.expires_at)) || Date.parse(payload.expires_at) <= now()) {
       throw new Error("Crashout returned an incomplete destination-link response.");
     }
     const launch = new URL(payload.launch_url);
