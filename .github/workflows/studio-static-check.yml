@@ -1,0 +1,46 @@
+name: REALMS Studio Static Check
+
+on:
+  pull_request:
+    paths:
+      - 'studio/**'
+      - '.github/workflows/studio-static-check.yml'
+  push:
+    branches:
+      - realms-visual-production-studio
+    paths:
+      - 'studio/**'
+      - '.github/workflows/studio-static-check.yml'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Parse JavaScript
+        run: |
+          node --check studio/data.js
+          node --check studio/app.js
+      - name: Validate studio files and v0.9 seed count
+        run: |
+          test -f studio/index.html
+          test -f studio/styles.css
+          test -f studio/_headers
+          test -f studio/_redirects
+          node - <<'NODE'
+          const fs = require('fs');
+          const vm = require('vm');
+          const source = fs.readFileSync('studio/data.js','utf8');
+          const context = { window: {} };
+          vm.createContext(context);
+          vm.runInContext(source, context);
+          const data = context.window.REALMS_STUDIO_DATA;
+          if (!data || data.cards.length !== 25) throw new Error('Expected exactly 25 prototype cards');
+          const counts = Object.fromEntries(['GEO','MON','ELI','HAR','CON'].map(f => [f, data.cards.filter(c=>c.faction===f).length]));
+          for (const [f,n] of Object.entries(counts)) if (n !== 5) throw new Error(f + ' expected 5 cards, got ' + n);
+          if (data.cards.some(c => c.id.startsWith('GEO-') && /Fold|Pressure/.test((c.rules||'')+(c.mechanicText||'')))) throw new Error('Retired Geode Pressure/Fold found in studio seed data');
+          console.log('Studio seed counts OK', counts);
+          NODE
