@@ -12,6 +12,7 @@ This is a separate, mobile-first platform entry point. It does not replace the l
 - A guarded destination-link request boundary that only accepts the central trusted handshake.
 - Honest unavailable states until each real service is connected.
 - No fabricated collection ownership, wallet balances, prices, multiplayer results, or player identity. The Formation Lab is an explicitly labeled local test harness, not an account-backed ranked match.
+- Realm-aware Deck Workshop with all five canonical Realm/faction pairings, local card-list drafts, and an honest catalogue-availability boundary.
 - No dependency on the retired v0.9 faction names or gameplay data.
 
 ## Run locally
@@ -38,7 +39,7 @@ See [services/README.md](services/README.md) for the full trusted-link sequence 
 
 Open Play → Formation Lab. The lab uses the 20 approved Eliteborn Unit definitions and 10 Formation definitions from the latest Eliteborn FRESH(2) source. It implements the locked Formation rules: exact Force requirements, sum of current STR and current HP, one Formation position, one damage recipient, and simultaneous component death when Formation HP reaches zero. The Formation card remains attached until the Formation breaks.
 
-The lab intentionally does not claim to be the final match ruleset. Its 20 starting HP, six Unit positions, resource-from-hand test economy, simplified attack loop, and scripted opponent are test harness parameters. The complete secondary card text, Formation on-play/start/end/break effects, the open component-text ruling, and the shared cross-faction match rules are not implemented here. The battle mat now presents six Unit positions per player, Deck counts, expandable Graveyards, resource totals, and a deck-bound Realm / Stage panel. The Realm panel is intentionally unconfigured in this test harness: Realm selection belongs to deck construction, and stage names, effects, and advancement thresholds must come from approved rules. Realm cards are not part of the deck or card zones. The UI calls these limits out rather than silently inventing rulings.
+The lab intentionally does not claim to be the final match ruleset. Its 20 starting HP, six Unit positions, resource-from-hand test economy, simplified attack loop, and scripted opponent are test harness parameters. The complete secondary card text, Formation on-play/start/end/break effects, the open component-text ruling, and the shared cross-faction match rules are not implemented here. The battle mat now presents six Unit positions per player, Deck counts, expandable Graveyards, resource totals, and a deck-bound Realm / Stage panel. The Deck Workshop lets a player select one of the five canonical Realm/faction pairings and save a local deck draft in browser storage. The checked-in card catalogue currently contains Eliteborn definitions only, so card browsing is enabled for Upper Strata and other faction catalogues are explicitly marked pending rather than substituted. Deck size, copy limits, and legality remain unvalidated until the current shared rules are locked. The selected deck Realm is carried into the local match state and displayed on the battle mat. Stage names, effects, and advancement thresholds remain unconfigured pending approved rules. Realm cards are not part of the deck or card zones.
 
 ## Integration gates
 
@@ -55,6 +56,6 @@ The lab intentionally does not claim to be the final match ruleset. Its 20 start
 
 - The root `index.html` and `src-v09/` are legacy playtest artifacts, not current platform authority.
 - `studio/` and historical visual-studio work must not seed current card data without a fresh canon check.
-- This foundation intentionally contains no card rules or card catalogue.
+- The platform currently includes the Eliteborn test catalogue only; it is not the complete 150-card cross-faction catalogue.
 - Never expose the Supabase service-role key or any destination adapter secret to browser code.
 - Never enable the REALMS destination registry entry until its adapter passes the full release gate.

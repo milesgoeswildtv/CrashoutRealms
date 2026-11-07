@@ -2,11 +2,12 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.119.0";
 import { REALMS_CONFIG } from "./config.js";
 import { createCrashoutIdentity } from "./services/crashout-identity.mjs";
 import { renderFormationLab } from "./game/formation-lab.js";
+import { renderDeckWorkshop, getActiveDeck } from "./game/deck-workshop.js";
 
 const ROUTES = Object.freeze({
   home: { label: "HOME", title: "THE WORLD IS OPENING", description: "Your place in the REALMS universe. Build your collection, shape your decks, and enter the arena as the worlds come online.", state: "FOUNDATION" },
   collection: { label: "COLLECTION", title: "YOUR COLLECTION", description: "Every card you own, every variant you discover, and every Realm you explore will live here.", state: "COLLECTION SERVICE PENDING" },
-  decks: { label: "DECKS", title: "DECK WORKSHOP", description: "Build, validate, save, and manage your decks here. Deck legality will be driven by the approved REALMS ruleset—not assumptions from the retired alpha.", state: "RULES + INVENTORY CONNECTION PENDING" },
+  decks: { label: "DECKS", title: "DECK WORKSHOP", description: "Choose a Realm and build a local card-list draft. Server sync and deck legality checks will follow the approved REALMS ruleset.", state: "LOCAL REALM DRAFT AVAILABLE" },
   play: { label: "PLAY", title: "ENTER THE ARENA", description: "Bot matches, private challenges, and competitive queues belong here. Matchmaking will only open when the authoritative match service is ready.", state: "MATCH SERVICE NOT CONNECTED" },
   store: { label: "STORE", title: "THE MARKET", description: "Packs, card acquisition, and purchases will use the Crashout economy integration. No prices, currencies, or purchase actions are fabricated in this foundation.", state: "ECONOMY CONNECTION PENDING" },
   profile: { label: "PROFILE", title: "PLAYER PROFILE", description: "Your Crashout identity, player record, progression, match history, and social connections will be presented here.", state: "CRASHOUT IDENTITY NOT CONNECTED" }
@@ -62,6 +63,7 @@ function homeView() {
 function routeView(route) {
   if (route === "home") return homeView();
   if (route === "play") return `<div id="formation-lab-root"></div>`;
+  if (route === "decks") return `<div id="deck-workshop-root"></div>`;
   const item = ROUTES[route];
   if (route === "profile" && snapshot.authenticated) {
     const name = snapshot.profile?.display_name || snapshot.profile?.username || "Crashout player";
@@ -89,7 +91,8 @@ function render() {
   const route = currentRoute(), item = ROUTES[route];
   sectionLabel.textContent = item.label;
   view.innerHTML = routeView(route);
-  if (route === "play") renderFormationLab();
+  if (route === "play") renderFormationLab(getActiveDeck());
+  if (route === "decks") renderDeckWorkshop();
   navLinks.forEach(link => {
     if (link.dataset.route === route) link.setAttribute("aria-current", "page");
     else link.removeAttribute("aria-current");
