@@ -43,13 +43,13 @@ function tile(symbol, title, copy, state, locked = false) {
 }
 function homeView() {
   return `<section class="hero"><div class="hero-copy"><div class="eyebrow">A CRASHOUT WORLD · TRADING CARD GAME</div>
-    <h1>ENTER<br>THE REALMS.</h1><p>A living card universe built around distinct worlds, strange civilizations, and strategic systems. Your journey starts here.</p>
+    <h1>ENTER<br>THE REALMS.</h1><p>The Eliteborn Formation Lab is playable now. Build four Forces, combine them into living battlefield laws, and break formations in combat.</p>
   </div><span class="hero-tag">NO SAFE ROUTES</span></section>
-  <div class="section-head"><div><div class="eyebrow">YOUR WORLD</div><h2>THE PLAYER HUB</h2></div><p>Platform foundation · connected services pending</p></div>
+  <div class="section-head"><div><div class="eyebrow">YOUR WORLD</div><h2>THE PLAYER HUB</h2></div><p>ELITEBORN FORMATION LAB · PLAYABLE TEST BUILD</p></div>
   <section class="grid" aria-label="REALMS destinations">
     ${tile("▤","COLLECTION","Browse owned cards and discover the full catalogue.","SERVICE PENDING",true)}
     ${tile("▱","DECK WORKSHOP","Create and validate decks against the live ruleset.","RULES PENDING",true)}
-    ${tile("⚔","THE ARENA","Play against bots, friends, or the wider field.","NOT CONNECTED",true)}
+    ${tile("⚔","THE ARENA","Play the Eliteborn Formation Lab against a scripted rival. Multiplayer is a separate release gate.","FORMATION LAB LIVE",true)}
   </section>
   <div class="section-head"><div><div class="eyebrow">COMING ONLINE</div><h2>THE REST OF THE WORLD</h2></div></div>
   <section class="grid" aria-label="More platform services">
