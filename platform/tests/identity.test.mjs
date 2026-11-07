@@ -15,7 +15,7 @@ function makeClient({ session = null, profile = null, link = null, rpcData = nul
     },
     from: table => ({ select: columns => ({ eq: (column, value) => ({ maybeSingle: async () => {
       calls.push(["select", table, columns, column, value]);
-      return { data: table === "profiles" ? profile : link, error: null };
+      return { data: table === "profiles" ? profile : table === "game_links" ? link : integration, error: null };
     } }) }) }),
     rpc: async (name, args) => { calls.push(["rpc", name, args]); return { data: rpcData, error: rpcError }; }
   };
@@ -24,15 +24,16 @@ function makeClient({ session = null, profile = null, link = null, rpcData = nul
 
 test("guest snapshot does not query private player data", async () => {
   const { client, calls } = makeClient();
-  assert.deepEqual(await createCrashoutIdentity(client).getSnapshot(), { connected: true, authenticated: false, user: null, profile: null, destination: null });
+  assert.deepEqual(await createCrashoutIdentity(client).getSnapshot(), { connected: true, authenticated: false, user: null, profile: null, destination: null, integration: null });
   assert.equal(calls.length, 0);
 });
 test("authenticated snapshot reads own profile and REALMS link", async () => {
-  const { client, calls } = makeClient({ session: { user: { id: "user-1", email: "player@example.test" } }, profile: { username: "player", player_id: "ABC123" }, link: { external_player_id: "realm-1", linked_at: "2026-11-07T00:00:00Z" } });
+  const { client, calls } = makeClient({ session: { user: { id: "user-1", email: "player@example.test" } }, profile: { username: "player", player_id: "ABC123" }, link: { external_player_id: "realm-1", linked_at: "2026-11-07T00:00:00Z" }, integration: { enabled: false, integration_state: "adapter_required" } });
   const snapshot = await createCrashoutIdentity(client).getSnapshot();
   assert.equal(snapshot.authenticated, true);
   assert.equal(snapshot.profile.username, "player");
   assert.equal(snapshot.destination.externalPlayerId, "realm-1");
+  assert.equal(snapshot.integration.integration_state, "adapter_required");
   assert.deepEqual(calls.map(call => call[1]), ["profiles", "game_links"]);
   assert.equal(calls[1][4], "realms");
 });
