@@ -19,7 +19,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Syntax check
-        run: node --check platform/app.js
-      - name: Platform shell regression tests
-        run: node --test platform/tests/shell.test.cjs
+      - name: Syntax checks
+        run: |
+          node --check platform/app.js
+          node --check platform/config.js
+          node --check platform/services/crashout-identity.mjs
+      - name: Platform regression tests
+        run: node --test platform/tests/*.test.cjs platform/tests/*.test.mjs
