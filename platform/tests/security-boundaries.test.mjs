@@ -14,6 +14,7 @@ test("browser config contains only the shared public Crashout client settings", 
 test("browser never creates a second auth token store", () => {
   assert.doesNotMatch(app + identity, /localStorage\.(setItem|getItem)\([^)]*(token|session)/i);
   assert.doesNotMatch(app + identity, /CRASHOUT_REALMS_ADAPTER_KEY|SUPABASE_SERVICE_ROLE_KEY/);
+  assert.match(app, /passwordInput\.value = ""/);
 });
 test("destination completion stays server-side", () => {
   assert.match(identity, /start_destination_link/);
