@@ -18,7 +18,7 @@ const escapeHtml=value=>String(value).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&
 const selectedRealm=()=>REALM_CATALOGUE.find(r=>r.id===draft.realm)||null;
 const counts=()=>draft.cards.reduce((acc,id)=>(acc[id]=(acc[id]||0)+1,acc),{});
 const cardById=id=>ELITEBORN_CARDS.find(c=>c.id===id);
-const persist=()=>{if(!safeWrite(draft)){statusMessage="Could not save locally. Check this browser's storage settings.";}};
+const persist=()=>{const ok=safeWrite(draft);if(!ok)statusMessage="Could not save locally. Check this browser storage settings.";return ok;};
 function cardTile(card,count=0){
  return `<article class="workshop-card"><div class="workshop-card-top"><span>${escapeHtml(card.force||card.type)}</span><small>${card.id}</small></div><h3>${escapeHtml(card.name)}</h3><p>${escapeHtml(card.rules)}</p><div class="workshop-card-foot"><span>COST ${card.cost} · RESOURCE +${card.resource}</span><span>${card.str??"—"} STR / ${card.hp??"—"} HP</span></div><div class="workshop-card-actions"><span>IN DECK: ${count}</span><button type="button" data-add-card="${card.id}">ADD COPY +</button></div></article>`;
 }
@@ -31,7 +31,7 @@ function render(){
  root.querySelector("#deck-name").addEventListener("input",e=>{draft.name=e.target.value;persist();root.querySelector(".deck-list-panel h2").textContent=draft.name||"UNTITLED DECK";});
  root.querySelector("#deck-realm").addEventListener("change",e=>{draft.realm=e.target.value;persist();render();});
  root.querySelector("#deck-new").addEventListener("click",()=>{draft={name:"New Deck",realm:"",cards:[]};statusMessage="New local draft created.";persist();render();});
- root.querySelector("#deck-save").addEventListener("click",()=>{persist();statusMessage=safeRead()?"Draft saved on this device.":"Local save failed.";render();});
+ root.querySelector("#deck-save").addEventListener("click",()=>{const ok=persist();statusMessage=ok?"Draft saved on this device.":"Local save failed.";render();});
  root.querySelectorAll("[data-add-card]").forEach(button=>button.addEventListener("click",()=>{draft.cards.push(button.dataset.addCard);statusMessage="Card added to the local deck list.";persist();render();}));
  root.querySelectorAll("[data-remove-index]").forEach(button=>button.addEventListener("click",()=>{draft.cards.splice(Number(button.dataset.removeIndex),1);statusMessage="Card removed from the local deck list.";persist();render();}));
 }
