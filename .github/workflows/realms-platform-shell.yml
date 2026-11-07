@@ -5,8 +5,9 @@ on:
     paths:
       - "platform/**"
       - ".github/workflows/realms-platform-shell.yml"
+  workflow_dispatch:
   push:
-    branches: [main]
+    branches: [main, "platform/**"]
     paths:
       - "platform/**"
       - ".github/workflows/realms-platform-shell.yml"
