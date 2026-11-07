@@ -19,9 +19,9 @@ function beginTurn(state,side){
   drawToFive(p); p.resource=p.hand.reduce((n,id)=>n+(cardById(id)?.resource||0),0);
   log(state,`${p.name} begins turn ${state.turn} with ${p.resource} resources.`);
 }
-export function createMatch({seed=1,deckA,deckB}={}){
+export function createMatch({seed=1,deckA,deckB,realm=null}={}){
   const rng=makeRng(seed),a=player("you","YOU",deckA||makeDeck(),rng),b=player("bot","RIVAL",deckB||makeDeck(),rng);
-  const state={players:{you:a,bot:b},active:"you",turn:0,phase:"main",winner:null,log:[],entitySeq:0,seed};
+  const state={players:{you:a,bot:b},active:"you",turn:0,phase:"main",winner:null,log:[],entitySeq:0,seed,realm:realm?clone(realm):null};
   for(let i=0;i<5;i++){draw(a);draw(b);}
   beginTurn(state,"you");
   return state;
@@ -80,7 +80,7 @@ export function endTurn(state,side){
 function botTurn(state){
   const side="bot",p=state.players.bot,enemy=state.players.you;state.active=side;state.turn++;drawToFive(p);p.resource=p.hand.reduce((n,id)=>n+(cardById(id)?.resource||0),0);log(state,`RIVAL begins turn ${state.turn} with ${p.resource} resources.`);
   let guard=0,changed=true;
-  while(changed&&guard++<10){changed=false;const affordable=p.hand.map(id=>cardById(id)).filter(c=>c&&c.type==="UNIT"&&c.cost<=p.resource&&p.board.length<5).sort((a,b)=>a.cost-b.cost)[0];if(affordable){playCard(state,side,affordable.id);changed=true;}}
+  while(changed&&guard++<10){changed=false;const affordable=p.hand.map(id=>cardById(id)).filter(c=>c&&c.type==="UNIT"&&c.cost<=p.resource&&p.board.length<6).sort((a,b)=>a.cost-b.cost)[0];if(affordable){playCard(state,side,affordable.id);changed=true;}}
   for(const u of [...p.board])if(!u.attacked&&u.hp>0){const target=[...enemy.board].sort((a,b)=>a.hp-b.hp)[0];attack(state,side,u.entityId,target?.entityId||null);if(state.winner)return;}
   log(state,"RIVAL ends the turn.");beginTurn(state,"you");
 }
