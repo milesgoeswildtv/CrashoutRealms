@@ -43,7 +43,7 @@ export function playCard(state,side,cardId){
   if(index<0||!card)throw new Error("That card is not in your hand.");
   if(card.type!=="UNIT")throw new Error("Formation cards need selected board components.");
   if(p.resource<card.cost)throw new Error("Not enough resources.");
-  if(unitCount(p)>=5)throw new Error("Your five Unit positions are full.");
+  if(unitCount(p)>=6)throw new Error("Your six Unit positions are full.");
   p.resource-=card.cost;p.hand.splice(index,1);
   const entity=nextEntity(state,side,card);entity.baseStr=entity.str;p.board.push(entity);
   log(state,`${p.name} deploys ${card.name} (${entity.str}/${entity.hp}).`);
