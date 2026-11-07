@@ -150,6 +150,7 @@ loginForm.addEventListener("submit", async event => {
       await identity.signInWithPassword(emailInput.value, passwordInput.value);
       setMessage("Crashout identity connected.", "success");
     }
+    passwordInput.value = "";
     await refreshIdentity();
     if (snapshot.authenticated) loginForm.hidden = true;
   } catch (error) {
