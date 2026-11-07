@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#10110f">
+  <meta name="description" content="REALMS — the living card world inside Crashout.">
+  <title>REALMS — Crashout</title>
+  <link rel="stylesheet" href="./app.css">
+  <script type="module" src="./app.js"></script>
+</head>
+<body>
+  <div class="app-frame">
+    <aside class="rail" aria-label="Primary navigation">
+      <a class="brand" href="#home" aria-label="REALMS home"><span class="brand-mark">R</span><span>REALMS<small>BY CRASHOUT</small></span></a>
+      <nav id="primary-nav" class="nav-list">
+        <a href="#home" data-route="home" aria-current="page"><span>⌂</span>Home</a>
+        <a href="#collection" data-route="collection"><span>▤</span>Collection</a>
+        <a href="#decks" data-route="decks"><span>▱</span>Decks</a>
+        <a href="#play" data-route="play"><span>⚔</span>Play</a>
+        <a href="#store" data-route="store"><span>◇</span>Store</a>
+        <a href="#profile" data-route="profile"><span>◎</span>Profile</a>
+      </nav>
+      <div class="rail-bottom"><span class="status-dot"></span><span>PLATFORM FOUNDATION</span><small id="identity-status" data-state="pending">CHECKING CRASHOUT IDENTITY</small></div>
+    </aside>
+    <main class="main">
+      <header class="topbar">
+        <div class="crumb"><span>CRASHOUT</span><b>/</b><span id="section-label">HOME</span></div>
+        <button class="account-chip" id="account-state" type="button" aria-haspopup="dialog"><span class="avatar">?</span><span><b>Crashout account</b><small>Sign in to continue</small></span><i>↗</i></button>
+      </header>
+      <section id="view" class="view" tabindex="-1" aria-live="polite"></section>
+      <footer class="footer"><span>REALMS · PLAYABLE FORMATION LAB</span><span>LOCAL RULES TEST · NOT RANKED OR MULTIPLAYER</span></footer>
+    </main>
+  </div>
+  <nav class="mobile-nav" aria-label="Mobile navigation">
+    <a href="#home" data-route="home" aria-current="page"><span>⌂</span>Home</a>
+    <a href="#collection" data-route="collection"><span>▤</span>Cards</a>
+    <a href="#decks" data-route="decks"><span>▱</span>Decks</a>
+    <a href="#play" data-route="play"><span>⚔</span>Play</a>
+    <a href="#profile" data-route="profile"><span>◎</span>Profile</a>
+  </nav>
+  <dialog id="account-dialog" class="account-dialog" aria-labelledby="account-title">
+    <div class="dialog-head"><div><div class="eyebrow">CRASHOUT NETWORK</div><h2 id="account-title">YOUR IDENTITY</h2></div><button id="close-account" class="close-button" type="button" aria-label="Close">×</button></div>
+    <p id="auth-message" role="status">Sign in with the same Crashout account you use across the network.</p>
+    <button id="discord-login" class="primary-button" type="button">CONTINUE WITH DISCORD</button>
+    <div class="form-divider"><span>OR USE EMAIL</span></div>
+    <form id="login-form">
+      <label for="auth-email">EMAIL</label><input id="auth-email" type="email" autocomplete="email" required>
+      <label for="auth-password">PASSWORD</label><input id="auth-password" type="password" autocomplete="current-password" minlength="8" required>
+      <button id="auth-submit" class="primary-button" type="submit">SIGN IN</button>
+      <button id="create-account" class="text-button" type="button">CREATE A CRASHOUT ACCOUNT</button>
+    </form>
+    <div class="link-actions">
+      <div class="eyebrow">REALMS DESTINATION LINK</div>
+      <button id="link-existing" class="secondary-button" type="button" disabled>LINK EXISTING REALMS ACCOUNT</button>
+      <button id="link-create" class="secondary-button" type="button" disabled>CREATE + LINK REALMS ACCOUNT</button>
+      <small id="link-status">Checking REALMS destination status in Crashout…</small>
+    </div>
+    <button id="sign-out" class="text-button" type="button" hidden>SIGN OUT</button>
+  </dialog>
+</body>
+</html>
