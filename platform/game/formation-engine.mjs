@@ -46,7 +46,7 @@ export function playCard(state,side,cardId){
   if(unitCount(p)>=5)throw new Error("Your five Unit positions are full.");
   p.resource-=card.cost;p.hand.splice(index,1);
   const entity=nextEntity(state,side,card);entity.baseStr=entity.str;p.board.push(entity);
-  p.discard.push(card.id); log(state,`${p.name} deploys ${card.name} (${entity.str}/${entity.hp}).`);
+  log(state,`${p.name} deploys ${card.name} (${entity.str}/${entity.hp}).`);
   return entity.entityId;
 }
 export function formUnits(state,side,formationId,componentIds){
@@ -58,7 +58,7 @@ export function formUnits(state,side,formationId,componentIds){
   p.resource-=formation.cost;p.hand.splice(index,1);
   const ids=new Set(componentIds);p.board=p.board.filter(u=>!ids.has(u.entityId));
   const formed=nextEntity(state,side,formation);Object.assign(formed,{str:totals.str,hp:totals.hp,maxHp:totals.maxHp,baseStr:totals.str,formation:true,componentIds:[...componentIds],componentCardIds:selected.map(u=>u.cardId)});
-  p.board.push(formed);p.discard.push(formation.id);
+  Object.assign(formed,{formationCardId:formation.id});p.board.push(formed);
   log(state,`${p.name} combines ${selected.map(u=>u.name).join(" + ")} into ${formation.name} (${formed.str}/${formed.hp}).`);
   return formed.entityId;
 }
@@ -69,7 +69,7 @@ export function attack(state,side,attackerId,targetId=null){
   else{enemy.health-=attacker.str;log(state,`${attacker.name} hits ${enemy.name} for ${attacker.str}.`);}
   attacker.attacked=true;if(enemy.health<=0)state.winner=side;return state;
 }
-function destroy(owner,unit){owner.board=owner.board.filter(u=>u.entityId!==unit.entityId);owner.discard.push(...(unit.formation?unit.componentCardIds:[unit.cardId]));}
+function destroy(owner,unit){owner.board=owner.board.filter(u=>u.entityId!==unit.entityId);owner.discard.push(...(unit.formation?[...unit.componentCardIds,unit.formationCardId]:[unit.cardId]));}
 export function endTurn(state,side){
   requireTurn(state,side);const p=state.players[side];log(state,`${p.name} ends the turn.`);
   const next=side==="you"?"bot":"you";
