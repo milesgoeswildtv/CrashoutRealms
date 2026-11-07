@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#10110f">
+  <meta name="description" content="REALMS — the living card world inside Crashout.">
+  <title>REALMS — Crashout</title>
+  <link rel="stylesheet" href="./app.css">
+  <script src="./app.js" defer></script>
+</head>
+<body>
+  <div class="app-frame">
+    <aside class="rail" aria-label="Primary navigation">
+      <a class="brand" href="#home" aria-label="REALMS home"><span class="brand-mark">R</span><span>REALMS<small>BY CRASHOUT</small></span></a>
+      <nav id="primary-nav" class="nav-list">
+        <a href="#home" data-route="home" aria-current="page"><span>⌂</span>Home</a>
+        <a href="#collection" data-route="collection"><span>▤</span>Collection</a>
+        <a href="#decks" data-route="decks"><span>▱</span>Decks</a>
+        <a href="#play" data-route="play"><span>⚔</span>Play</a>
+        <a href="#store" data-route="store"><span>◇</span>Store</a>
+        <a href="#profile" data-route="profile"><span>◎</span>Profile</a>
+      </nav>
+      <div class="rail-bottom"><span class="status-dot"></span><span>PLATFORM FOUNDATION</span><small>GAME SYSTEMS CONNECT AFTER CANON LOCK</small></div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="crumb"><span>CRASHOUT</span><b>/</b><span id="section-label">HOME</span></div>
+        <div class="account-chip" id="account-state"><span class="avatar">?</span><span><b>Guest session</b><small>Crashout identity not connected</small></span><i>↗</i></div>
+      </header>
+      <section id="view" class="view" tabindex="-1" aria-live="polite"></section>
+      <footer class="footer"><span>REALMS · PLATFORM FOUNDATION</span><span>GAMEPLAY DATA IS NOT YET CONNECTED</span></footer>
+    </main>
+  </div>
+  <nav class="mobile-nav" aria-label="Mobile navigation">
+    <a href="#home" data-route="home" aria-current="page"><span>⌂</span>Home</a>
+    <a href="#collection" data-route="collection"><span>▤</span>Cards</a>
+    <a href="#decks" data-route="decks"><span>▱</span>Decks</a>
+    <a href="#play" data-route="play"><span>⚔</span>Play</a>
+    <a href="#profile" data-route="profile"><span>◎</span>Profile</a>
+  </nav>
+</body>
+</html>
