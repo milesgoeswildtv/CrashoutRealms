@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { createCrashoutIdentity } from "../services/crashout-identity.mjs";
 
-function makeClient({ session = null, profile = null, link = null, rpcData = null, rpcError = null } = {}) {
+function makeClient({ session = null, profile = null, link = null, integration = null, rpcData = null, rpcError = null } = {}) {
   const calls = [];
   const client = {
     auth: {
@@ -25,7 +25,8 @@ function makeClient({ session = null, profile = null, link = null, rpcData = nul
 test("guest snapshot does not query private player data", async () => {
   const { client, calls } = makeClient();
   assert.deepEqual(await createCrashoutIdentity(client).getSnapshot(), { connected: true, authenticated: false, user: null, profile: null, destination: null, integration: null });
-  assert.equal(calls.length, 0);
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0][1], "destination_integrations");
 });
 test("authenticated snapshot reads own profile and REALMS link", async () => {
   const { client, calls } = makeClient({ session: { user: { id: "user-1", email: "player@example.test" } }, profile: { username: "player", player_id: "ABC123" }, link: { external_player_id: "realm-1", linked_at: "2026-11-07T00:00:00Z" }, integration: { enabled: false, integration_state: "adapter_required" } });
@@ -34,7 +35,7 @@ test("authenticated snapshot reads own profile and REALMS link", async () => {
   assert.equal(snapshot.profile.username, "player");
   assert.equal(snapshot.destination.externalPlayerId, "realm-1");
   assert.equal(snapshot.integration.integration_state, "adapter_required");
-  assert.deepEqual(calls.map(call => call[1]), ["profiles", "game_links"]);
+  assert.deepEqual(calls.map(call => call[1]).sort(), ["destination_integrations", "game_links", "profiles"]);
   assert.equal(calls[1][4], "realms");
 });
 test("destination-link requests require a Crashout session", async () => {
