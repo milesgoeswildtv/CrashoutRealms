@@ -73,7 +73,7 @@ function destroy(owner,unit){owner.board=owner.board.filter(u=>u.entityId!==unit
 export function endTurn(state,side){
   requireTurn(state,side);const p=state.players[side];log(state,`${p.name} ends the turn.`);
   const next=side==="you"?"bot":"you";
-  if(next==="bot"){botTurn(state);if(!state.winner)beginTurn(state,"you");}
+  if(next==="bot"){botTurn(state);}
   else beginTurn(state,"bot");
   return state;
 }
