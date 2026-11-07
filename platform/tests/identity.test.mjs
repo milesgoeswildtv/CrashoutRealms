@@ -36,7 +36,7 @@ test("authenticated snapshot reads own profile and REALMS link", async () => {
   assert.equal(snapshot.destination.externalPlayerId, "realm-1");
   assert.equal(snapshot.integration.integration_state, "adapter_required");
   assert.deepEqual(calls.map(call => call[1]).sort(), ["destination_integrations", "game_links", "profiles"]);
-  assert.equal(calls[1][4], "realms");
+  assert.equal(calls.find(call => call[1] === "game_links")[4], "realms");
 });
 test("destination-link requests require a Crashout session", async () => {
   const { client, calls } = makeClient();
@@ -48,12 +48,12 @@ test("destination-link flow is restricted to existing or create", async () => {
   await assert.rejects(createCrashoutIdentity(client).requestDestinationLink("admin"), /Unsupported/);
 });
 test("destination-link response is checked and secure", async () => {
-  const { client } = makeClient({ session: { user: { id: "u1" } }, rpcData: { token: "a".repeat(64), launch_url: "https://realms.example.test/link", flow: "create", expires_at: "2026-11-07T00:10:00Z" } });
+  const { client } = makeClient({ session: { user: { id: "u1" } }, rpcData: { token: "a".repeat(64), launch_url: "https://realms.example.test/link", flow: "create", expires_at: "2099-11-07T00:10:00Z" } });
   const result = await createCrashoutIdentity(client).requestDestinationLink("create");
   assert.equal(result.flow, "create"); assert.equal(result.token.length, 64);
 });
 test("insecure launch URLs are rejected", async () => {
-  const { client } = makeClient({ session: { user: { id: "u1" } }, rpcData: { token: "a".repeat(64), launch_url: "http://evil.example.test", expires_at: "2026-11-07T00:10:00Z" } });
+  const { client } = makeClient({ session: { user: { id: "u1" } }, rpcData: { token: "a".repeat(64), launch_url: "http://evil.example.test", expires_at: "2099-11-07T00:10:00Z" } });
   await assert.rejects(createCrashoutIdentity(client).requestDestinationLink("create"), /insecure/);
 });
 test("RPC errors are not converted into successful links", async () => {
