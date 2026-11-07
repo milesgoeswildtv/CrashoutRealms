@@ -58,6 +58,14 @@ test("RPC errors are not converted into successful links", async () => {
   const { client } = makeClient({ session: { user: { id: "u1" } }, rpcError: new Error("Destination disabled") });
   await assert.rejects(createCrashoutIdentity(client).requestDestinationLink("create"), /Destination disabled/);
 });
+test("malformed or mismatched link proof is rejected", async () => {
+  const { client } = makeClient({ session: { user: { id: "u1" } }, rpcData: { token: "not-a-token", launch_url: "https://realms.example.test", flow: "existing", expires_at: "2099-01-01T00:00:00Z" } });
+  await assert.rejects(createCrashoutIdentity(client).requestDestinationLink("create"), /incomplete/);
+});
+test("expired link proof is rejected", async () => {
+  const { client } = makeClient({ session: { user: { id: "u1" } }, rpcData: { token: "a".repeat(64), launch_url: "https://realms.example.test", flow: "create", expires_at: "2020-01-01T00:00:00Z" } });
+  await assert.rejects(createCrashoutIdentity(client).requestDestinationLink("create"), /incomplete/);
+});
 test("missing link payload is rejected", async () => {
   const { client } = makeClient({ session: { user: { id: "u1" } }, rpcData: {} });
   await assert.rejects(createCrashoutIdentity(client).requestDestinationLink("existing"), /incomplete/);
