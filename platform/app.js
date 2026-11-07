@@ -1,6 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.119.0";
 import { REALMS_CONFIG } from "./config.js";
 import { createCrashoutIdentity } from "./services/crashout-identity.mjs";
+import { renderFormationLab } from "./game/formation-lab.js";
 
 const ROUTES = Object.freeze({
   home: { label: "HOME", title: "THE WORLD IS OPENING", description: "Your place in the REALMS universe. Build your collection, shape your decks, and enter the arena as the worlds come online.", state: "FOUNDATION" },
@@ -60,6 +61,7 @@ function homeView() {
 }
 function routeView(route) {
   if (route === "home") return homeView();
+  if (route === "play") return `<div id="formation-lab-root"></div>`;
   const item = ROUTES[route];
   if (route === "profile" && snapshot.authenticated) {
     const name = snapshot.profile?.display_name || snapshot.profile?.username || "Crashout player";
@@ -87,6 +89,7 @@ function render() {
   const route = currentRoute(), item = ROUTES[route];
   sectionLabel.textContent = item.label;
   view.innerHTML = routeView(route);
+  if (route === "play") renderFormationLab();
   navLinks.forEach(link => {
     if (link.dataset.route === route) link.setAttribute("aria-current", "page");
     else link.removeAttribute("aria-current");
