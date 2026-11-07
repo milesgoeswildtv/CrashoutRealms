@@ -10,7 +10,9 @@ export function createCrashoutIdentity(client, options = {}) {
   async function getSnapshot() {
     const sessionResult = await client.auth.getSession();
     const session = requireData(sessionResult, null)?.session ?? null;
-    if (!session?.user) return { connected: true, authenticated: false, user: null, profile: null, destination: null };
+    const integrationResult = await client.from("destination_integrations").select("integration_state,enabled,launch_url,adapter_version,capabilities").eq("game_key", destinationKey).maybeSingle();
+    const integration = requireData(integrationResult, null);
+    if (!session?.user) return { connected: true, authenticated: false, user: null, profile: null, destination: null, integration };
     const user = session.user;
     const [profileResult, linkResult] = await Promise.all([
       client.from("profiles").select("player_id,username,display_name,avatar_url").eq("id", user.id).maybeSingle(),
@@ -19,7 +21,7 @@ export function createCrashoutIdentity(client, options = {}) {
     const profile = requireData(profileResult, null), link = requireData(linkResult, null);
     return {
       connected: true, authenticated: true,
-      user: { id: user.id, email: user.email ?? null }, profile,
+      user: { id: user.id, email: user.email ?? null }, profile, integration,
       destination: link ? { linked: true, externalPlayerId: link.external_player_id, linkedAt: link.linked_at } : { linked: false }
     };
   }
@@ -28,7 +30,7 @@ export function createCrashoutIdentity(client, options = {}) {
       queueMicrotask(() => getSnapshot().then(listener).catch(() => listener({
         connected: true, authenticated: Boolean(session?.user),
         user: session?.user ? { id: session.user.id, email: session.user.email ?? null } : null,
-        profile: null, destination: null, refreshFailed: true
+        profile: null, destination: null, integration: null, refreshFailed: true
       })));
     });
     return () => data?.subscription?.unsubscribe?.();
@@ -64,5 +66,9 @@ export function createCrashoutIdentity(client, options = {}) {
     if (launch.protocol !== "https:" && launch.hostname !== "localhost") throw new Error("Crashout returned an insecure destination launch URL.");
     return { token: payload.token, launchUrl: launch.toString(), flow: payload.flow, expiresAt: payload.expires_at };
   }
-  return Object.freeze({ getSnapshot, subscribe, signInWithDiscord, signInWithPassword, createCrashoutAccount, signOut, requestDestinationLink });
+  async function getDestinationStatus() {
+    const result = await client.from("destination_integrations").select("integration_state,enabled,launch_url,adapter_version,capabilities").eq("game_key", destinationKey).maybeSingle();
+    return requireData(result, null);
+  }
+  return Object.freeze({ getSnapshot, getDestinationStatus, subscribe, signInWithDiscord, signInWithPassword, createCrashoutAccount, signOut, requestDestinationLink });
 }
