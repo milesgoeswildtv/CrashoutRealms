@@ -29,4 +29,5 @@ test("profile reads are scoped to the authenticated user and destination", () =>
 test("browser configuration is pinned to the shared Crashout project", () => {
   assert.match(config, /qcmfnkuyinhfdxnuvneb\.supabase\.co/);
   assert.match(config, /destinationKey: "realms"/);
+  assert.match(await readFile(new URL("../app.js", import.meta.url), "utf8"), /@supabase\\/supabase-js@2\\.119\\.0/);
 });
