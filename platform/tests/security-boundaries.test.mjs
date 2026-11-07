@@ -19,7 +19,8 @@ test("browser never creates a second auth token store", () => {
 test("destination completion stays server-side", () => {
   assert.match(identity, /start_destination_link/);
   assert.doesNotMatch(identity, /complete_destination_link/);
-  assert.match(html, /Account linking opens after the trusted REALMS adapter is verified/);
+  assert.match(html, /id="link-status"/);
+  assert.match(app, /Crashout currently lists REALMS as unavailable/);
 });
 test("profile reads are scoped to the authenticated user and destination", () => {
   assert.match(identity, /eq\("id", user\.id\)/);
