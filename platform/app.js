@@ -27,7 +27,7 @@ const signOutButton = document.querySelector("#sign-out");
 const linkExisting = document.querySelector("#link-existing");
 const linkCreate = document.querySelector("#link-create");
 let identity = null;
-let snapshot = { connected: false, authenticated: false, user: null, profile: null, destination: null };
+let snapshot = { connected: false, authenticated: false, user: null, profile: null, destination: null, integration: null };
 let accountMode = "signin";
 
 function currentRoute() {
@@ -65,6 +65,7 @@ function routeView(route) {
     const name = snapshot.profile?.display_name || snapshot.profile?.username || "Crashout player";
     const playerId = snapshot.profile?.player_id || "Player ID provisioning pending";
     const linked = snapshot.destination?.linked;
+    const integration = snapshot.integration;
     return `<div class="eyebrow">REALMS / PROFILE</div><h1 class="page-title">${escapeHtml(name)}</h1>
       <p class="page-lead">Your REALMS destination profile is backed by your existing Crashout identity. The account is not duplicated.</p>
       <section class="profile-grid">
@@ -113,10 +114,14 @@ function updateAccountUI() {
   loginForm.hidden = true;
   discordButton.hidden = true;
   createToggle.hidden = true;
-  linkExisting.disabled = Boolean(snapshot.destination?.linked);
-  linkCreate.disabled = Boolean(snapshot.destination?.linked);
+  const canLink = snapshot.authenticated && snapshot.integration?.enabled === true && snapshot.integration?.integration_state === "ready" && !snapshot.destination?.linked;
+  linkExisting.disabled = !canLink;
+  linkCreate.disabled = !canLink;
   linkExisting.textContent = snapshot.destination?.linked ? "REALMS ACCOUNT LINKED" : "LINK EXISTING REALMS ACCOUNT";
   linkCreate.textContent = snapshot.destination?.linked ? "REALMS ACCOUNT LINKED" : "CREATE + LINK REALMS ACCOUNT";
+  const integrationState = snapshot.integration?.integration_state || "registry unavailable";
+  document.querySelector("#identity-status").textContent = snapshot.integration?.enabled ? "REALMS ADAPTER READY" : `REALMS ADAPTER ${integrationState.toUpperCase()}`;
+  document.querySelector("#identity-status").dataset.state = snapshot.integration?.enabled ? "ready" : "pending";
 }
 function setBusy(busy) {
   [authSubmit, discordButton, createToggle, signOutButton].forEach(button => { if (button) button.disabled = busy; });
@@ -181,8 +186,7 @@ try {
   identity = createCrashoutIdentity(supabase, { destinationKey: REALMS_CONFIG.destinationKey, redirectTo: REALMS_CONFIG.authRedirectTo });
   await refreshIdentity();
   identity.subscribe(next => { snapshot = next; updateAccountUI(); render(); });
-  document.querySelector("#identity-status").textContent = "CRASHOUT AUTH SERVICE REACHABLE";
-  document.querySelector("#identity-status").dataset.state = "ready";
+  updateAccountUI();
 } catch (error) {
   document.querySelector("#identity-status").textContent = "CRASHOUT AUTH SERVICE UNAVAILABLE";
   document.querySelector("#identity-status").dataset.state = "error";
