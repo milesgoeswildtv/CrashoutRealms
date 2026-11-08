@@ -473,7 +473,7 @@ function playerHTML(p,side='bottom'){
   <header class="player-header"><div class="player-id"><span class="faction-dot" style="background:${COLORS[p.faction]}"></span><div><div class="player-name">${esc(p.name)} — ${esc(p.faction)}</div><div class="player-sub">${esc(p.passive)}</div></div></div>
    <div class="statbar"><span class="stat health-stat">♥ <b>${p.health}</b> HP</span><span class="stat">RES <b>${p.resource}</b> / ${p.resourceStart}</span>${p.faction==='Continuum'?`<span class="stat">SEQ <b>${p.sequence}</b> ${p.passive==='Loop Back'?(p.sequenceDir>0?'→':'←'):''}</span>`:''}</div>
   </header>
-  ${side==='top'?handMarkup+battlefield:battlefield+zones+handMarkup}
+  ${side==='top'?handMarkup+battlefield+zones:battlefield+zones+handMarkup}
  </section>`;
 }
 function findCardForInspection(owner,iid){
