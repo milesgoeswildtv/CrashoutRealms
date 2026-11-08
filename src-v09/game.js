@@ -519,7 +519,7 @@ function openZoneBrowser(owner,zone){
   : '<div class="empty-zone">This zone is empty.</div>';
  overlay.classList.add('open');
 }
-function getSelected(){function getSelected(){if(!state?.selected)return null;for(const p of state.players){const c=[...p.board,...p.hand].find(x=>x.iid===state.selected.iid);if(c)return c;}return null;}
+function getSelected(){if(!state?.selected)return null;for(const p of state.players){const c=[...p.board,...p.hand].find(x=>x.iid===state.selected.iid);if(c)return c;}return null;}
 function controlsHTML(){
  if(state.winner!==null)return `<section class="controls"><div class="action-panel"><strong>${state.winner==='draw'?'DRAW':state.players[state.winner].name+' WINS'}</strong><button class="btn primary" data-action="new">New Match</button></div></section>`;
  const p=state.players[state.active];let actions='';
@@ -562,7 +562,7 @@ function wire(){
  document.querySelectorAll('[data-action]').forEach(b=>b.onclick=()=>handleAction(b.dataset.action));
  document.querySelectorAll('[data-ref]').forEach(b=>b.onclick=()=>handleRef(b.dataset.ref));
 }
-function handleAction(x){function handleAction(x){const p=state.players[state.active];if(x==='new')setupModal.classList.add('open');if(x==='pass-placement')passPlacement(p.index);if(x==='pass-combat')passCombat(p.index);if(x==='attack-player'){const a=getSelected();if(a)combatAttack(a,null);}if(x==='skip')useSkipAhead(p);if(x==='consume')useConsume(p);if(x==='grave-echo')useDeadlandsEcho(p);if(x==='dead-absorb')useDeadlandsAbsorption(p);}
+function handleAction(x){const p=state.players[state.active];if(x==='new')setupModal.classList.add('open');if(x==='pass-placement')passPlacement(p.index);if(x==='pass-combat')passCombat(p.index);if(x==='attack-player'){const a=getSelected();if(a)combatAttack(a,null);}if(x==='skip')useSkipAhead(p);if(x==='consume')useConsume(p);if(x==='grave-echo')useDeadlandsEcho(p);if(x==='dead-absorb')useDeadlandsAbsorption(p);}
 function handleRef(x){const c=getSelected();if(!c||!c.type.includes('Creature'))return;if(x==='damage')applyDamage(c,1);if(x==='heal')healUnit(c,1,'Ref');if(x==='pressure')gainPressure(c,1,'Ref');if(x==='destroy')destroyUnit(c);render();}
 function showOptions(eyebrow,title,opts,pick,{cancel=true}={}){choiceEyebrow.textContent=eyebrow;choiceTitle.textContent=title;choiceBody.innerHTML=`<div class="choice-list">${opts.map(o=>`<button class="choice-option" data-val="${esc(o.value)}">${esc(o.label)}</button>`).join('')}</div>`;choiceActions.innerHTML=cancel?'<button class="btn ghost" id="choiceCancelBtn">Cancel</button>':'';choiceModal.classList.add('open');choiceBody.querySelectorAll('[data-val]').forEach(b=>b.onclick=()=>{const v=b.dataset.val;closeChoice();pick(v);});if($('#choiceCancelBtn'))$('#choiceCancelBtn').onclick=closeChoice;}
 function closeChoice(){choiceModal.classList.remove('open');choiceBody.innerHTML='';choiceActions.innerHTML='';}
