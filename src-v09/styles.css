@@ -54,7 +54,7 @@ body { min-width: 320px; }
 .stat b { font-size:14px; }
 .board-wrap { padding:10px; }
 .zone-label { color:var(--muted); font-size:10px; text-transform:uppercase; letter-spacing:.14em; margin-bottom:6px; display:flex; justify-content:space-between; gap:8px; }
-.board-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,105px),1fr)); gap:9px; align-items:stretch; padding:4px 0 8px; }
+.board-grid { display:flex; flex-wrap:wrap; gap:9px; align-items:stretch; padding:4px 0 8px; }
 .empty-board { grid-column:1/-1; min-height:76px; display:grid; place-items:center; border:1px dashed #35404e; border-radius:12px; color:#687587; font-size:11px; letter-spacing:.08em; }
 .trap-row { display:flex; gap:7px; overflow-x:auto; min-height:58px; }
 .trap-chip { border:1px solid var(--line); background:#141923; padding:8px 10px; border-radius:10px; min-width:135px; cursor:pointer; font-size:11px; }
@@ -131,7 +131,7 @@ select { width:100%; background:#0d1219; border:1px solid #394454; color:var(--t
 @media (max-width: 900px) {
   .controls { grid-template-columns:1fr; }
   .inspector { border-left:0; border-top:1px solid var(--line); padding-left:0; padding-top:9px; }
-  .board-grid { grid-template-columns:repeat(auto-fit,minmax(min(100%,105px),1fr)); }
+  .board-grid { gap:8px; }
 }
 @media (max-width: 620px) {
   .app-shell { padding:8px; }
@@ -156,12 +156,12 @@ body {
 button, select, input, .card, .trap-chip, .choice-option, .mulligan-card {
   touch-action: manipulation;
 }
-.hand, .board-grid, .trap-row {
+.hand, .trap-row {
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
   scroll-snap-type: x proximity;
 }
-.hand::-webkit-scrollbar, .board-grid::-webkit-scrollbar, .trap-row::-webkit-scrollbar { display:none; }
+.hand::-webkit-scrollbar, .trap-row::-webkit-scrollbar { display:none; }
 .card, .trap-chip { scroll-snap-align: start; }
 .btn, .icon-btn { min-height: 44px; }
 
@@ -217,12 +217,7 @@ button, select, input, .card, .trap-chip, .choice-option, .mulligan-card {
 
   .board-wrap { padding:7px; }
   .zone-label { font-size:9px; margin-bottom:5px; }
-  .board-grid {
-    grid-template-columns:repeat(auto-fit,minmax(100px,1fr));
-    gap:7px;
-    margin:0;
-    padding:4px 0 8px;
-  }
+  .board-grid { gap:7px; margin:0; padding:4px 0 8px; }
   .trap-row { margin-right:-7px; padding-right:7px; }
   .trap-chip { min-width:150px; min-height:48px; }
 
@@ -334,7 +329,7 @@ button, select, input, .card, .trap-chip, .choice-option, .mulligan-card {
 
 @media (max-width: 380px) {
   .hand .card { width:140px; min-width:140px; flex-basis:140px; }
-  .board-grid { grid-template-columns:repeat(auto-fit,minmax(96px,1fr)); }
+  .board-grid { gap:6px; }
   .choice-list, .mulligan-grid { grid-template-columns:1fr; }
 }
 
@@ -845,7 +840,7 @@ button, select, input, .card, .trap-chip, .choice-option, .mulligan-card {
 .health-stat { border-color:#75434b; }
 .board-wrap { padding:12px 14px; }
 .board-grid { width:100%; }
-.board-grid .card { width:100%; min-width:0; height:auto; aspect-ratio:.74; }
+.board-grid .card { flex:1 1 130px; width:auto; min-width:100px; max-width:190px; height:auto; aspect-ratio:.74; }
 .board-grid .card-name { padding-right:25px; }
 .board-grid .card-rules { -webkit-line-clamp:5; }
 .hand-wrap { border-top:1px solid var(--line); background:rgba(5,8,12,.22); }
@@ -907,8 +902,8 @@ button, select, input, .card, .trap-chip, .choice-option, .mulligan-card {
 .empty-zone { padding:30px 12px; color:var(--muted); text-align:center; }
 @media (max-width:620px) {
  .board-wrap { padding:9px; }
- .board-grid { grid-template-columns:repeat(auto-fit,minmax(96px,1fr)); gap:7px; }
- .board-grid .card { aspect-ratio:.7; }
+ .board-grid { gap:7px; }
+ .board-grid .card { flex-basis:100px; max-width:170px; aspect-ratio:.7; }
  .board-grid .card-head { padding:6px; }
  .board-grid .card-name { font-size:10px; min-height:26px; }
  .board-grid .card-meta { font-size:8px; }
@@ -925,7 +920,7 @@ button, select, input, .card, .trap-chip, .choice-option, .mulligan-card {
  .card-inspect-details { padding:0 4px 8px; }
 }
 @media (max-width:380px) {
- .board-grid { grid-template-columns:repeat(auto-fit,minmax(90px,1fr)); }
+ .board-grid { gap:6px; }
  .board-grid .card-rules { -webkit-line-clamp:3; }
  .hand .card { flex-basis:140px; width:140px; min-width:140px; }
 }
