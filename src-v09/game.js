@@ -535,7 +535,7 @@ function controlsHTML(){
   if(state.selected?.owner===p.index)actions+='<button class="btn danger" data-action="attack-player">Attack Player</button>';
  }
  const c=getSelected();
- return `<section class="controls"><div class="action-panel"><div class="eyebrow">MATCH ACTIONS</div>${actions||'<span class="player-sub">Choose a card or pass when you are ready.</span>'}</div><div class="inspector"><div class="eyebrow">SELECTED CARD</div><h3>${c?esc(c.name):'No card selected'}</h3><p>${c?esc(c.rules):'Use the ↗ button on any card to open its full-size text and details.'}</p></div></section>`;
+ return `<section class="controls"><div class="action-panel"><div class="eyebrow">MATCH ACTIONS</div>${actions||(p.ai?'<span class="player-sub">Opponent is taking its turn.</span>':'<span class="player-sub">Choose a card or pass when you are ready.</span>')}</div><div class="inspector"><div class="eyebrow">SELECTED CARD</div><h3>${c?esc(c.name):'No card selected'}</h3><p>${c?esc(c.rules):'Use the ↗ button on any card to open its full-size text and details.'}</p></div></section>`;
 }
 function render(){
  if(!state){gameRoot.innerHTML='<div class="prototype-note">Start a match to enter REALMS.</div>';return;}
@@ -543,8 +543,9 @@ function render(){
  const bottomIndex=state.mode==='hotseat'?state.active:0;
  const phase=typeof readablePhaseName==='function'?readablePhaseName():String(state.phase||'').toUpperCase();
  const actor=typeof readableActorLabel==='function'?readableActorLabel():state.players[state.active].name;
+ const actionHint=state.phase==='placement'?'PLAY ONE CARD OR PASS':state.phase==='combat'?'ACTIVATE ONE CREATURE OR PASS':'MATCH COMPLETE';
  gameRoot.innerHTML=`<section class="realm-banner"><div><div class="eyebrow">ROUND ${state.round} · ${esc(state.players[state.initiative].name)} HAS INITIATIVE</div><strong>${esc(state.realm)}</strong></div><div class="realm-effects">${esc(realmDescription())}</div></section>
-  <section class="match-status-strip"><span class="match-phase"><small>PHASE</small><b>${esc(phase)}</b></span><span><small>ACTIVE PLAYER</small><b>${esc(actor)}</b></span><span><small>ROUND</small><b>${state.round}</b></span><span class="match-hint">${state.winner!==null?'MATCH COMPLETE':'PLAY ONE CARD OR PASS · ACTIONS ALTERNATE'}</span></section>
+  <section class="match-status-strip"><span class="match-phase"><small>PHASE</small><b>${esc(phase)}</b></span><span><small>ACTIVE PLAYER</small><b>${esc(actor)}</b></span><span><small>ROUND</small><b>${state.round}</b></span><span class="match-hint">${state.winner!==null?'MATCH COMPLETE':actionHint}</span></section>
   ${deadlandsGraveHTML()}${playerHTML(state.players[topIndex],'top')}${playerHTML(state.players[bottomIndex],'bottom')}${controlsHTML()}
   <section class="log-panel"><div class="zone-label"><span>MATCH LOG</span><span>${state.log.length} EVENTS</span></div><div class="log">${[...state.log].reverse().map(x=>`<div class="log-line">${x}</div>`).join('')}</div></section>`;
  wire();
