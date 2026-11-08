@@ -1,4 +1,5 @@
 import { ELITEBORN_CARDS } from "./eliteborn-catalogue.mjs";
+import { normalizeDeckStore, createBlankDeck } from "./deck-workshop-store.mjs";
 
 export const REALM_CATALOGUE = Object.freeze([
   {id:"crystal-isle",name:"Crystal Isle",faction:"Prismites",status:"catalogue-pending"},
@@ -10,31 +11,9 @@ export const REALM_CATALOGUE = Object.freeze([
 
 const STORAGE_KEY="crashout.realms.deck-workshop.v1";
 const makeId=()=>globalThis.crypto?.randomUUID?.()||`deck-${Date.now().toString(36)}-${Math.random().toString(36).slice(2,9)}`;
-const blankDeck=(name="New Deck")=>({id:makeId(),name,realm:"",cards:[]});
 const safeRead=()=>{try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||"null");}catch{return null;}};
 const safeWrite=value=>{try{localStorage.setItem(STORAGE_KEY,JSON.stringify(value));return true;}catch{return false;}};
-
-function normalizeDeck(value,index=0){
-  if(!value||typeof value!=="object")return null;
-  return {
-    id:typeof value.id==="string"&&value.id?value.id:makeId(),
-    name:typeof value.name==="string"&&value.name.trim()?value.name.trim().slice(0,48):`Deck ${index+1}`,
-    realm:REALM_CATALOGUE.some(r=>r.id===value.realm)?value.realm:"",
-    cards:Array.isArray(value.cards)?value.cards.filter(id=>typeof id==="string"&&ELITEBORN_CARDS.some(card=>card.id===id)):[]
-  };
-}
-function loadStore(){
-  const saved=safeRead();
-  if(saved&&Array.isArray(saved.decks)){
-    const decks=saved.decks.map(normalizeDeck).filter(Boolean);
-    if(decks.length){
-      const activeId=decks.some(deck=>deck.id===saved.activeId)?saved.activeId:decks[0].id;
-      return {activeId,decks};
-    }
-  }
-  const legacy=normalizeDeck(saved,0);
-  return {activeId:legacy?.id||"",decks:[legacy||blankDeck("My First Deck")]};
-}
+const loadStore=()=>normalizeDeckStore(safeRead(),{makeId,realms:REALM_CATALOGUE,cards:ELITEBORN_CARDS});
 let store=loadStore();
 let statusMessage="Decks are saved locally on this device. Server-backed storage is not connected.";
 let searchQuery="",forceFilter="ALL",typeFilter="ALL";
@@ -74,7 +53,7 @@ function render(){
  root.querySelector("#force-filter")?.addEventListener("change",event=>{forceFilter=event.target.value;refreshCardGrid();});
  root.querySelector("#type-filter")?.addEventListener("change",event=>{typeFilter=event.target.value;refreshCardGrid();});
  cardGrid?.addEventListener("click",event=>{const button=event.target.closest("[data-add-card]");if(!button)return;draft.cards.push(button.dataset.addCard);statusMessage="Card added to this local deck.";persist();render();});
- root.querySelector("#deck-new").addEventListener("click",()=>{const deck=blankDeck(store.decks.length?"New Deck":"My First Deck");store.decks.push(deck);store.activeId=deck.id;statusMessage="New local deck created.";persist();render();});
+ root.querySelector("#deck-new").addEventListener("click",()=>{const deck=createBlankDeck(makeId,store.decks.length?"New Deck":"My First Deck");store.decks.push(deck);store.activeId=deck.id;statusMessage="New local deck created.";persist();render();});
  root.querySelector("#deck-delete").addEventListener("click",()=>{if(store.decks.length<2)return;const name=draft.name; if(!window.confirm(`Delete “${name}” from this device? This cannot be undone.`))return;store.decks=store.decks.filter(deck=>deck.id!==draft.id);store.activeId=store.decks[0].id;statusMessage="Deck deleted from this device.";persist();render();});
  root.querySelector("#deck-save").addEventListener("click",()=>{const ok=persist();statusMessage=ok?"Deck saved on this device.":"Local save failed.";render();});
  root.querySelectorAll("[data-remove-index]").forEach(button=>button.addEventListener("click",()=>{draft.cards.splice(Number(button.dataset.removeIndex),1);statusMessage="Card removed from this local deck.";persist();render();}));
