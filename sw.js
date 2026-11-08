@@ -1,4 +1,4 @@
-const CACHE='realms-v09-geodes-alpha8';
+const CACHE='realms-v09-tcg-table-1';
 const SHELL=[
   './',
   './index.html',

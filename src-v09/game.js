@@ -446,12 +446,123 @@ function maybeAI(){if(!state||state.winner!==null)return;const p=state.players[s
 function aiPlacement(p){if(p.faction==='Harvest'&&p.passive==='Consume'&&!p.consumeUsed&&p.board.length>=2&&Math.random()<.12){if(useConsume(p,true)){state.active=1-p.index;render();maybeAI();return;}}if(p.faction==='Continuum'&&p.passive==='Skip Ahead'&&p.sequence>=3&&Math.random()<.35){if(useSkipAhead(p,true)){state.active=1-p.index;render();maybeAI();return;}}const a=p.hand.filter(c=>effectiveCost(p,c)<=p.resource&&(!c.type.includes('Creature')||p.board.length<maxSlots(p))&&(c.type!=='Equip'||p.board.some(x=>!x.equip)));if(!a.length)return passPlacement(p.index);a.sort((x,y)=>(y.type.includes('Creature')?10:5)+(y.str||0)+(y.hp||0)*.5-y.cost*.2-((x.type.includes('Creature')?10:5)+(x.str||0)+(x.hp||0)*.5-x.cost*.2));playCard(p.index,a[0].iid,{ai:true});}
 function aiCombat(p){const r=readyUnits(p).sort((a,b)=>getStr(b)-getStr(a));if(!r.length)return passCombat(p.index);const a=r[0],e=state.players[1-p.index],taunt=e.board.filter(unitHasTaunt);let t=taunt[0]||e.board.filter(x=>x.currentHp<=getStr(a)).sort((x,y)=>x.currentHp-y.currentHp)[0]||null;if(!t&&e.board.length&&Math.random()<.45)t=chooseEnemy(p.index);combatAttack(a,t);}
 function realmDescription(){if(state.realm==='Crystal Isle')return `Every 2 rounds, Polarity swaps each creature's current STR and HP. Five Polarity deaths loses. P1 ${state.polarityDeaths?.[0]||0}/5 • P2 ${state.polarityDeaths?.[1]||0}/5.`;if(state.realm==='Blood Moon')return 'Round 5+: destroyed creatures are banished. Initiative gets first two combat actions.';if(state.realm==='Upper Strata')return 'End round: 1 Health per 2 unspent RES. 3+ creatures redirect half direct combat damage.';if(state.realm==='Deadlands')return 'Deaths enter the shared Grave State. A death grants its owner a Grave-Echo raise; Absorption may replace one Echo with a normally-paid creature once per round.';return `Borrows exactly two Realm effects: ${state.borrowed.map(realmEffectName).join(' + ')}.`;}
-function cardHTML(c,zone,hidden=false){if(hidden)return `<div class="card-back">CARD</div>`;const cr=c.type.includes('Creature'),p=state.players[c.owner],sel=state.selected?.iid===c.iid?' selected':'',acted=c.acted&&c.extraActions<=0?' acted':'',legend=c.legendary?' legendary':'';const badges=cr?`<span class="badge str">STR ${getStr(c)}</span><span class="badge hp">HP ${c.currentHp}/${getMaxHp(c)}</span>${c.faction==='Living Geodes'?`<span class="badge pressure">P ${c.pressure}/${c.cracked?c.fold:c.crack}</span>${c.cracked?'<span class="badge cracked">CRACKED</span>':''}`:''}${isBloodied(c)?'<span class="badge danger">BLOODIED</span>':''}${c.formation!=null?`<span class="badge">F${formationSize(p,c)}</span>`:''}${c.equip?`<span class="badge">EQ ${esc(c.equip.name)}</span>`:''}`:'';return `<article class="card ${CLASSES[c.faction]}${sel}${acted}${legend}" data-card="1" data-iid="${c.iid}" data-owner="${c.owner}" data-zone="${zone}"><div class="card-head"><div class="card-name">${esc(c.name)}</div><div class="card-meta"><span>${esc(c.type)}</span><span>${esc(c.id)}</span></div></div><span class="card-cost">${c.cost}</span><div class="card-body"><div class="card-rules">${esc(c.rules)}</div><div class="card-stats">${badges}</div></div>${zone==='hand'?`<span class="card-resource">+${c.resource} RES</span>`:''}</article>`;}
-function playerHTML(p){const visible=state.mode==='hotseat'?state.active===p.index:p.index===0,slots=[];for(let i=0;i<7;i++){const u=p.board[i],locked=i>=maxSlots(p);slots.push(`<div class="slot ${u?'':'empty'}" ${locked?'style="opacity:.25"':''}>${u?cardHTML(u,'board'):''}</div>`);}return `<section class="player-zone${state.active===p.index?' active':''}"><header class="player-header"><div class="player-id"><span class="faction-dot" style="background:${COLORS[p.faction]}"></span><div><div class="player-name">${esc(p.name)} — ${esc(p.faction)}</div><div class="player-sub">${esc(p.passive)}</div></div></div><div class="statbar"><span class="stat">♥ <b>${p.health}</b></span><span class="stat">RES <b>${p.resource}</b>/${p.resourceStart}</span>${p.faction==='Continuum'?`<span class="stat">SEQ <b>${p.sequence}</b> ${p.passive==='Loop Back'?(p.sequenceDir>0?'→':'←'):''}</span>`:''}<span class="stat">Deck <b>${p.deck.length}</b></span></div></header><div class="board-wrap"><div class="zone-label"><span>Battlefield</span><span>${p.board.length}/${maxSlots(p)}</span></div><div class="board-grid">${slots.join('')}</div><div class="zone-label"><span>Traps</span><span>${p.traps.length}</span></div><div class="trap-row">${p.traps.map(t=>`<button class="trap-chip">${visible?esc(t.name):'FACE-DOWN TRAP'}</button>`).join('')||'<span class="player-sub">No traps</span>'}</div></div><div class="hand-wrap"><div class="zone-label"><span>${visible?'Hand':'Hidden Hand'}</span><span>${p.hand.length}</span></div><div class="hand">${visible?p.hand.map(c=>cardHTML(c,'hand')).join(''):`<div class="card-back">${p.hand.length} CARDS</div>`}</div></div></section>`;}
+function cardHTML(c,zone,hidden=false,inspect=false){
+ if(hidden)return '<div class="card-back">CARD</div>';
+ const cr=c.type.includes('Creature'),p=state.players[c.owner],sel=state.selected?.iid===c.iid?' selected':'',acted=c.acted&&c.extraActions<=0?' acted':'',legend=c.legendary?' legendary':'';
+ const badges=cr?`<span class="badge str">STR ${getStr(c)}</span><span class="badge hp">HP ${c.currentHp}/${getMaxHp(c)}</span>${c.faction==='Living Geodes'?`<span class="badge pressure">P ${c.pressure}/${c.cracked?c.fold:c.crack}</span>${c.cracked?'<span class="badge cracked">CRACKED</span>':''}`:''}${isBloodied(c)?'<span class="badge danger">BLOODIED</span>':''}${c.formation!=null?`<span class="badge">F${formationSize(p,c)}</span>`:''}${c.equip?`<span class="badge">EQ ${esc(c.equip.name)}</span>`:''}`:'';
+ const interactive=inspect?'':`data-card="1" data-iid="${c.iid}" data-owner="${c.owner}" data-zone="${zone}"`;
+ const inspectButton=inspect?'':`<button class="card-inspect-button" type="button" data-inspect="${c.iid}" data-owner="${c.owner}" aria-label="Inspect ${esc(c.name)}">↗</button>`;
+ return `<article class="card ${CLASSES[c.faction]}${sel}${acted}${legend}${inspect?' inspect-card':''}" ${interactive} aria-label="${esc(c.name)}, ${esc(c.type)}, cost ${c.cost}">
+   <div class="card-head"><div class="card-name">${esc(c.name)}</div><div class="card-meta"><span>${esc(c.type)}</span><span>${esc(c.id)}</span></div></div>
+   <span class="card-cost">${c.cost}</span>${inspectButton}
+   <div class="card-body"><div class="card-rules">${esc(c.rules)}</div><div class="card-stats">${badges}</div></div>
+   ${zone==='hand'||zone==='inspect'? `<span class="card-resource">+${c.resource} RES</span>`:''}
+ </article>`;
+}
+function playerHTML(p,side='bottom'){
+ const visible=state.mode==='hotseat'?state.active===p.index:p.index===0;
+ const handVisible=side==='bottom'&&visible;
+ const boardCards=p.board.map(c=>cardHTML(c,'board')).join('');
+ const handMarkup=handVisible
+  ? `<div class="hand-wrap"><div class="zone-label"><span>YOUR HAND</span><span>${p.hand.length} CARDS</span></div><div class="hand">${p.hand.map(c=>cardHTML(c,'hand')).join('')}</div></div>`
+  : `<div class="opponent-hand"><div class="zone-label"><span>HIDDEN HAND</span><span>${p.hand.length} CARDS</span></div><div class="opponent-hand-cards">${Array.from({length:Math.min(p.hand.length,6)},()=>'<span class="opponent-card-back" aria-hidden="true"></span>').join('')}${p.hand.length>6?`<b>+${p.hand.length-6}</b>`:''}</div></div>`;
+ const zoneButton=(zone,label,count,disabled=false)=>`<button class="zone-chip" type="button" data-zone-open="${zone}" data-owner="${p.index}" ${disabled?'disabled':''}><span>${label}</span><b>${count}</b></button>`;
+ const zones=`<div class="zone-strip">${zoneButton('deck','DECK',p.deck.length,!visible)}${zoneButton('graveyard','GRAVEYARD',p.discard.length)}${zoneButton('banished','BANISHED',p.banished.length)}</div>`;
+ const battlefield=`<div class="board-wrap"><div class="zone-label"><span>BATTLEFIELD</span><span>${p.board.length} / ${maxSlots(p)} UNITS</span></div><div class="board-grid" aria-label="${side==='top'?'Opponent':'Player'} battlefield">${boardCards||'<div class="empty-board">No creatures in play</div>'}</div><div class="zone-label"><span>TRAPS</span><span>${p.traps.length}</span></div><div class="trap-row">${p.traps.map(t=>`<button class="trap-chip ${visible?'':'hidden'}" type="button">${visible?esc(t.name):'FACE-DOWN TRAP'}</button>`).join('')||'<span class="player-sub">No traps in play.</span>'}</div></div>`;
+ return `<section class="player-zone ${side==='top'?'opponent-side':'player-side'}${state.active===p.index?' active':''}" data-player-side="${side}">
+  <header class="player-header"><div class="player-id"><span class="faction-dot" style="background:${COLORS[p.faction]}"></span><div><div class="player-name">${esc(p.name)} — ${esc(p.faction)}</div><div class="player-sub">${esc(p.passive)}</div></div></div>
+   <div class="statbar"><span class="stat health-stat">♥ <b>${p.health}</b> HP</span><span class="stat">RES <b>${p.resource}</b> / ${p.resourceStart}</span>${p.faction==='Continuum'?`<span class="stat">SEQ <b>${p.sequence}</b> ${p.passive==='Loop Back'?(p.sequenceDir>0?'→':'←'):''}</span>`:''}</div>
+  </header>
+  ${side==='top'?handMarkup+battlefield+zones:battlefield+zones+handMarkup}
+ </section>`;
+}
+function findCardForInspection(owner,iid){
+ const p=state?.players?.[owner];
+ if(!p)return null;
+ return [...p.deck,...p.hand,...p.board,...p.traps,...p.discard,...p.banished].find(card=>card.iid===iid)||null;
+}
+function ensureTcgOverlay(){
+ let overlay=document.querySelector('#tcg-overlay');
+ if(overlay)return overlay;
+ overlay=document.createElement('div');
+ overlay.id='tcg-overlay';
+ overlay.className='tcg-overlay';
+ overlay.innerHTML='<div class="tcg-overlay-backdrop" data-overlay-close></div><section class="tcg-overlay-panel" role="dialog" aria-modal="true" aria-labelledby="tcg-overlay-title"><header class="tcg-overlay-header"><div><div class="eyebrow">REALMS CARD ZONE</div><h2 id="tcg-overlay-title">CARD INSPECTOR</h2></div><button class="icon-btn" type="button" data-overlay-close aria-label="Close">×</button></header><div id="tcg-overlay-content" class="tcg-overlay-content"></div></section>';
+ document.body.appendChild(overlay);
+ overlay.addEventListener('click',event=>{
+  const close=event.target.closest('[data-overlay-close]');
+  if(close){overlay.classList.remove('open');return;}
+  const inspect=event.target.closest('[data-inspect]');
+  if(inspect){event.preventDefault();event.stopPropagation();openCardInspector(Number(inspect.dataset.owner),inspect.dataset.inspect);}
+ });
+ document.addEventListener('keydown',event=>{if(event.key==='Escape')overlay.classList.remove('open');});
+ return overlay;
+}
+function openCardInspector(owner,iid){
+ const card=findCardForInspection(owner,iid);
+ if(!card)return;
+ const overlay=ensureTcgOverlay();
+ overlay.querySelector('#tcg-overlay-title').textContent=card.name;
+ overlay.querySelector('#tcg-overlay-content').innerHTML=`<div class="card-inspect-layout">${cardHTML(card,'inspect',false,true)}<div class="card-inspect-details"><div class="eyebrow">${esc(card.faction)} · ${esc(card.type)}</div><h3>${esc(card.name)}</h3><p>${esc(card.rules)}</p><div class="card-inspect-facts"><span>COST <b>${card.cost}</b></span><span>RESOURCE <b>+${card.resource}</b></span><span>CARD ID <b>${esc(card.id)}</b></span>${card.legendary?'<span class="legendary-fact">LEGENDARY</span>':''}</div><p class="card-inspect-hint">Tap outside this panel or press Escape to close.</p></div></div>`;
+ overlay.classList.add('open');
+}
+function openZoneBrowser(owner,zone){
+ const p=state?.players?.[owner];
+ if(!p)return;
+ const zoneMap={deck:{title:'DECK',cards:p.deck},graveyard:{title:'GRAVEYARD',cards:p.discard},banished:{title:'BANISHED',cards:p.banished}};
+ const selected=zoneMap[zone];
+ if(!selected)return;
+ const overlay=ensureTcgOverlay();
+ overlay.querySelector('#tcg-overlay-title').textContent=`${selected.title} · ${selected.cards.length}`;
+ overlay.querySelector('#tcg-overlay-content').innerHTML=selected.cards.length
+  ? `<div class="zone-browser-list">${selected.cards.map(card=>`<button class="zone-browser-card" type="button" data-inspect="${card.iid}" data-owner="${owner}"><span><strong>${esc(card.name)}</strong><small>${esc(card.type)} · ${esc(card.id)}</small></span><b>${card.cost}</b></button>`).join('')}</div>`
+  : '<div class="empty-zone">This zone is empty.</div>';
+ overlay.classList.add('open');
+}
 function getSelected(){if(!state?.selected)return null;for(const p of state.players){const c=[...p.board,...p.hand].find(x=>x.iid===state.selected.iid);if(c)return c;}return null;}
-function controlsHTML(){if(state.winner!==null)return `<section class="controls"><div class="action-panel"><strong>${state.winner==='draw'?'DRAW':state.players[state.winner].name+' WINS'}</strong><button class="btn primary" data-action="new">New Match</button></div></section>`;const p=state.players[state.active];let a='';if(!p.ai&&state.phase==='placement'){a+='<button class="btn" data-action="pass-placement">Pass Placement</button>';if(p.faction==='Continuum'&&p.passive==='Skip Ahead'&&p.hand.length)a+='<button class="btn good" data-action="skip">Skip Ahead</button>';if(p.faction==='Harvest'&&p.passive==='Consume'&&!p.consumeUsed&&p.board.length>=2)a+='<button class="btn good" data-action="consume">Consume</button>';if(canUseDeadlandsEcho(p))a+='<button class="btn good" data-action="grave-echo">Raise Grave Echo</button>';if(canUseDeadlandsAbsorption(p))a+='<button class="btn good" data-action="dead-absorb">Absorb Echo</button>';}if(!p.ai&&state.phase==='combat'){a+='<button class="btn" data-action="pass-combat">Burn / Pass</button>';if(state.selected?.owner===p.index)a+='<button class="btn danger" data-action="attack-player">Attack Player</button>';}const c=getSelected();return `<section class="controls"><div class="action-panel">${a||'<span class="player-sub">Choose a card or action.</span>'}</div><div class="inspector"><h3>${c?esc(c.name):'v0.8 test controls'}</h3><p>${c?esc(c.rules):'Eliteborn: tap a battlefield creature first, then play a Creature to join its Formation or an Equip to attach it. No selected creature = new Formation.'}</p>${c?.type.includes('Creature')?'<div class="referee-grid"><button class="btn small" data-ref="damage">Damage 1</button><button class="btn small" data-ref="heal">Heal 1</button><button class="btn small" data-ref="pressure">+1 Shield</button><button class="btn small danger" data-ref="destroy">Destroy</button></div>':''}</div></section>`;}
-function render(){if(!state){gameRoot.innerHTML='<div class="prototype-note">Start a match to enter REALMS.</div>';return;}gameRoot.innerHTML=`<section class="realm-banner"><div><div class="eyebrow">Round ${state.round} • ${state.players[state.initiative].name} Initiative</div><strong>${esc(state.realm)}</strong></div><div class="realm-effects">${esc(realmDescription())}</div></section>${deadlandsGraveHTML()}${playerHTML(state.players[1])}${playerHTML(state.players[0])}${controlsHTML()}<section class="log-panel"><div class="zone-label"><span>Match Log</span><span>${state.log.length}</span></div><div class="log">${[...state.log].reverse().map(x=>`<div class="log-line">${x}</div>`).join('')}</div></section>`;wire();}
-function wire(){document.querySelectorAll('[data-card="1"]').forEach(el=>el.onclick=()=>{const p=state.players[+el.dataset.owner],c=[...p.hand,...p.board].find(x=>x.iid===el.dataset.iid);if(!c)return;if(el.dataset.zone==='hand'&&state.phase==='placement'&&state.active===p.index&&!p.ai){playCard(p.index,c.iid);return;}if(el.dataset.zone==='board'&&state.phase==='combat'&&c.owner!==state.active&&state.selected?.owner===state.active){const a=getSelected();if(a)combatAttack(a,c);return;}state.selected={iid:c.iid,owner:c.owner,zone:el.dataset.zone};render();});document.querySelectorAll('[data-action]').forEach(b=>b.onclick=()=>handleAction(b.dataset.action));document.querySelectorAll('[data-ref]').forEach(b=>b.onclick=()=>handleRef(b.dataset.ref));}
+function controlsHTML(){
+ if(state.winner!==null)return `<section class="controls"><div class="action-panel"><strong>${state.winner==='draw'?'DRAW':state.players[state.winner].name+' WINS'}</strong><button class="btn primary" data-action="new">New Match</button></div></section>`;
+ const p=state.players[state.active];let actions='';
+ if(!p.ai&&state.phase==='placement'){
+  actions+='<button class="btn" data-action="pass-placement">Pass Placement</button>';
+  if(p.faction==='Continuum'&&p.passive==='Skip Ahead'&&p.hand.length)actions+='<button class="btn good" data-action="skip">Skip Ahead</button>';
+  if(p.faction==='Harvest'&&p.passive==='Consume'&&!p.consumeUsed&&p.board.length>=2)actions+='<button class="btn good" data-action="consume">Consume</button>';
+  if(canUseDeadlandsEcho(p))actions+='<button class="btn good" data-action="grave-echo">Raise Grave Echo</button>';
+  if(canUseDeadlandsAbsorption(p))actions+='<button class="btn good" data-action="dead-absorb">Absorb Echo</button>';
+ }
+ if(!p.ai&&state.phase==='combat'){
+  actions+='<button class="btn" data-action="pass-combat">Burn / Pass</button>';
+  if(state.selected?.owner===p.index)actions+='<button class="btn danger" data-action="attack-player">Attack Player</button>';
+ }
+ const c=getSelected();
+ return `<section class="controls"><div class="action-panel"><div class="eyebrow">MATCH ACTIONS</div>${actions||(p.ai?'<span class="player-sub">Opponent is taking its turn.</span>':'<span class="player-sub">Choose a card or pass when you are ready.</span>')}</div><div class="inspector"><div class="eyebrow">SELECTED CARD</div><h3>${c?esc(c.name):'No card selected'}</h3><p>${c?esc(c.rules):'Use the ↗ button on any card to open its full-size text and details.'}</p></div></section>`;
+}
+function render(){
+ if(!state){gameRoot.innerHTML='<div class="prototype-note">Start a match to enter REALMS.</div>';return;}
+ const topIndex=state.mode==='hotseat'?1-state.active:1;
+ const bottomIndex=state.mode==='hotseat'?state.active:0;
+ const phase=typeof readablePhaseName==='function'?readablePhaseName():String(state.phase||'').toUpperCase();
+ const actor=typeof readableActorLabel==='function'?readableActorLabel():state.players[state.active].name;
+ const actionHint=state.phase==='placement'?'PLAY ONE CARD OR PASS':state.phase==='combat'?'ACTIVATE ONE CREATURE OR PASS':'MATCH COMPLETE';
+ gameRoot.innerHTML=`<section class="realm-banner"><div><div class="eyebrow">ROUND ${state.round} · ${esc(state.players[state.initiative].name)} HAS INITIATIVE</div><strong>${esc(state.realm)}</strong></div><div class="realm-effects">${esc(realmDescription())}</div></section>
+  <section class="match-status-strip"><span class="match-phase"><small>PHASE</small><b>${esc(phase)}</b></span><span><small>ACTIVE PLAYER</small><b>${esc(actor)}</b></span><span><small>ROUND</small><b>${state.round}</b></span><span class="match-hint">${state.winner!==null?'MATCH COMPLETE':actionHint}</span></section>
+  ${deadlandsGraveHTML()}${playerHTML(state.players[topIndex],'top')}${playerHTML(state.players[bottomIndex],'bottom')}${controlsHTML()}
+  <section class="log-panel"><div class="zone-label"><span>MATCH LOG</span><span>${state.log.length} EVENTS</span></div><div class="log">${[...state.log].reverse().map(x=>`<div class="log-line">${x}</div>`).join('')}</div></section>`;
+ wire();
+}
+function wire(){
+ document.querySelectorAll('[data-card="1"]').forEach(el=>el.onclick=()=>{
+  const p=state.players[+el.dataset.owner],c=[...p.hand,...p.board].find(x=>x.iid===el.dataset.iid);
+  if(!c)return;
+  if(el.dataset.zone==='hand'&&state.phase==='placement'&&state.active===p.index&&!p.ai){playCard(p.index,c.iid);return;}
+  if(el.dataset.zone==='board'&&state.phase==='combat'&&c.owner!==state.active&&state.selected?.owner===state.active){const a=getSelected();if(a)combatAttack(a,c);return;}
+  state.selected={iid:c.iid,owner:c.owner,zone:el.dataset.zone};render();
+ });
+ document.querySelectorAll('[data-inspect]').forEach(el=>el.onclick=event=>{event.preventDefault();event.stopPropagation();openCardInspector(Number(el.dataset.owner),el.dataset.inspect);});
+ document.querySelectorAll('[data-zone-open]').forEach(el=>el.onclick=()=>openZoneBrowser(Number(el.dataset.owner),el.dataset.zoneOpen));
+ document.querySelectorAll('[data-action]').forEach(b=>b.onclick=()=>handleAction(b.dataset.action));
+ document.querySelectorAll('[data-ref]').forEach(b=>b.onclick=()=>handleRef(b.dataset.ref));
+}
 function handleAction(x){const p=state.players[state.active];if(x==='new')setupModal.classList.add('open');if(x==='pass-placement')passPlacement(p.index);if(x==='pass-combat')passCombat(p.index);if(x==='attack-player'){const a=getSelected();if(a)combatAttack(a,null);}if(x==='skip')useSkipAhead(p);if(x==='consume')useConsume(p);if(x==='grave-echo')useDeadlandsEcho(p);if(x==='dead-absorb')useDeadlandsAbsorption(p);}
 function handleRef(x){const c=getSelected();if(!c||!c.type.includes('Creature'))return;if(x==='damage')applyDamage(c,1);if(x==='heal')healUnit(c,1,'Ref');if(x==='pressure')gainPressure(c,1,'Ref');if(x==='destroy')destroyUnit(c);render();}
 function showOptions(eyebrow,title,opts,pick,{cancel=true}={}){choiceEyebrow.textContent=eyebrow;choiceTitle.textContent=title;choiceBody.innerHTML=`<div class="choice-list">${opts.map(o=>`<button class="choice-option" data-val="${esc(o.value)}">${esc(o.label)}</button>`).join('')}</div>`;choiceActions.innerHTML=cancel?'<button class="btn ghost" id="choiceCancelBtn">Cancel</button>':'';choiceModal.classList.add('open');choiceBody.querySelectorAll('[data-val]').forEach(b=>b.onclick=()=>{const v=b.dataset.val;closeChoice();pick(v);});if($('#choiceCancelBtn'))$('#choiceCancelBtn').onclick=closeChoice;}
