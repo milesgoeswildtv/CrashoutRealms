@@ -34,7 +34,7 @@ export function normalizeDeckStore(saved,{makeId,realms,cards}){
     }
   }
 
-  const legacy=normalizeDeck(saved,0);
+  const legacy=saved&&Array.isArray(saved.cards)?normalizeDeck(saved,0):null;
   const first=legacy||createBlankDeck(makeId,"My First Deck");
   return {activeId:first.id,decks:[first]};
 }
