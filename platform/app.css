@@ -98,3 +98,11 @@
 .card-library-filters{display:grid;grid-template-columns:minmax(0,1fr) 145px 145px;gap:8px;margin:10px 0}
 .card-library-filters input,.card-library-filters select{min-width:0;min-height:38px;padding:8px 10px;background:#11140f;border:1px solid #424a35;color:var(--text);font:inherit;font-size:10px}
 @media(max-width:620px){.card-library-filters{grid-template-columns:1fr 1fr}.card-library-filters input{grid-column:1/-1}}
+
+/* Multiple local deck drafts */
+.deck-manager-panel{grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(150px,.7fr);align-items:end}
+.deck-manager-actions{display:flex;flex-direction:column;gap:7px;align-items:stretch}
+.deck-manager-actions .secondary-button{margin:0;min-height:43px}
+.deck-manager-actions .secondary-button:disabled{opacity:.38;cursor:not-allowed}
+.deck-manager-count{font-size:8px;letter-spacing:.13em;color:#89927e;text-align:right}
+@media(max-width:620px){.deck-manager-panel{grid-template-columns:1fr}.deck-manager-count{text-align:left}}
