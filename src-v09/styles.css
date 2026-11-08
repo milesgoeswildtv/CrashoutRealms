@@ -55,7 +55,7 @@ body { min-width: 320px; }
 .board-wrap { padding:10px; }
 .zone-label { color:var(--muted); font-size:10px; text-transform:uppercase; letter-spacing:.14em; margin-bottom:6px; display:flex; justify-content:space-between; gap:8px; }
 .board-grid { display:flex; flex-wrap:wrap; gap:9px; align-items:stretch; padding:4px 0 8px; }
-.empty-board { grid-column:1/-1; min-height:76px; display:grid; place-items:center; border:1px dashed #35404e; border-radius:12px; color:#687587; font-size:11px; letter-spacing:.08em; }
+.empty-board { width:100%; min-height:76px; display:grid; place-items:center; border:1px dashed #35404e; border-radius:12px; color:#687587; font-size:11px; letter-spacing:.08em; }
 .trap-row { display:flex; gap:7px; overflow-x:auto; min-height:58px; }
 .trap-chip { border:1px solid var(--line); background:#141923; padding:8px 10px; border-radius:10px; min-width:135px; cursor:pointer; font-size:11px; }
 .trap-chip.hidden { color:#8f99a5; background:repeating-linear-gradient(135deg,#111821,#111821 8px,#151e29 8px,#151e29 16px); }
