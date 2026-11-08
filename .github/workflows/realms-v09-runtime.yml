@@ -1,0 +1,82 @@
+name: REALMS v0.9 Runtime QA
+
+on:
+  pull_request:
+    paths:
+      - "index.html"
+      - "sw.js"
+      - "src-v09/**"
+      - ".github/workflows/realms-v09-runtime.yml"
+  push:
+    branches: [main]
+    paths:
+      - "index.html"
+      - "sw.js"
+      - "src-v09/**"
+      - ".github/workflows/realms-v09-runtime.yml"
+
+jobs:
+  runtime-static-qa:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Parse runtime JavaScript
+        run: |
+          node --check src-v09/game.js
+          node --check src-v09/cards.js
+          node --check sw.js
+      - name: Parse inline boot scripts
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          html = Path('index.html').read_text()
+          scripts = re.findall(r'<script(?:\\s[^>]*)?>(.*?)</script>', html, re.S)
+          inline = [script for script in scripts if script.strip()]
+          if not inline:
+              raise SystemExit('No inline boot script found')
+          for index, script in enumerate(inline):
+              path = Path(f'/tmp/realms-inline-{index}.js')
+              path.write_text(script)
+              print(f'Checking {path}')
+          PY
+          for file in /tmp/realms-inline-*.js; do node --check "$file"; done
+      - name: Preserve v0.9 card catalogue invariants
+        run: |
+          node <<'NODE'
+          global.window = {};
+          require('./src-v09/cards.js');
+          const data = window.REALMS_DATA;
+          if (!data || !data.cards) throw new Error('REALMS card data failed to initialize');
+          const factions = Object.entries(data.cards);
+          if (factions.length !== 5) throw new Error(`Expected 5 factions, found ${factions.length}`);
+          for (const [faction, cards] of factions) {
+            if (cards.length !== 30) throw new Error(`${faction}: expected 30 cards, found ${cards.length}`);
+            const legendary = cards.filter(card => card.legendary).length;
+            if (legendary !== 1) throw new Error(`${faction}: expected 1 Legendary, found ${legendary}`);
+            const plusOne = cards.filter(card => card.resource === 1).length;
+            const plusTwo = cards.filter(card => card.resource === 2).length;
+            if (plusOne !== 15 || plusTwo !== 15) {
+              throw new Error(`${faction}: expected 15 +1 and 15 +2 resources, found ${plusOne}/${plusTwo}`);
+            }
+          }
+          console.log('All five v0.9 faction catalogues preserve their 30-card, Legendary, and resource invariants.');
+          NODE
+      - name: Confirm flexible battlefield replaces fixed slots
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          game = Path('src-v09/game.js').read_text()
+          css = Path('src-v09/styles.css').read_text()
+          if 'class="slot' in game or 'for(let i=0;i<7;i++)' in game:
+              raise SystemExit('Fixed battlefield slots remain in the match renderer')
+          if '.slot {' in css or 'repeat(7,132px)' in css or 'repeat(7,124px)' in css:
+              raise SystemExit('Fixed battlefield slot styling remains')
+          for token in ('data-inspect=', 'data-zone-open=', 'tcg-overlay'):
+              if token not in game:
+                  raise SystemExit(f'Missing TCG interface feature: {token}')
+          print('Flexible battlefield and inspection controls verified.')
+          PY
