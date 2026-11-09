@@ -26,6 +26,8 @@ jobs:
           node --check platform/game/eliteborn-catalogue.mjs
           node --check platform/game/formation-engine.mjs
           node --check platform/game/formation-lab.js
+          node --check platform/game/match-setup.mjs
+          node --check platform/game/deck-copy-limits.mjs
           node --check platform/config.js
           node --check platform/services/crashout-identity.mjs
       - name: Platform regression tests
