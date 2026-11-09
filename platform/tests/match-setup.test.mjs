@@ -6,4 +6,4 @@ test("selected deck and Realm are passed into the match engine",()=>{const confi
 test("match setup requires a selected Realm",()=>assert.throws(()=>buildLocalMatchConfig({...deck,realm:null}),/Choose a Realm/));
 test("match setup requires enough cards to draw the opening hand",()=>assert.throws(()=>buildLocalMatchConfig({...deck,cards:["ELI-001","ELI-006","ELI-011","ELI-016"]}),/at least 5 cards/));
 test("unsupported match modes are rejected",()=>assert.throws(()=>buildLocalMatchConfig(deck,"hotseat"),/not available/));
-test("malformed card entries are rejected",()=>assert.throws(()=>buildLocalMatchConfig({...deck,cards:["ELI-001",null]}),/invalid or unavailable card/));
+test("malformed card entries are rejected",()=>assert.throws(()=>buildLocalMatchConfig({...deck,cards:["ELI-001","ELI-006","ELI-011","ELI-016",null]}),/invalid or unavailable card/));
