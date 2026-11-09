@@ -42,7 +42,7 @@ export function validateDeckCopies(cardIds, lookup = getCard) {
           String(card.type || "").toUpperCase().includes("LEGENDARY"))
         ? "Legendary"
         : String(card.type || "").toUpperCase() === "UNIT" ? "Unit" : "Special";
-      errors.push(`${card.name || id}: maximum ${limit} copy/copies per deck (${category}).`);
+      errors.push(`${card.name || id}: maximum ${limit} ${limit === 1 ? "copy" : "copies"} per deck (${category}).`);
     }
   }
   return [...new Set(errors)];
