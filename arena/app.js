@@ -14,12 +14,12 @@ function syncMatchOrientation(){
 }
 async function enterMatchOrientation(){
   syncMatchOrientation();
-  try{if(screen.orientation?.lock)await screen.orientation.lock("landscape");}catch(_){/* CSS fallback handles unsupported/denied locks. */}
+  try{if(window.screen.orientation?.lock)await window.screen.orientation.lock("landscape");}catch(_){/* CSS fallback handles unsupported/denied locks. */}
 }
 function leaveMatchOrientation(){
   document.querySelector("#app").classList.remove("match-active","needs-rotation");
   document.body.classList.remove("match-active");
-  try{screen.orientation?.unlock?.();}catch(_){}
+  try{window.screen.orientation?.unlock?.();}catch(_){}
 }
 window.addEventListener("resize",syncMatchOrientation);
 window.addEventListener("orientationchange",()=>setTimeout(syncMatchOrientation,80));
