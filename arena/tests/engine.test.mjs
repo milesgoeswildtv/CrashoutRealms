@@ -25,14 +25,21 @@ test("two consecutive explicit passes begin combat",()=>{
 test("Unit combat applies simultaneous retaliation and direct attacks hit Health",()=>{
  const s=createMatch({playerFaction:"prismites",opponentFaction:"moon-demons"});begin(s);s.phase="combat";s.active=0;
  s.players[0].board[0]={name:"A",str:3,hp:4,damage:0,acted:false};
+ s.players[0].board[1]={name:"C",str:2,hp:3,damage:0,acted:false};
  s.players[1].board[0]={name:"B",str:2,hp:3,damage:0,acted:false};
  attack(s,0,0,0);assert.equal(s.players[0].board[0].damage,2);assert.equal(s.players[1].board[0],null);
- s.players[0].board[1]={name:"C",str:2,hp:3,damage:0,acted:false};const before=s.players[1].health;s.active=0;attack(s,0,1,-1);assert.equal(s.players[1].health,before-2);
+ const before=s.players[1].health;s.active=0;attack(s,0,1,-1);assert.equal(s.players[1].health,before-2);
+});
+test("combat does not end while an unspent Unit remains",()=>{
+ const s=createMatch({playerFaction:"prismites",opponentFaction:"moon-demons"});begin(s);s.phase="combat";s.active=0;
+ s.players[0].board[0]={name:"A",str:1,hp:4,damage:0,acted:false};
+ s.players[0].board[1]={name:"B",str:1,hp:4,damage:0,acted:false};
+ attack(s,0,0,-1);
+ assert.equal(s.phase,"combat");assert.equal(s.active,1);
 });
 test("every Realm exposes a three-stage progression contract",()=>{
  for(const f of FACTIONS){assert.equal(REALM_STAGES[f.realm].length,3);assert.deepEqual(REALM_STAGES[f.realm].map(x=>x.round),[1,3,6]);}
 });
-
 test("Convergence discounts only the first Special played each turn",()=>{
  const s=createMatch({playerFaction:"prismites",opponentFaction:"moon-demons"});begin(s);s.stage=1;
  const p=s.players[0],special=p.hand.find(c=>c.type!=="Unit");assert.ok(special);
