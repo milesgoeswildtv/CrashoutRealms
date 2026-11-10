@@ -11,3 +11,6 @@
 
 /* Collection ownership and deck validation states */
 .collection-entry{min-width:0;display:flex;flex-direction:column;gap:8px}.collection-entry>small{font-size:10px;letter-spacing:.13em;color:#aaa58f;text-align:center}.deck-summary{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.deck-summary .legal{color:#a6c99d}.deck-summary .illegal{color:#e49b8d}
+
+/* Deck catalogue rows keep inspection and deck mutation as separate actions. */
+.card-pick-row{display:flex;align-items:stretch;gap:6px;min-width:0}.card-pick-row .card-pick{flex:1;min-width:0;text-align:left;background:#171c1a;border:1px solid #343c36;border-radius:6px;padding:12px}.card-pick-row .card-pick b{display:block;font-size:12px}.card-pick-row .card-pick small{display:block;color:#9ca49c;margin-top:5px;font-size:10px}.card-pick-row .add-card{width:42px;flex:none;border:1px solid #786849;background:#28271f;color:#e1c68f;border-radius:6px;font-size:22px}.card-pick-row .add-card:active{background:#c2a675;color:#171713}
