@@ -72,7 +72,7 @@ test("Eliteborn Apex Formation requires five Units of its matching Force",()=>{
  assert.equal(playCard(s,0,0,-1),false);
  p.board[4]={...units[4],owner:0,damage:0,acted:false};
  assert.equal(playCard(s,0,0,-1),true);
- assert.equal(p.board[0].components.length,5);
+ assert.equal(p.board.find(x=>x?.isFormation).components.length,5);
 });
 test("when an Eliteborn Formation breaks, its components and attached card enter discard",()=>{
  const s=createMatch({playerFaction:"eliteborn",opponentFaction:"prismites"});begin(s);
