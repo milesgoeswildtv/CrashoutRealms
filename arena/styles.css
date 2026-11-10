@@ -24,3 +24,53 @@
 /* Match result: readable scorecard instead of a bare victory overlay. */
 .result{padding:18px;overflow:auto}.result-card{width:min(520px,100%);padding:30px;background:linear-gradient(145deg,#202720,#111614);border:1px solid #756443;border-radius:10px;box-shadow:0 24px 90px #000;text-align:left}.result-card>small{font-size:10px;letter-spacing:.22em;color:#c6aa75;font-weight:800}.result-card h2{font:clamp(42px,9vw,62px)/1 Georgia,serif;margin:16px 0 8px;text-align:left}.result-subtitle{color:#aab0a8;margin:0 0 22px}.result-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.result-grid>div{padding:12px;background:#171d19;border:1px solid #353d35;border-radius:5px;min-width:0}.result-grid small,.result-grid b{display:block}.result-grid small{font-size:9px;letter-spacing:.13em;color:#929b91;margin-bottom:6px}.result-grid b{font-size:13px;color:#e6d5ae;overflow-wrap:anywhere}.reward-line{display:flex;justify-content:space-between;align-items:center;margin:18px 0;padding:14px 0;border-block:1px solid #4a493a;color:#aeb4a9;font-size:13px}.reward-line b{font-size:18px;color:#d7c08e}.result-card>.primary{width:100%}
 @media(max-width:420px){.result-card{padding:22px}.result-grid{gap:6px}.result-grid>div{padding:10px}.result-grid b{font-size:12px}}
+
+
+/* REALMS match orientation: the lobby stays portrait; the complete match surface
+   remains landscape. On browsers that cannot lock physical orientation (notably
+   iOS Safari), rotate the app viewport instead of rearranging the battlefield. */
+#app.match-active{min-height:100dvh}
+#app.match-active .top{height:48px;min-height:48px;padding:5px 16px;gap:16px}
+#app.match-active .brand{min-width:125px}
+#app.match-active .sigil{width:29px;height:29px;font-size:20px}
+#app.match-active .top nav{display:none}
+#app.match-active .profile{margin-left:auto}
+#app.match-active main{max-width:none;width:100%;padding:10px 14px 14px}
+#app.match-active .battle-head{gap:12px;min-height:54px}
+#app.match-active .battle-head h1{font-size:25px;margin:3px 0}
+#app.match-active .battle-head p{font-size:10px;margin:2px 0}
+#app.match-active .table{margin-top:8px;padding:8px 12px;display:grid;grid-template-rows:minmax(0,1fr) auto minmax(0,1fr);gap:5px}
+#app.match-active .side{padding:4px 2px;min-width:0}
+#app.match-active .player-line{font-size:11px}
+#app.match-active .board{grid-template-columns:repeat(6,minmax(0,1fr));gap:7px;margin:6px 0}
+#app.match-active .slot{min-width:0;min-height:clamp(64px,17dvh,108px);padding:6px;font-size:18px}
+#app.match-active .slot b{font-size:clamp(10px,1.8vw,14px);overflow-wrap:anywhere}
+#app.match-active .slot span{font-size:9px}
+#app.match-active .slot small{font-size:8px}
+#app.match-active .zones{gap:14px;font-size:9px}
+#app.match-active .realm-spine{margin:2px auto;padding:7px 12px;gap:2px}
+#app.match-active .realm-spine b{font-size:17px}
+#app.match-active .battle-controls{margin-top:8px;padding:8px 12px}
+#app.match-active .turn-state{font-size:10px}
+#app.match-active .hand{padding:7px 0;gap:7px;max-height:25dvh}
+#app.match-active .hand-card .card{width:clamp(112px,14vw,150px);min-height:125px;padding:8px}
+#app.match-active .hand-card .card h3{font-size:13px;margin:9px 0 4px}
+#app.match-active .hand-card .card p{font-size:9px;line-height:1.25}
+#app.match-active .hand-card .inspect-hint{font-size:8px;margin-top:3px}
+#app.match-active .action-row{flex-wrap:wrap}
+#app.match-active .action-row button{padding:8px 12px;font-size:11px}
+#app.match-active .battle-log{margin-top:7px;padding:8px 12px;max-height:12dvh;overflow:auto}
+#app.match-active .battle-log p{display:inline-block;margin:5px 12px 0 0;font-size:9px}
+#app.match-active .result{z-index:60}
+#app.match-active.needs-rotation{position:fixed;inset:0;z-index:50;overflow:hidden}
+#app.match-active.needs-rotation #app{position:fixed;top:0;left:0;width:100dvh;height:100dvw;min-height:0;overflow:auto;transform-origin:top left;transform:rotate(90deg) translateY(-100%);overscroll-behavior:contain}
+@media (orientation:landscape){
+  #app.match-active.needs-rotation{position:static;inset:auto;overflow:visible}
+  #app.match-active.needs-rotation #app{position:static;width:auto;height:auto;min-height:100dvh;transform:none;overflow:visible}
+}
+@media(max-height:500px) and (orientation:landscape){
+  #app.match-active .top{height:38px;min-height:38px}
+  #app.match-active .table{padding:4px 10px}
+  #app.match-active .slot{min-height:58px}
+  #app.match-active .hand{max-height:22dvh}
+}
