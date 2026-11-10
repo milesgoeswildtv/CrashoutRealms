@@ -7,7 +7,7 @@ test("all faction starter lists satisfy the prototype 30-card deck contract",()=
 });
 test("standard Units allow four copies but not five",()=>{
  const unit={id:"unit-a",name:"Unit A",type:"Unit",rarity:"Common"};
- assert.equal(validateDeck(Array(4).fill(unit)).valid,false); // size check only; copy cap is not exceeded
+ assert.equal(validateDeck(Array(4).fill(unit),{size:4}).valid,true);
  assert.ok(validateDeck([unit,unit,unit,unit,unit]).errors.some(x=>x.includes("maximum 4")));
 });
 test("Legendary Units and Special cards are limited to one copy",()=>{
