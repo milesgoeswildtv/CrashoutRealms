@@ -13,7 +13,7 @@ function formationComponents(p,c){
  const units=p.board.map((u,slot)=>({u,slot})).filter(x=>x.u&&!x.u.isFormation&&x.u.type==="Unit");
  const labels=c.force_labels||[];
  if(c.force_count_required===5){const force=labels[0];return units.filter(x=>x.u.force===force).slice(0,5)}
- if(labels.length===2){const chosen=[];for(const force of labels){const found=units.find(x=>x.u.force===force&&!chosen.includes(x));if(!found)return [];chosen.push(found)}return chosen}
+ if(labels.length===2){const chosen=[];for(const force of labels){const found=units.find(x=>x.u.force===force&&!chosen.includes(x));if(!found)return [];chosen.push(found)}return chosen.sort((a,b)=>a.slot-b.slot)}
  return [];
 }
 export function legalPlay(s,pi,ci,slot=-1){
