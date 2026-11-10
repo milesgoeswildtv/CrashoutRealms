@@ -81,3 +81,9 @@ body.match-active{overflow:hidden}
 @media(orientation:landscape){
  #app.match-active.needs-rotation{position:static;inset:auto;width:auto;height:auto;min-height:100dvh;transform:none;overflow:visible}
 }
+
+/* Correct geometry for the portrait-device fallback: landscape-sized content
+   is laid out across the long viewport axis, then the root is rotated once. */
+#app.match-active.needs-rotation{width:100dvw;height:100dvh;min-height:0;overflow:visible;transform-origin:top left;transform:rotate(90deg) translateY(-100%)}
+#app.match-active.needs-rotation .top,
+#app.match-active.needs-rotation main{width:100dvh;max-width:none}
