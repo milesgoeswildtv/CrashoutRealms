@@ -47,7 +47,7 @@ test("every Realm exposes a three-stage progression contract",()=>{
 });
 test("Convergence discounts only the first Special played each turn",()=>{
  const s=createMatch({playerFaction:"prismites",opponentFaction:"moon-demons"});begin(s);s.stage=1;
- const p=s.players[0],special=p.hand.find(c=>c.type!=="Unit");assert.ok(special);
+ const p=s.players[0],special=CATALOGUE.prismites.find(c=>c.type==="Prism");p.hand=[special];
  assert.equal(effectiveCost(s,p,special),Math.max(1,special.cost-1));
  p.stageSpecialUsed=true;assert.equal(effectiveCost(s,p,special),special.cost);
 });
