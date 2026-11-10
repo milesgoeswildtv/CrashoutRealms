@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {FACTIONS,CATALOGUE,REALM_STAGES,starterDeck,createMatch,begin,playCard,passPlacement,attack} from "../engine.js";
+import {FACTIONS,CATALOGUE,REALM_STAGES,starterDeck,createMatch,begin,playCard,passPlacement,attack,effectiveCost} from "../engine.js";
 
 test("five current factions map to five current Realms",()=>{
  assert.deepEqual(FACTIONS.map(f=>f.realm),["Crystal Isle","The Lost Star","Upper Strata","The Endless","Deadlands"]);
@@ -31,4 +31,11 @@ test("Unit combat applies simultaneous retaliation and direct attacks hit Health
 });
 test("every Realm exposes a three-stage progression contract",()=>{
  for(const f of FACTIONS){assert.equal(REALM_STAGES[f.realm].length,3);assert.deepEqual(REALM_STAGES[f.realm].map(x=>x.round),[1,3,6]);}
+});
+
+test("Convergence discounts only the first Special played each turn",()=>{
+ const s=createMatch({playerFaction:"prismites",opponentFaction:"moon-demons"});begin(s);s.stage=1;
+ const p=s.players[0],special=p.hand.find(c=>c.type!=="Unit");assert.ok(special);
+ assert.equal(effectiveCost(s,p,special),Math.max(1,special.cost-1));
+ p.stageSpecialUsed=true;assert.equal(effectiveCost(s,p,special),special.cost);
 });
