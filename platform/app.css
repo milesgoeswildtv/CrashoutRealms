@@ -98,3 +98,6 @@
 .card-library-filters{display:grid;grid-template-columns:minmax(0,1fr) 145px 145px;gap:8px;margin:10px 0}
 .card-library-filters input,.card-library-filters select{min-width:0;min-height:38px;padding:8px 10px;background:#11140f;border:1px solid #424a35;color:var(--text);font:inherit;font-size:10px}
 @media(max-width:620px){.card-library-filters{grid-template-columns:1fr 1fr}.card-library-filters input{grid-column:1/-1}}
+
+
+.deck-legality{margin:12px 0;padding:10px;background:#20251c;border:1px solid #46513a;font-size:9px;line-height:1.5;color:#bdc8a5}.deck-legality b,.deck-legality small{display:block;letter-spacing:.12em}.deck-legality small{margin-top:8px;color:#aab68a}.deck-legality.invalid{border-color:#81533f;background:#281d17;color:#e1b39a}.deck-legality ul{padding-left:16px;margin:7px 0}.deck-legality p{margin:7px 0;color:#b6bda9}
