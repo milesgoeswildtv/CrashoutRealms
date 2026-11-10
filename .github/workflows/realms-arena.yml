@@ -13,4 +13,5 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - run: node --check arena/app.js && node --check arena/engine.js && node --check arena/data.js
       - run: node --test arena/tests/*.test.mjs
