@@ -4,14 +4,14 @@ Audit date: 2026-11-09
 Base: `main` at `7e9e9a4045e30d15a14190b3cc03ea7b82a6c7bf`
 Working branch: `rebuild/unified-tcg-foundation`
 
-## Executive finding
+## Executive finding — correction after authority review
 
-There are two separate REALMS implementations in this repository:
+The repository contains two separate REALMS implementations, but the current platform documentation explicitly establishes the newer `platform/` application as the active product direction and the root v0.9 runtime as a legacy playtest artifact. The initial inspection incorrectly treated v0.9 as the behavioral authority. That conclusion is superseded by this correction: **do not extract or transplant v0.9 rules into the platform without a fresh owner-approved rules audit.**
 
 1. **Root v0.9 runtime** (`index.html`, `src-v09/cards.js`, `src-v09/game.js`, `src-v09/styles.css`). The repository working contract (`AGENTS.md`) identifies this as the current playable runtime and says to preserve its rules. It contains five 30-card faction catalogues, the five-card recurring selective hand cycle, 20 starting Health, alternating Placement and Action, simultaneous creature combat, AI behavior, Realm effects, and faction signature systems. The game logic is substantial, but concentrated in a large browser runtime file.
-2. **New platform** (`platform/`). This is a separate shell with identity/navigation and a Realm-aware local Deck Workshop. Its Play destination uses `formation-engine.mjs` and `formation-lab.js`, which explicitly describe themselves as a local Eliteborn Formation test harness, not the complete shared ruleset. Only the Eliteborn catalogue is connected there.
+2. **New platform** (`platform/`). This is the active product direction according to `platform/README.md` and `platform/contracts/architecture.md`. It has navigation, identity boundaries and a Realm-aware local Deck Workshop. Its Play destination uses `formation-engine.mjs` and `formation-lab.js`, which explicitly describe themselves as a local Eliteborn Formation test harness, not the complete shared ruleset. Only the Eliteborn catalogue is connected.
 
-The current problem is therefore not that REALMS has no gameplay. The repository already contains a much more complete legacy/current alpha rules runtime, while the newer platform has a simplified, disconnected match harness. Rebuilding the game from the platform Formation Lab alone would discard substantial existing rules work and repeat prior mistakes.
+The current product gap is that the active platform has a partial local test game, while the complete shared rules and approved cross-faction catalogue are not connected. The legacy runtime can be studied as historical reference only; it must not silently supply current rules.
 
 ## Verified current state
 
@@ -20,7 +20,7 @@ The current problem is therefore not that REALMS has no gameplay. The repository
 - `src-v09/game.js` is a 117 KB monolithic game runtime.
 - `src-v09/styles.css` contains the current match styling.
 - `REALMS_150_Cards_v0.9_Signature_Systems.json` is marked alpha / not balance-locked / human playtest required.
-- `AGENTS.md` names the root v0.9 runtime as authoritative and documents its core rules and faction systems.
+- `AGENTS.md` conflicts with the newer platform README: it calls root v0.9 authoritative, while `platform/README.md` explicitly says root v0.9 is historical and must not seed current card data. This is a governance conflict that must be resolved by the owner; the active platform's own explicit guardrails prohibit importing v0.9 gameplay as current authority.
 - The v0.9 faction labels in the checked-in source are Living Geodes, Continuum, Harvest, Moondemons, and Eliteborn.
 - The v0.9 source still uses the Realm label **Blood Moon** in runtime setup. The newer approved canon is **The Lost Star — Moon Demons**. This is a canon mismatch to reconcile; do not silently propagate Blood Moon.
 - The current root runtime has an existing UI-only PR #26 that builds a conventional TCG table (opponent top, player bottom, hidden opponent hand, flexible battlefield rows, card inspector, deck/graveyard/banished zones). Its checks and Cloudflare preview deployment succeeded, but browser/device QA was explicitly not performed.
@@ -39,7 +39,13 @@ The current problem is therefore not that REALMS has no gameplay. The repository
 - PR #27 is open/draft and targets main; it adds setup and local deck limits to the platform.
 - These represent different implementation paths. They should not be merged as a pile. The unified rebuild branch starts from main and will selectively carry forward validated work after integration review.
 
-## Canon and rules that must be preserved
+## Canon and known constraints
+
+The platform's own README and architecture contract prohibit importing old v0.9 gameplay or card data as current authority. The 150-card v0.9 JSON is explicitly alpha/not balance-locked, and the card art rosters are art-production references, not automatically playable rules catalogues. The only catalogue presently connected to the active platform is Eliteborn, and its 30 card definitions are a test source whose full card effects are not executed by the current match engine.
+
+The platform documentation explicitly leaves shared match rules, approved card catalogue, deck size, deck legality, Realm stages and server-authoritative services unresolved. This audit cannot honestly mark those as complete or invent values for them.
+
+
 
 The approved Realm/faction identity for the unified game is:
 - Crystal Isle — Prismites
