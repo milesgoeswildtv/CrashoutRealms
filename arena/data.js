@@ -1,3 +1,4 @@
+import elitebornCanon from "./canon/eliteborn-v1.json" with { type: "json" };
 export const FACTIONS = [
  {id:"prismites",name:"Prismites",realm:"Crystal Isle",special:"Prism",accent:"#8acbd1",identity:"Invest colour, then fuse your crystal line."},
  {id:"moon-demons",name:"Moon Demons",realm:"The Lost Star",special:"Sigil",accent:"#b58abf",identity:"Mark combat and answer from the shadows."},
@@ -9,6 +10,11 @@ const unitNames=["Initiate","Warden","Stalker","Mender","Vanguard","Sentinel","S
 const specials=["First Sign","Second Sign","Third Sign","Fourth Sign","Fifth Sign","Sixth Sign","Seventh Sign","Eighth Sign","Ninth Sign","Final Sign"];
 export function buildCatalogue(factionId){
  const f=FACTIONS.find(x=>x.id===factionId);
+ if(factionId==="eliteborn") return elitebornCanon.cards.map(card=>{
+  const isUnit=card.type.includes("Unit");
+  const statPair=isUnit?(card.stats.split("|")[0].trim().split("/").map(Number)):[0,0];
+  return {id:card.id,name:card.name,type:isUnit?"Unit":card.type.includes("Apex")?"Apex Formation":"Formation",family:isUnit?"Unit":"Special",faction:factionId,cost:card.cost,resource:card.resource,str:statPair[0],hp:statPair[1],rarity:"Not assigned in source",text:card.rules,reminder:card.reminder||"",force:card.force||card.force_labels?.[0]||"",force_labels:card.force_labels||[],force_count_required:card.force_count_required||0,requirement:card.requirement||"",template_mode:card.template_mode||"",template_key:card.template_key||"",mechanic_strip_label:card.mechanic_strip_label||""};
+ });
  const units=unitNames.map((n,i)=>({id:f.id+"-U"+String(i+1).padStart(2,"0"),name:f.name+" "+n,type:"Unit",family:"Unit",faction:f.id,cost:1+Math.floor(i/4),resource:i%2?1:2,str:1+(i%4)+Math.floor(i/7),hp:2+(i%5),rarity:i===19?"Legendary":i>14?"Rare":"Common",text:unitText(f.id,i)}));
  const sig=specials.map((n,i)=>({id:f.id+"-S"+String(i+1).padStart(2,"0"),name:f.name+" "+n,type:f.special,family:"Special",faction:f.id,cost:2+(i%4),resource:i%2?1:2,str:0,hp:0,rarity:i===9?"Epic":"Uncommon",text:specialText(f.id,i)}));
  return [...units,...sig];
