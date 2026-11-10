@@ -14,3 +14,5 @@
 
 /* Deck catalogue rows keep inspection and deck mutation as separate actions. */
 .card-pick-row{display:flex;align-items:stretch;gap:6px;min-width:0}.card-pick-row .card-pick{flex:1;min-width:0;text-align:left;background:#171c1a;border:1px solid #343c36;border-radius:6px;padding:12px}.card-pick-row .card-pick b{display:block;font-size:12px}.card-pick-row .card-pick small{display:block;color:#9ca49c;margin-top:5px;font-size:10px}.card-pick-row .add-card{width:42px;flex:none;border:1px solid #786849;background:#28271f;color:#e1c68f;border-radius:6px;font-size:22px}.card-pick-row .add-card:active{background:#c2a675;color:#171713}
+
+.slot.selected{border-color:#d4b77c;box-shadow:0 0 0 2px rgba(212,183,124,.22),inset 0 0 24px rgba(212,183,124,.08);transform:translateY(-2px)}.slot.selected b{color:#f0d7a5}.slot small{display:block;color:#c4a56f;font-size:9px;letter-spacing:.1em;margin-top:5px}
