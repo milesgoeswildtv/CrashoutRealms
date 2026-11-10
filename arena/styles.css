@@ -74,3 +74,10 @@
   #app.match-active .slot{min-height:58px}
   #app.match-active .hand{max-height:22dvh}
 }
+
+/* Portrait-device fallback rotates the entire match viewport, not the phone. */
+body.match-active{overflow:hidden}
+#app.match-active.needs-rotation{top:0;left:0;right:auto;bottom:auto;width:100dvh;height:100dvw;min-height:0;transform-origin:top left;transform:rotate(90deg) translateY(-100%);overflow:auto}
+@media(orientation:landscape){
+ #app.match-active.needs-rotation{position:static;inset:auto;width:auto;height:auto;min-height:100dvh;transform:none;overflow:visible}
+}
