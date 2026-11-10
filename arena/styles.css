@@ -8,3 +8,6 @@
 .inspect-card .card{min-height:300px;max-width:240px;margin:auto;pointer-events:none}
 .inspect-copy{padding:12px 12px 8px 0}.inspect-copy>small{color:#b69c69;letter-spacing:.16em;font-size:10px}.inspect-copy h2{font:32px Georgia;margin:12px 0}.inspect-copy p{color:#c3c6c0;line-height:1.65}.inspect-copy dl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:22px 0}.inspect-copy dl div{padding:9px;background:#202522;border:1px solid #343b35;border-radius:5px}.inspect-copy dt{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:#9da39b}.inspect-copy dd{margin:4px 0 0;color:#e8d6ad;font-weight:700}.hand-card{position:relative}
 @media(max-width:620px){.inspect-panel{grid-template-columns:1fr;gap:14px;max-height:92dvh;overflow:auto;padding:22px}.inspect-card .card{min-height:220px}.inspect-copy{padding:0}.inspect-copy h2{font-size:26px}.inspect-copy dl{margin:12px 0}}
+
+/* Collection ownership and deck validation states */
+.collection-entry{min-width:0;display:flex;flex-direction:column;gap:8px}.collection-entry>small{font-size:10px;letter-spacing:.13em;color:#aaa58f;text-align:center}.deck-summary{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.deck-summary .legal{color:#a6c99d}.deck-summary .illegal{color:#e49b8d}
