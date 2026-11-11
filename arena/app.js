@@ -2,9 +2,8 @@ import {FACTIONS,CATALOGUE,REALM_STAGES,createMatch,begin,playCard,passPlacement
 import {validateDeck} from "./deck-rules.js";
 const $=s=>document.querySelector(s),screen=$("#screen"),store={view:"home",match:null,selected:null,collection:JSON.parse(localStorage.getItem("realms.collection")||"{}"),decks:JSON.parse(localStorage.getItem("realms.decks")||"{}"),currency:Number(localStorage.getItem("realms.shards")||250),packs:Number(localStorage.getItem("realms.packs")||0),history:JSON.parse(localStorage.getItem("realms.history")||"[]")};
 
-// Keep the lobby in its normal responsive orientation. A match requests the
-// browser's native landscape lock where supported; iOS Safari uses a rotated
-// app-surface fallback so the board itself never flips into portrait.
+// Matches use a fixed landscape game surface. On iOS portrait, rotate the
+// complete app shell; resize/orientation events recalculate its viewport.
 function syncMatchOrientation(){
   const active=store.view==="battle"&&!!store.match;
   document.body.classList.toggle("match-active",active);
@@ -14,7 +13,7 @@ function syncMatchOrientation(){
 }
 async function enterMatchOrientation(){
   syncMatchOrientation();
-  try{if(window.screen.orientation?.lock)await window.screen.orientation.lock("landscape");}catch(_){/* CSS fallback handles unsupported/denied locks. */}
+  try{if(window.screen.orientation?.lock)await window.screen.orientation.lock("landscape");}catch(_){}
 }
 function leaveMatchOrientation(){
   document.querySelector("#app").classList.remove("match-active","needs-rotation");
@@ -22,7 +21,7 @@ function leaveMatchOrientation(){
   try{window.screen.orientation?.unlock?.();}catch(_){}
 }
 window.addEventListener("resize",syncMatchOrientation);
-window.addEventListener("orientationchange",()=>setTimeout(syncMatchOrientation,80));
+window.addEventListener("orientationchange",()=>setTimeout(syncMatchOrientation,120));
 function save(){localStorage.setItem("realms.collection",JSON.stringify(store.collection));localStorage.setItem("realms.decks",JSON.stringify(store.decks));localStorage.setItem("realms.shards",store.currency);localStorage.setItem("realms.packs",store.packs);localStorage.setItem("realms.history",JSON.stringify(store.history));$("#shards").textContent=store.currency+" ◈"}
 function card(c){const label=c.type==="Unit"?(c.force||"UNIT"):c.mechanic_strip_label||c.requirement||c.rarity||c.type;const stats=c.type==="Unit"?c.str+" / "+c.hp:c.type.includes("Formation")?"FORMATION":c.rarity;return `<article class="card ${c.type==="Unit"?"unit":"special"}"><div class="card-top"><span>${label}</span><b>${c.cost}</b></div><h3>${c.name}</h3><p>${c.text}</p><footer><span>R ${c.resource}</span><strong>${stats}</strong></footer></article>`}
 function factionCards(){return FACTIONS.map(f=>`<button class="faction" data-faction="${f.id}" style="--accent:${f.accent}"><span class="faction-mark">${f.name.slice(0,1)}</span><span><b>${f.name}</b><small>${f.realm} · ${f.special}</small><em>${f.identity}</em></span></button>`).join("")}
@@ -36,14 +35,9 @@ function renderBattle(){
  const s=store.match;if(!s)return;
  const p=s.players[0],e=s.players[1],stage=REALM_STAGES[s.realm][s.stage]||REALM_STAGES[s.realm][0];
  const faction=id=>FACTIONS.find(f=>f.id===id)?.name||id;
- const pile=(label,count,kind)=>`<div class="pile ${kind}"><span>${label}</span><b>${count}</b><small>${kind==="grave"?"GRAVEYARD":kind==="deck"?"DRAW PILE":"RESOURCE"}</small></div>`;
  const row=(player,owner)=>`<section class="player-zone ${owner===1?"opponent-zone":"your-zone"}">
-  <div class="player-line"><b>${owner===1?"OPPONENT":"YOU"} · ${faction(player.faction)}</b><strong>${player.health} HP</strong></div>
-  <div class="battle-row">
-   <div class="side-piles">${pile("DECK",player.deck.length,"deck")}${pile("GRAVEYARD",player.discard.length,"grave")}${pile("RESOURCE",player.resource,"resource")}</div>
-   <div class="board">${player.board.map((u,i)=>slot(u,i,owner)).join("")}</div>
-   ${owner===1?`<div class="hidden-hand" aria-label="Opponent hand">${Array.from({length:Math.min(player.hand.length,6)},()=>'<span class="card-back">R</span>').join("")}<small>${player.hand.length} IN HAND</small></div>`:""}
-  </div>
+  <div class="player-line"><b>${owner===1?"RIVAL":"YOU"} · ${faction(player.faction)}</b><strong>${player.health} HP</strong><span class="zone-counts"><span>DECK <b>${player.deck.length}</b></span><span>GRAVE <b>${player.discard.length}</b></span><span>RESOURCE <b>${player.resource}</b></span></span>${owner===1?`<span class="hidden-hand" aria-label="Opponent hand">${Array.from({length:Math.min(player.hand.length,5)},()=>'<i class="card-back"></i>').join("")}<small>${player.hand.length} IN HAND</small></span>`:""}</div>
+  <div class="board">${player.board.map((u,i)=>slot(u,i,owner)).join("")}</div>
  </section>`;
  screen.innerHTML=`<div class="battle-head"><div class="battle-title"><small>ROUND ${s.round} · ${s.phase.toUpperCase()}</small><h1>${s.realm}</h1><p>${stage.name} — ${stage.law}</p></div><div class="battle-stage-chip">STAGE ${s.stage+1} / 3</div><button class="secondary" id="leave">Concede / Exit</button></div>
  <div class="battle-mat">
