@@ -26,98 +26,44 @@
 @media(max-width:420px){.result-card{padding:22px}.result-grid{gap:6px}.result-grid>div{padding:10px}.result-grid b{font-size:12px}}
 
 
-/* REALMS match orientation: the lobby stays portrait; the complete match surface
-   remains landscape. On browsers that cannot lock physical orientation (notably
-   iOS Safari), rotate the app viewport instead of rearranging the battlefield. */
+/* Match presentation: keep the battle surface landscape on every device.
+   Portrait iOS cannot be physically locked by a web page, so rotate the entire
+   app shell into a landscape viewport. The lobby remains untouched. */
+body.match-active{overflow:hidden}
 #app.match-active{min-height:100dvh}
 #app.match-active .top{height:48px;min-height:48px;padding:5px 16px;gap:16px}
 #app.match-active .brand{min-width:125px}
 #app.match-active .sigil{width:29px;height:29px;font-size:20px}
 #app.match-active .top nav{display:none}
 #app.match-active .profile{margin-left:auto}
-#app.match-active main{max-width:none;width:100%;padding:10px 14px 14px}
-#app.match-active .battle-head{gap:12px;min-height:54px}
-#app.match-active .battle-head h1{font-size:25px;margin:3px 0}
-#app.match-active .battle-head p{font-size:10px;margin:2px 0}
-#app.match-active .table{margin-top:8px;padding:8px 12px;display:grid;grid-template-rows:minmax(0,1fr) auto minmax(0,1fr);gap:5px}
-#app.match-active .side{padding:4px 2px;min-width:0}
-#app.match-active .player-line{font-size:11px}
-#app.match-active .board{grid-template-columns:repeat(6,minmax(0,1fr));gap:7px;margin:6px 0}
-#app.match-active .slot{min-width:0;min-height:clamp(64px,17dvh,108px);padding:6px;font-size:18px}
-#app.match-active .slot b{font-size:clamp(10px,1.8vw,14px);overflow-wrap:anywhere}
-#app.match-active .slot span{font-size:9px}
-#app.match-active .slot small{font-size:8px}
-#app.match-active .zones{gap:14px;font-size:9px}
-#app.match-active .realm-spine{margin:2px auto;padding:7px 12px;gap:2px}
-#app.match-active .realm-spine b{font-size:17px}
-#app.match-active .battle-controls{margin-top:8px;padding:8px 12px}
-#app.match-active .turn-state{font-size:10px}
-#app.match-active .hand{padding:7px 0;gap:7px;max-height:25dvh}
-#app.match-active .hand-card .card{width:clamp(112px,14vw,150px);min-height:125px;padding:8px}
-#app.match-active .hand-card .card h3{font-size:13px;margin:9px 0 4px}
-#app.match-active .hand-card .card p{font-size:9px;line-height:1.25}
-#app.match-active .hand-card .inspect-hint{font-size:8px;margin-top:3px}
-#app.match-active .action-row{flex-wrap:wrap}
-#app.match-active .action-row button{padding:8px 12px;font-size:11px}
-#app.match-active .battle-log{margin-top:7px;padding:8px 12px;max-height:12dvh;overflow:auto}
-#app.match-active .battle-log p{display:inline-block;margin:5px 12px 0 0;font-size:9px}
-#app.match-active .result{z-index:60}
-#app.match-active.needs-rotation{position:fixed;inset:0;z-index:50;overflow:hidden}
-#app.match-active.needs-rotation #app{position:fixed;top:0;left:0;width:100dvh;height:100dvw;min-height:0;overflow:auto;transform-origin:top left;transform:rotate(90deg) translateY(-100%);overscroll-behavior:contain}
-@media (orientation:landscape){
-  #app.match-active.needs-rotation{position:static;inset:auto;overflow:visible}
-  #app.match-active.needs-rotation #app{position:static;width:auto;height:auto;min-height:100dvh;transform:none;overflow:visible}
-}
-@media(max-height:500px) and (orientation:landscape){
-  #app.match-active .top{height:38px;min-height:38px}
-  #app.match-active .table{padding:4px 10px}
-  #app.match-active .slot{min-height:58px}
-  #app.match-active .hand{max-height:22dvh}
-}
-
-/* Portrait-device fallback rotates the entire match viewport, not the phone. */
-body.match-active{overflow:hidden}
-#app.match-active.needs-rotation{top:0;left:0;right:auto;bottom:auto;width:100dvh;height:100dvw;min-height:0;transform-origin:top left;transform:rotate(90deg) translateY(-100%);overflow:auto}
-@media(orientation:landscape){
- #app.match-active.needs-rotation{position:static;inset:auto;width:auto;height:auto;min-height:100dvh;transform:none;overflow:visible}
-}
-
-/* Correct geometry for the portrait-device fallback: landscape-sized content
-   is laid out across the long viewport axis, then the root is rotated once. */
-#app.match-active.needs-rotation{width:100dvw;height:100dvh;min-height:0;overflow:visible;transform-origin:top left;transform:rotate(90deg) translateY(-100%)}
-#app.match-active.needs-rotation .top,
-#app.match-active.needs-rotation main{width:100dvh;max-width:none}
-
-/* Complete playable battlefield: opponent, realm, player, hand and all piles. */
-#app.match-active{--battle-height:100dvh}
-#app.match-active main{height:calc(var(--battle-height) - 48px);box-sizing:border-box;overflow:hidden;padding:5px 12px 8px}
-#app.match-active .battle-mat{height:100%;min-height:0;display:grid;grid-template-rows:minmax(0,1fr) 42px minmax(0,1fr) minmax(92px,auto) auto;gap:4px;overflow:hidden}
+#app.match-active main{max-width:none;width:100%;height:calc(100dvh - 48px);box-sizing:border-box;overflow:hidden;padding:5px 12px 8px}
 #app.match-active .battle-head{height:40px;min-height:40px;display:flex;align-items:center;margin:0;gap:12px}
 #app.match-active .battle-title h1{font-size:19px;line-height:1;margin:2px 0}
 #app.match-active .battle-title p{font-size:9px;margin:0}
 #app.match-active .battle-title>small{font-size:8px;letter-spacing:.15em}
 #app.match-active .battle-stage-chip{margin-left:auto;color:#c7ae7b;font-size:9px;letter-spacing:.12em}
 #app.match-active .battle-head #leave{padding:6px 10px;font-size:9px}
+#app.match-active .battle-mat{height:calc(100% - 40px);min-height:0;display:grid;grid-template-rows:minmax(0,1fr) 38px minmax(0,1fr) minmax(82px,auto) auto;gap:4px;overflow:hidden}
 #app.match-active .player-zone{min-height:0;padding:3px 8px;background:#111714;border:1px solid #354039;border-radius:5px;display:flex;flex-direction:column;justify-content:center}
-#app.match-active .player-line{font-size:9px;line-height:1.2}
-#app.match-active .player-line strong{font-size:12px}
+#app.match-active .player-line{display:flex;justify-content:space-between;font-size:9px;line-height:1.2}
+#app.match-active .player-line strong{font-size:12px;color:#d4b17d}
 #app.match-active .battle-row{display:grid;grid-template-columns:104px minmax(0,1fr) 96px;align-items:center;gap:8px;min-height:0}
-#app.match-active .board{grid-template-columns:repeat(6,minmax(0,1fr));gap:5px;margin:3px 0}
-#app.match-active .slot{min-height:clamp(42px,11dvh,76px);height:100%;padding:4px;font-size:15px;overflow:hidden}
-#app.match-active .slot b{font-size:clamp(8px,1.4vw,12px);line-height:1.1}
+#app.match-active .board{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:5px;margin:3px 0}
+#app.match-active .slot{min-width:0;min-height:0;height:clamp(42px,11dvh,76px);padding:4px;font-size:15px;overflow:hidden}
+#app.match-active .slot b{font-size:clamp(8px,1.4vw,12px);line-height:1.1;overflow-wrap:anywhere}
 #app.match-active .slot span{font-size:8px;line-height:1.1}
 #app.match-active .slot small{font-size:7px;margin-top:2px}
 #app.match-active .slot.occupied{gap:3px;padding:5px}
 #app.match-active .side-piles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px}
 #app.match-active .pile{height:35px;border:1px solid #485046;border-radius:4px;background:#1a211c;display:grid;grid-template-columns:1fr auto;align-items:center;padding:3px 5px;gap:0 4px;min-width:0}
 #app.match-active .pile span{font-size:7px;color:#a9ae9f;letter-spacing:.06em;white-space:nowrap}
-#app.match-active .pile b{font: bold 12px Georgia;color:#e1c998}
+#app.match-active .pile b{font:bold 12px Georgia;color:#e1c998}
 #app.match-active .pile small{grid-column:1/-1;font-size:6px;color:#818b7e;letter-spacing:.08em}
 #app.match-active .pile.resource{border-color:#806e48;background:#29271d}
 #app.match-active .hidden-hand{display:flex;align-items:center;justify-content:center;gap:2px;flex-wrap:wrap}
 #app.match-active .card-back{width:17px;height:25px;border:1px solid #9b8359;border-radius:3px;background:repeating-linear-gradient(45deg,#27342d 0 3px,#17211b 3px 6px);display:grid;place-items:center;color:#c8b17e;font:10px Georgia}
 #app.match-active .hidden-hand small{width:100%;text-align:center;font-size:7px;color:#969e91}
-#app.match-active .realm-spine{height:42px;box-sizing:border-box;margin:0;padding:3px 10px;display:flex;align-items:center;justify-content:center;gap:10px;white-space:nowrap;overflow:hidden}
+#app.match-active .realm-spine{height:38px;box-sizing:border-box;margin:0;padding:3px 10px;display:flex;align-items:center;justify-content:center;gap:10px;white-space:nowrap;overflow:hidden}
 #app.match-active .realm-spine span,#app.match-active .realm-spine em{font-size:7px}
 #app.match-active .realm-spine b{font-size:13px}
 #app.match-active .realm-spine small{font-size:8px;overflow:hidden;text-overflow:ellipsis}
@@ -132,25 +78,31 @@ body.match-active{overflow:hidden}
 #app.match-active .hand-card .card p{font-size:7px;line-height:1.12;margin:0;overflow:hidden}
 #app.match-active .hand-card .card footer{font-size:7px;margin-top:auto}
 #app.match-active .hand-card .inspect-hint{font-size:6px;margin:1px 0 0}
-#app.match-active .battle-footer{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:28px}
+#app.match-active .battle-footer{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:26px}
 #app.match-active .turn-state{font-size:8px;gap:10px}
-#app.match-active .action-row{gap:5px}
+#app.match-active .action-row{display:flex;gap:5px;flex-wrap:wrap}
 #app.match-active .action-row button{padding:5px 9px;font-size:8px}
 #app.match-active .battle-log{margin:0;padding:3px 8px;font-size:8px;max-height:22px;overflow:auto}
 #app.match-active .battle-log summary{cursor:pointer;color:#a7a08a;font-size:8px}
 #app.match-active .battle-log p{font-size:8px;margin:3px 0}
 #app.match-active .result{z-index:80}
-@media (orientation:portrait){
- #app.match-active{--battle-height:100dvw}
- #app.match-active main{width:100dvh;max-width:none;height:calc(100dvw - 48px)}
-}
+#app.match-active.needs-rotation{position:fixed;top:0;left:0;width:100dvh;height:100dvw;min-height:0;overflow:hidden;transform-origin:top left;transform:rotate(90deg) translateY(-100%);z-index:50}
+#app.match-active.needs-rotation .top,
+#app.match-active.needs-rotation main{width:100dvh;max-width:none}
 @media (orientation:landscape){
- #app.match-active{--battle-height:100dvh}
+ #app.match-active.needs-rotation{position:static;width:100%;height:auto;min-height:100dvh;transform:none;overflow:visible}
+ #app.match-active.needs-rotation .top,
+ #app.match-active.needs-rotation main{width:100%;max-width:none}
  #app.match-active main{height:calc(100dvh - 48px)}
 }
+@media (orientation:portrait){
+ #app.match-active.needs-rotation{width:100dvh;height:100dvw}
+ #app.match-active.needs-rotation main{height:calc(100dvw - 48px)}
+ #app.match-active.needs-rotation .battle-mat{height:calc(100% - 40px)}
+}
 @media(max-height:390px) and (orientation:landscape){
- #app.match-active .battle-mat{grid-template-rows:minmax(0,1fr) 34px minmax(0,1fr) 88px 22px}
- #app.match-active .realm-spine{height:34px}
- #app.match-active .slot{min-height:36px}
- #app.match-active .hand-card .card{max-height:68px}
+ #app.match-active .battle-mat{grid-template-rows:minmax(0,1fr) 32px minmax(0,1fr) 76px 20px}
+ #app.match-active .realm-spine{height:32px}
+ #app.match-active .slot{height:36px}
+ #app.match-active .hand-card .card{max-height:62px}
 }
