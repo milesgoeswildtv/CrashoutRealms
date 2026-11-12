@@ -39,7 +39,7 @@ body.match-active{overflow:hidden;background:#080d0b}
 #app.match-active .battle-title>small{font-size:8px;letter-spacing:.14em}
 #app.match-active .battle-stage-chip{margin-left:auto;font-size:9px;color:#c7ae7b;letter-spacing:.12em}
 #app.match-active #leave{padding:6px 10px;font-size:9px}
-#app.match-active .battle-mat{height:calc(100% - 39px);min-height:0;display:grid;grid-template-rows:minmax(76px,1fr) 34px minmax(76px,1fr) minmax(92px,1.05fr) 26px;gap:5px;overflow:hidden}
+#app.match-active .battle-mat{height:calc(100% - 39px);min-height:0;display:grid;grid-template-rows:minmax(74px,.9fr) 30px minmax(74px,.9fr) minmax(78px,1fr) 24px 18px;gap:4px;overflow:hidden}
 #app.match-active .player-zone{min-height:0;display:flex;flex-direction:column;justify-content:center;gap:5px;padding:6px 9px;border:1px solid #39443b;border-radius:6px;background:#111814;overflow:hidden}
 #app.match-active .opponent-zone{background:#101613;border-color:#303b34}
 #app.match-active .your-zone{background:#151c17;border-color:#66583e}
@@ -49,7 +49,7 @@ body.match-active{overflow:hidden;background:#080d0b}
 #app.match-active .zone-counts span{display:flex;gap:3px;align-items:center}
 #app.match-active .zone-counts b{font-size:10px;color:#d4c49f}
 #app.match-active .board{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;min-height:0;margin:0}
-#app.match-active .slot{height:clamp(48px,12dvh,82px);min-height:0;min-width:0;padding:5px;overflow:hidden;border-radius:5px;font-size:14px}
+#app.match-active .slot{height:clamp(40px,10dvh,66px);min-height:0;min-width:0;padding:5px;overflow:hidden;border-radius:5px;font-size:14px}
 #app.match-active .slot b{font-size:clamp(9px,1.35vw,13px);line-height:1.1;overflow-wrap:anywhere}
 #app.match-active .slot span{font-size:8px;line-height:1.15}
 #app.match-active .slot small{font-size:7px;margin-top:3px}
@@ -76,8 +76,8 @@ body.match-active{overflow:hidden;background:#080d0b}
 #app.match-active .turn-state{font-size:8px;gap:10px}
 #app.match-active .action-row{display:flex;gap:6px;flex-wrap:nowrap}
 #app.match-active .action-row button{padding:5px 10px;font-size:8px;white-space:nowrap}
-#app.match-active .battle-log{margin:0;padding:3px 8px;font-size:8px;max-height:22px;overflow:auto}
-#app.match-active .battle-log summary{cursor:pointer;color:#a7a08a;font-size:8px}
+#app.match-active .battle-log{margin:0;padding:2px 8px;font-size:8px;min-height:18px;max-height:18px;overflow:hidden;border-top:1px solid #303a32}
+#app.match-active .battle-log summary{cursor:pointer;color:#a7a08a;font-size:8px;line-height:12px}
 #app.match-active .battle-log p{font-size:8px;margin:3px 0}
 #app.match-active .result{z-index:80}
 #app.match-active.needs-rotation{position:fixed;top:0;left:0;width:100dvh;height:100dvw;min-height:0;overflow:hidden;transform-origin:top left;transform:rotate(90deg) translateY(-100%);z-index:50}
@@ -92,10 +92,10 @@ body.match-active{overflow:hidden;background:#080d0b}
 }
 @media(max-height:390px) and (orientation:landscape){
  #app.match-active main{padding:5px 10px}
- #app.match-active .battle-mat{grid-template-rows:minmax(64px,1fr) 29px minmax(64px,1fr) minmax(76px,1fr) 22px;gap:3px}
+ #app.match-active .battle-mat{grid-template-rows:minmax(68px,.9fr) 27px minmax(68px,.9fr) minmax(72px,1fr) 22px 16px;gap:3px}
  #app.match-active .realm-spine{height:29px;min-height:29px}
- #app.match-active .slot{height:clamp(42px,13dvh,58px)}
- #app.match-active .hand-card .card{max-height:88px}
+ #app.match-active .slot{height:clamp(36px,10dvh,50px)}
+ #app.match-active .hand-card .card{max-height:82px}
 }
 @media(max-width:680px) and (orientation:landscape){
  #app.match-active .zone-counts{gap:5px;font-size:6px}
