@@ -1,0 +1,17 @@
+name: REALMS standalone arena tests
+on:
+  push:
+    branches: [rebuild/standalone-realms-game]
+    paths: ['arena/**']
+  pull_request:
+    paths: ['arena/**']
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node --check arena/app.js && node --check arena/engine.js && node --check arena/data.js
+      - run: node --test arena/tests/*.test.mjs

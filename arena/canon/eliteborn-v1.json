@@ -1,0 +1,757 @@
+{
+  "version": "Eliteborn-v1-rebuild",
+  "status": "CREATIVE/MECHANICAL REBUILD — NOT BALANCE LOCKED",
+  "realm": "Upper Strata",
+  "composition": "20 Units (5 Order / 5 Chaos / 5 Life / 5 Death) + 10 Formation Cards",
+  "template_family": "Moon Demon template governs architecture/hierarchy only. Eliteborn uses its own ivory/electrum/graphite/force-glass skin with subtle Force accents.",
+  "formation_engine": {
+    "formation": "Play a Formation Card when you control the required Units. Add those Units' CURRENT STR together and CURRENT HP together. They become one Formation, occupy one Unit position, attack/take damage as one Unit, and receive each stat modifier once.",
+    "break": "The Formation Card stays attached until the Formation reaches 0 HP. Then the Formation breaks; all component Units die simultaneously, then the Formation's break effect resolves unless the card says otherwise.",
+    "apex": "Apex Formations require all five Units of one Force and combine all five into one Formation.",
+    "component_text": "Unit cards are designed to be valuable before Formation. Any engine decision about whether component Unit text remains active while formed should be locked separately before rules implementation."
+  },
+  "cards": [
+    {
+      "id": "ELI-001",
+      "name": "Axiom Seeker",
+      "force": "ORDER",
+      "type": "Eliteborn Unit — Order",
+      "cost": 2,
+      "resource": 2,
+      "stats": "2/4 | ORDER",
+      "rules": "On play: look at top 5. Take an ORDER Unit; bottom the rest.",
+      "descriptor": "Eliteborn are one perfected force-civilization, not knights, royalty, paladins, robots, angels, or four unrelated factions. All Units share refined humanoid-adjacent anatomy, sculptural force-integrated garments, ivory/electrum/graphite materials, translucent force-glass, and visible internal force seams. Upper Strata is a high-altitude civilization of immense pale platforms, terraces, bridges, and broken megastructures held together by visible force lattices, tension planes, vector beams, and gravity fields rather than conventional supports. ORDER subfamily: exact symmetry, pale electrum, cool ivory, restrained sapphire-white force light, measured spacing, mirrored geometry, stable verticals, and immaculate surfaces. ORDER bodies look calibrated rather than armored. Axiom Seeker is a lean, adult Eliteborn navigator built around a perfectly centered body axis. Give the figure a readable but unnaturally precise face, short sculptural hair, and a sleeveless force-woven mantle that locks into the torso through thin electrum seams rather than armor. Pose them in full-body side view walking left-to-right across three floating ivory platforms that are held in alignment by luminous vector lines. Several small force-glass measurement plates hover at exact equal distances around one hand, visually suggesting search, indexing, and selection. Do not use a sword, shield, crown, throne, cape, or knight silhouette. The composition should feel like a person calmly reading the architecture of reality.",
+      "prototype": false,
+      "text_mode": "concise",
+      "effect_authority": "Eliteborn v1 rebuild",
+      "force_labels": [
+        "ORDER"
+      ],
+      "force_count_required": 1,
+      "template_mode": "single-force-unit",
+      "template_key": "ELITEBORN_ORDER_TEMPLATE",
+      "generator_template_rule": "Use the approved ORDER Eliteborn template exactly for frame/skin. Do not substitute another Force template and do not recolor a generic Eliteborn frame.",
+      "mechanic_strip_label": "ORDER"
+    },
+    {
+      "id": "ELI-002",
+      "name": "Still Meridian",
+      "force": "ORDER",
+      "type": "Eliteborn Unit — Order",
+      "cost": 3,
+      "resource": 1,
+      "stats": "2/5 | ORDER",
+      "rules": "First time each round another ally would lose STR or maximum HP: prevent it.",
+      "descriptor": "Eliteborn are one perfected force-civilization, not knights, royalty, paladins, robots, angels, or four unrelated factions. All Units share refined humanoid-adjacent anatomy, sculptural force-integrated garments, ivory/electrum/graphite materials, translucent force-glass, and visible internal force seams. Upper Strata is a high-altitude civilization of immense pale platforms, terraces, bridges, and broken megastructures held together by visible force lattices, tension planes, vector beams, and gravity fields rather than conventional supports. ORDER subfamily: exact symmetry, pale electrum, cool ivory, restrained sapphire-white force light, measured spacing, mirrored geometry, stable verticals, and immaculate surfaces. ORDER bodies look calibrated rather than armored. Still Meridian is a broad-shouldered Eliteborn whose force channels run as perfectly straight luminous lines from collarbone to wrists and down both legs. Use a low-angle, mostly frontal composition with the figure standing motionless while loose fragments of Upper Strata stop at invisible planar boundaries around them. Their garments should be layered ivory force-cloth stiffened into geometric panels, with no medieval armor shapes. The face is calm, almost clinical. One hand is relaxed at the side; the other touches a vertical force plane that keeps a nearby cracked structure from deforming. The visual idea is preservation through exactness: nothing under Order's protection is allowed to become less than it was.",
+      "prototype": false,
+      "text_mode": "concise",
+      "effect_authority": "Eliteborn v1 rebuild",
+      "force_labels": [
+        "ORDER"
+      ],
+      "force_count_required": 1,
+      "template_mode": "single-force-unit",
+      "template_key": "ELITEBORN_ORDER_TEMPLATE",
+      "generator_template_rule": "Use the approved ORDER Eliteborn template exactly for frame/skin. Do not substitute another Force template and do not recolor a generic Eliteborn frame.",
+      "mechanic_strip_label": "ORDER"
+    },
+    {
+      "id": "ELI-003",
+      "name": "Perfect Interval",
+      "force": "ORDER",
+      "type": "Eliteborn Unit — Order",
+      "cost": 4,
+      "resource": 2,
+      "stats": "3/6 | ORDER",
+      "rules": "When this joins a Formation: that Formation gains +0/+3 permanently.",
+      "descriptor": "Eliteborn are one perfected force-civilization, not knights, royalty, paladins, robots, angels, or four unrelated factions. All Units share refined humanoid-adjacent anatomy, sculptural force-integrated garments, ivory/electrum/graphite materials, translucent force-glass, and visible internal force seams. Upper Strata is a high-altitude civilization of immense pale platforms, terraces, bridges, and broken megastructures held together by visible force lattices, tension planes, vector beams, and gravity fields rather than conventional supports. ORDER subfamily: exact symmetry, pale electrum, cool ivory, restrained sapphire-white force light, measured spacing, mirrored geometry, stable verticals, and immaculate surfaces. ORDER bodies look calibrated rather than armored. Perfect Interval should be tall and narrow, shown in hard right-facing profile rather than another centered portrait. Two luminous force rings float around the torso at mathematically exact spacing, while a third ring locks around the hips as if measuring the distance between body segments. The Eliteborn's force-grown clothing is seamless ivory ceramic-fabric with thin sapphire lines and electrum joint bands. Behind them, two separated Upper Strata platforms are connected by a flawless bridge of force with no visible supports. Make the composition communicate structural reinforcement: the Unit does not look defensive in a knightly sense; it looks like a living theorem that adds stability when merged into something larger.",
+      "prototype": false,
+      "text_mode": "concise",
+      "effect_authority": "Eliteborn v1 rebuild",
+      "force_labels": [
+        "ORDER"
+      ],
+      "force_count_required": 1,
+      "template_mode": "single-force-unit",
+      "template_key": "ELITEBORN_ORDER_TEMPLATE",
+      "generator_template_rule": "Use the approved ORDER Eliteborn template exactly for frame/skin. Do not substitute another Force template and do not recolor a generic Eliteborn frame.",
+      "mechanic_strip_label": "ORDER"
+    },
+    {
+      "id": "ELI-004",
+      "name": "Unbroken Proof",
+      "force": "ORDER",
+      "type": "Eliteborn Unit — Order",
+      "cost": 5,
+      "resource": 1,
+      "stats": "4/7 | ORDER",
+      "rules": "On play: choose a Unit. Until end of turn, its STR and maximum HP cannot change.",
+      "descriptor": "Eliteborn are one perfected force-civilization, not knights, royalty, paladins, robots, angels, or four unrelated factions. All Units share refined humanoid-adjacent anatomy, sculptural force-integrated garments, ivory/electrum/graphite materials, translucent force-glass, and visible internal force seams. Upper Strata is a high-altitude civilization of immense pale platforms, terraces, bridges, and broken megastructures held together by visible force lattices, tension planes, vector beams, and gravity fields rather than conventional supports. ORDER subfamily: exact symmetry, pale electrum, cool ivory, restrained sapphire-white force light, measured spacing, mirrored geometry, stable verticals, and immaculate surfaces. ORDER bodies look calibrated rather than armored. Unbroken Proof is an older adult Eliteborn seen from a high three-quarter angle, standing inside a suspended square of force-glass whose four sides remain perfectly rigid despite the warped Upper Strata around it. Use a severe asymmetrical crop in the scene while the character itself remains perfectly symmetrical, emphasizing Order resisting a distorted environment. Their clothing is a long architectural wrap made of interlocking pale graphite and ivory segments, elegant and ceremonial rather than armored. One palm faces a nearby Unit-shaped silhouette made of light; measurement lines pin that silhouette's dimensions in place. The card should visually say: for one moment, the target's definition cannot be altered.",
+      "prototype": false,
+      "text_mode": "concise",
+      "effect_authority": "Eliteborn v1 rebuild",
+      "force_labels": [
+        "ORDER"
+      ],
+      "force_count_required": 1,
+      "template_mode": "single-force-unit",
+      "template_key": "ELITEBORN_ORDER_TEMPLATE",
+      "generator_template_rule": "Use the approved ORDER Eliteborn template exactly for frame/skin. Do not substitute another Force template and do not recolor a generic Eliteborn frame.",
+      "mechanic_strip_label": "ORDER"
+    },
+    {
+      "id": "ELI-005",
+      "name": "Final Measure",
+      "force": "ORDER",
+      "type": "Eliteborn Unit — Order",
+      "cost": 6,
+      "resource": 2,
+      "stats": "6/7 | ORDER",
+      "rules": "Costs 1 less per other ORDER ally, max 3. If you control 4 other ORDER Units when played: restore all allies to full HP.",
+      "descriptor": "Eliteborn are one perfected force-civilization, not knights, royalty, paladins, robots, angels, or four unrelated factions. All Units share refined humanoid-adjacent anatomy, sculptural force-integrated garments, ivory/electrum/graphite materials, translucent force-glass, and visible internal force seams. Upper Strata is a high-altitude civilization of immense pale platforms, terraces, bridges, and broken megastructures held together by visible force lattices, tension planes, vector beams, and gravity fields rather than conventional supports. ORDER subfamily: exact symmetry, pale electrum, cool ivory, restrained sapphire-white force light, measured spacing, mirrored geometry, stable verticals, and immaculate surfaces. ORDER bodies look calibrated rather than armored. Final Measure is the apex individual expression of ORDER before Ascendancy. Make the character visually powerful without royal or knightly language: a tall Eliteborn with a clean shaved or tightly bound hairstyle, pale electrum body seams, and a long split ceremonial garment that falls in rigid planes. Use an extreme wide shot from low altitude: the figure stands at the intersection of five force axes while four distant allied positions line up behind them in perfect perspective. As the fifth axis completes, damaged architecture and wounded luminous silhouettes snap back into complete geometry. No throne, banner, halo, or giant weapon. The feeling should be mathematical completion so absolute that damage itself is corrected.",
+      "prototype": false,
+      "text_mode": "concise",
+      "effect_authority": "Eliteborn v1 rebuild",
+      "force_labels": [
+        "ORDER"
+      ],
+      "force_count_required": 1,
+      "template_mode": "single-force-unit",
+      "template_key": "ELITEBORN_ORDER_TEMPLATE",
+      "generator_template_rule": "Use the approved ORDER Eliteborn template exactly for frame/skin. Do not substitute another Force template and do not recolor a generic Eliteborn frame.",
+      "mechanic_strip_label": "ORDER"
+    },
+    {
+      "id": "ELI-006",
+      "name": "Faultborn Variable",
+      "force": "CHAOS",
+      "type": "Eliteborn Unit — Chaos",
+      "cost": 2,
+      "resource": 1,
+      "stats": "3/3 | CHAOS",
+      "rules": "On play: randomly gain +2/-1 or -1/+2 permanently.",
+      "descriptor": "Eliteborn are one perfected force-civilization, not knights, royalty, paladins, robots, angels, or four unrelated factions. All Units share refined humanoid-adjacent anatomy, sculptural force-integrated garments, ivory/electrum/graphite materials, translucent force-glass, and visible internal force seams. Upper Strata is a high-altitude civilization of immense pale platforms, terraces, bridges, and broken megastructures held together by visible force lattices, tension planes, vector beams, and gravity fields rather than conventional supports. CHAOS subfamily: deliberate asymmetry, fractured electrum, crimson-violet and unstable amber force light, offset body structures, displaced layers, elegant breaks, and controlled instability. CHAOS is beautiful distortion, never random clutter. Faultborn Variable is a compact, athletic Eliteborn caught mid-turn with the torso and hips angled in different directions. One side of the body is stretched into a long aggressive silhouette while the other side has collapsed into thicker defensive geometry, visually representing the two possible stat outcomes. Use a rear three-quarter camera and strong diagonal movement across a broken Upper Strata walkway whose pieces are held together by unstable force vectors. The clothing should be the same elite material culture as Order, but deliberately offset: one sleeve split, one electrum seam interrupted, force-glass plates floating a few centimeters away from where they should attach. Beautiful instability, not punk chaos or random debris.",
+      "prototype": false,
+      "text_mode": "concise",
+      "effect_authority": "Eliteborn v1 rebuild",
+      "force_labels": [
+        "CHAOS"
+      ],
+      "force_count_required": 1,
+      "template_mode": "single-force-unit",
+      "template_key": "ELITEBORN_CHAOS_TEMPLATE",
+      "generator_template_rule": "Use the approved CHAOS Eliteborn template exactly for frame/skin. Do not substitute another Force template and do not recolor a generic Eliteborn frame.",
+      "mechanic_strip_label": "CHAOS"
+    },
+    {
+      "id": "ELI-007",
+      "name": "Shifting Index",
+      "force": "CHAOS",
+      "type": "Eliteborn Unit — Chaos",
+      "cost": 3,
+      "resource": 2,
+      "stats": "2/5 | CHAOS",
+      "rules": "Start of turn: randomly gain +2 STR/-1 HP or -1 STR/+2 HP this turn.",
+      "descriptor": "Eliteborn are one perfected force-civilization, not knights, royalty, paladins, robots, angels, or four unrelated factions. All Units share refined humanoid-adjacent anatomy, sculptural force-integrated garments, ivory/electrum/graphite materials, translucent force-glass, and visible internal force seams. Upper Strata is a high-altitude civilization of immense pale platforms, terraces, bridges, and broken megastructures held together by visible force lattices, tension planes, vector beams, and gravity fields rather than conventional supports. CHAOS subfamily: deliberate asymmetry, fractured electrum, crimson-violet and unstable amber force light, offset body structures, displaced layers, elegant breaks, and controlled instability. CHAOS is beautiful distortion, never random clutter. Shifting Index is a long-limbed Eliteborn shown from directly above as their body rebalances between two incompatible proportions. One ghost-solid version has elongated striking limbs and a narrow torso; the other is compact, dense, and thick through the core. Do not make them transparent clones; both states should appear as hard, overlapping physical geometry fighting for the same body. Use crimson-violet force channels and amber fault lines that physically migrate from limb to torso. The Upper Strata floor beneath them should be a suspended diagram of offset tiles that never align twice. The image should immediately communicate that the same person wakes into a different useful configuration each turn.",
+      "prototype": false,
+      "text_mode": "concise",
+      "effect_authority": "Eliteborn v1 rebuild",
+      "force_labels": [
+        "CHAOS"
+      ],
+      "force_count_required": 1,
+      "template_mode": "single-force-unit",
+      "template_key": "ELITEBORN_CHAOS_TEMPLATE",
+      "generator_template_rule": "Use the approved CHAOS Eliteborn template exactly for frame/skin. Do not substitute another Force template and do not recolor a generic Eliteborn frame.",
+      "mechanic_strip_label": "CHAOS"
+    },
+    {
+      "id": "ELI-008",
+      "name": "Broken Constant",
+      "force": "CHAOS",
+      "type": "Eliteborn Unit — Chaos",
+      "cost": 4,
+      "resource": 1,
+      "stats": "5/4 | CHAOS",
+      "rules": "When this joins a Formation: randomly give that Formation +3 STR or +3 HP permanently.",
+      "descriptor": "Eliteborn are one perfected force-civilization, not knights, royalty, paladins, robots, angels, or four unrelated factions. All Units share refined humanoid-adjacent anatomy, sculptural force-integrated garments, ivory/electrum/graphite materials, translucent force-glass, and visible internal force seams. Upper Strata is a high-altitude civilization of immense pale platforms, terraces, bridges, and broken megastructures held together by visible force lattices, tension planes, vector beams, and gravity fields rather than conventional supports. CHAOS subfamily: deliberate asymmetry, fractured electrum, crimson-violet and unstable amber force light, offset body structures, displaced layers, elegant breaks, and controlled instability. CHAOS is beautiful distortion, never random clutter. Broken Constant is a muscular Eliteborn whose body is visibly interrupted at the waist by a narrow gap of impossible space. The upper and lower halves remain coordinated through a rotating ring of crimson-violet forceglass, proving the break is intentional rather than injury. Use a low camera looking upward while two alternative force structures bloom from the gap: one forms aggressive forward-bladed geometry, the other forms thick reinforcing plates. The worker must not turn those plates into medieval armor. They are body-integrated force architecture. The visual should suggest that when Broken Constant joins a Formation, nobody knows whether the union becomes violently stronger or impossibly harder to kill.",
+      "prototype": false,
+      "text_mode": "concise",
+      "effect_authority": "Eliteborn v1 rebuild",
+      "force_labels": [
+        "CHAOS"
+      ],
+      "force_count_required": 1,
+      "template_mode": "single-force-unit",
+      "template_key": "ELITEBORN_CHAOS_TEMPLATE",
+      "generator_template_rule": "Use the approved CHAOS Eliteborn template exactly for frame/skin. Do not substitute another Force template and do not recolor a generic Eliteborn frame.",
+      "mechanic_strip_label": "CHAOS"
+    },
+    {
+      "id": "ELI-009",
+      "name": "Manybody Error",
+      "force": "CHAOS",
+      "type": "Eliteborn Unit — Chaos",
+      "cost": 5,
+      "resource": 2,
+      "stats": "4/6 | CHAOS",
+      "rules": "On play: choose two Units. Swap their current STR/HP pairs.",
+      "descriptor": "Eliteborn are one perfected force-civilization, not knights, royalty, paladins, robots, angels, or four unrelated factions. All Units share refined humanoid-adjacent anatomy, sculptural force-integrated garments, ivory/electrum/graphite materials, translucent force-glass, and visible internal force seams. Upper Strata is a high-altitude civilization of immense pale platforms, terraces, bridges, and broken megastructures held together by visible force lattices, tension planes, vector beams, and gravity fields rather than conventional supports. CHAOS subfamily: deliberate asymmetry, fractured electrum, crimson-violet and unstable amber force light, offset body structures, displaced layers, elegant breaks, and controlled instability. CHAOS is beautiful distortion, never random clutter. Manybody Error is an adult Eliteborn seen in strong left-facing profile at the center of two surrounding Unit-shaped force silhouettes. Their own body remains singular, but two sets of crimson-violet measurement bands detach from the surrounding silhouettes and cross through the character's hands, trading places. Make one surrounding silhouette huge and narrow, the other small and dense, so the idea of stat-pair exchange reads visually without UI text. The character's clothing is asymmetrical but exquisitely tailored from ivory force-fabric and floating graphite plates. Use a clean Upper Strata void behind them so the exchange, not another glamour portrait, is the focal action.",
+      "prototype": false,
+      "text_mode": "concise",
+      "effect_authority": "Eliteborn v1 rebuild",
+      "force_labels": [
+        "CHAOS"
+      ],
+      "force_count_required": 1,
+      "template_mode": "single-force-unit",
+      "template_key": "ELITEBORN_CHAOS_TEMPLATE",
+      "generator_template_rule": "Use the approved CHAOS Eliteborn template exactly for frame/skin. Do not substitute another Force template and do not recolor a generic Eliteborn frame.",
+      "mechanic_strip_label": "CHAOS"
+    },
+    {
+      "id": "ELI-010",
+      "name": "Unwritten Result",
+      "force": "CHAOS",
+      "type": "Eliteborn Unit — Chaos",
+      "cost": 6,
+      "resource": 1,
+      "stats": "7/5 | CHAOS",
+      "rules": "First time this would die: transform it into another random Cost 6 Unit from any Realm at full HP. It remains CHAOS.",
+      "descriptor": "Eliteborn are one perfected force-civilization, not knights, royalty, paladins, robots, angels, or four unrelated factions. All Units share refined humanoid-adjacent anatomy, sculptural force-integrated garments, ivory/electrum/graphite materials, translucent force-glass, and visible internal force seams. Upper Strata is a high-altitude civilization of immense pale platforms, terraces, bridges, and broken megastructures held together by visible force lattices, tension planes, vector beams, and gravity fields rather than conventional supports. CHAOS subfamily: deliberate asymmetry, fractured electrum, crimson-violet and unstable amber force light, offset body structures, displaced layers, elegant breaks, and controlled instability. CHAOS is beautiful distortion, never random clutter. Unwritten Result should look like an Eliteborn whose death cannot settle on a final answer. Show the figure falling backward through a vertical tear in Upper Strata while several hard-edged alternative body architectures are already replacing different portions of them: one crystalline, one lunar, one necro-organic, one temporal, yet all forced through the same Eliteborn core silhouette. Do not depict a collage of other faction characters; make the foreign possibilities anatomical/material echoes embedded in a single transforming body. The face remains calm and recognizably Eliteborn as the body changes. CHAOS force markings remain constant across every possible form, visually explaining why the transformed result still counts as CHAOS.",
+      "prototype": false,
+      "text_mode": "concise",
+      "effect_authority": "Eliteborn v1 rebuild",
+      "force_labels": [
+        "CHAOS"
+      ],
+      "force_count_required": 1,
+      "template_mode": "single-force-unit",
+      "template_key": "ELITEBORN_CHAOS_TEMPLATE",
+      "generator_template_rule": "Use the approved CHAOS Eliteborn template exactly for frame/skin. Do not substitute another Force template and do not recolor a generic Eliteborn frame.",
+      "mechanic_strip_label": "CHAOS"
+    },
+    {
+      "id": "ELI-011",
+      "name": "Pulse Origin",
+      "force": "LIFE",
+      "type": "Eliteborn Unit — Life",
+      "cost": 2,
+      "resource": 2,
+      "stats": "1/5 | LIFE",
+      "rules": "End of turn: restore 1 HP to another ally.",
+      "descriptor": "Eliteborn are one perfected force-civilization, not knights, royalty, paladins, robots, angels, or four unrelated factions. All Units share refined humanoid-adjacent anatomy, sculptural force-integrated garments, ivory/electrum/graphite materials, translucent force-glass, and visible internal force seams. Upper Strata is a high-altitude civilization of immense pale platforms, terraces, bridges, and broken megastructures held together by visible force lattices, tension planes, vector beams, and gravity fields rather than conventional supports. LIFE subfamily: opaline ivory, jade/emerald force light, branching internal channels, layered regenerative structures, expanding curves, and biological abundance expressed as high-order anatomy rather than leaves, vines, druids, or plant people. Pulse Origin is a compact adult Eliteborn with a soft but powerful silhouette, shown kneeling in profile beside a cracked force platform. Instead of leaves or vines, translucent jade force channels branch through their torso like a perfected circulatory system and extend through the fingertips into a wounded allied silhouette just outside frame. The garment uses opaline ivory layers that appear grown around the body in smooth overlapping bands, not fabric robes or armor. Upper Strata around them is alive with subtle force tension: a fractured bridge slowly reconnects as the pulse passes through. The image should communicate restoration as a natural bodily function of LIFE, not spellcasting.",
+      "prototype": false,
+      "text_mode": "concise",
+      "effect_authority": "Eliteborn v1 rebuild",
+      "force_labels": [
+        "LIFE"
+      ],
+      "force_count_required": 1,
+      "template_mode": "single-force-unit",
+      "template_key": "ELITEBORN_LIFE_TEMPLATE",
+      "generator_template_rule": "Use the approved LIFE Eliteborn template exactly for frame/skin. Do not substitute another Force template and do not recolor a generic Eliteborn frame.",
+      "mechanic_strip_label": "LIFE"
+    },
+    {
+      "id": "ELI-012",
+      "name": "Second Heart",
+      "force": "LIFE",
+      "type": "Eliteborn Unit — Life",
+      "cost": 3,
+      "resource": 1,
+      "stats": "2/6 | LIFE",
+      "rules": "First time another ally is healed each turn: +0/+1 permanently.",
+      "descriptor": "Eliteborn are one perfected force-civilization, not knights, royalty, paladins, robots, angels, or four unrelated factions. All Units share refined humanoid-adjacent anatomy, sculptural force-integrated garments, ivory/electrum/graphite materials, translucent force-glass, and visible internal force seams. Upper Strata is a high-altitude civilization of immense pale platforms, terraces, bridges, and broken megastructures held together by visible force lattices, tension planes, vector beams, and gravity fields rather than conventional supports. LIFE subfamily: opaline ivory, jade/emerald force light, branching internal channels, layered regenerative structures, expanding curves, and biological abundance expressed as high-order anatomy rather than leaves, vines, druids, or plant people. Second Heart is a tall, dark-skinned Eliteborn walking right-to-left in full profile. Two separate luminous jade force-organs are visible beneath a translucent sternum structure, one primary and one smaller secondary chamber that grows brighter whenever healing occurs nearby. The body should look elegant and biologically advanced without exposed gore. Use short tightly curled hair or another silhouette unlike the Order/Chaos cards. Their clothing should be a fitted opaline mantle whose seams curve with the force channels rather than hang like fantasy robes. In the distance, a healed ally's light reaches the second organ and causes a new layer of body architecture to grow around the ribs.",
+      "prototype": false,
+      "text_mode": "concise",
+      "effect_authority": "Eliteborn v1 rebuild",
+      "force_labels": [
+        "LIFE"
+      ],
+      "force_count_required": 1,
+      "template_mode": "single-force-unit",
+      "template_key": "ELITEBORN_LIFE_TEMPLATE",
+      "generator_template_rule": "Use the approved LIFE Eliteborn template exactly for frame/skin. Do not substitute another Force template and do not recolor a generic Eliteborn frame.",
+      "mechanic_strip_label": "LIFE"
+    },
+    {
+      "id": "ELI-013",
+      "name": "Continuance Vessel",
+      "force": "LIFE",
+      "type": "Eliteborn Unit — Life",
+      "cost": 4,
+      "resource": 2,
+      "stats": "3/7 | LIFE",
+      "rules": "When this joins a Formation: restore 3 HP to that Formation.",
+      "descriptor": "Eliteborn are one perfected force-civilization, not knights, royalty, paladins, robots, angels, or four unrelated factions. All Units share refined humanoid-adjacent anatomy, sculptural force-integrated garments, ivory/electrum/graphite materials, translucent force-glass, and visible internal force seams. Upper Strata is a high-altitude civilization of immense pale platforms, terraces, bridges, and broken megastructures held together by visible force lattices, tension planes, vector beams, and gravity fields rather than conventional supports. LIFE subfamily: opaline ivory, jade/emerald force light, branching internal channels, layered regenerative structures, expanding curves, and biological abundance expressed as high-order anatomy rather than leaves, vines, druids, or plant people. Continuance Vessel is a broad, physically grounded Eliteborn shown from a rear three-quarter angle stepping into the center of a partially formed force structure. Their back contains a large translucent jade reservoir divided into several living chambers, each releasing restorative light into the surrounding Formation geometry. Use no backpack, machine tank, or armor trope: the reservoir is part of their perfected anatomy, integrated beneath opaline plates. The environment should show two force architectures beginning to fuse, with cracks sealing where the LIFE current enters. The person should feel like a living reserve of continuity that makes a newly formed union healthier than the damaged pieces that entered it.",
+      "prototype": false,
+      "text_mode": "concise",
+      "effect_authority": "Eliteborn v1 rebuild",
+      "force_labels": [
+        "LIFE"
+      ],
+      "force_count_required": 1,
+      "template_mode": "single-force-unit",
+      "template_key": "ELITEBORN_LIFE_TEMPLATE",
+      "generator_template_rule": "Use the approved LIFE Eliteborn template exactly for frame/skin. Do not substitute another Force template and do not recolor a generic Eliteborn frame.",
+      "mechanic_strip_label": "LIFE"
+    },
+    {
+      "id": "ELI-014",
+      "name": "Living Archive",
+      "force": "LIFE",
+      "type": "Eliteborn Unit — Life",
+      "cost": 5,
+      "resource": 1,
+      "stats": "4/8 | LIFE",
+      "rules": "On play: return a LIFE Unit from discard to your hand.",
+      "descriptor": "Eliteborn are one perfected force-civilization, not knights, royalty, paladins, robots, angels, or four unrelated factions. All Units share refined humanoid-adjacent anatomy, sculptural force-integrated garments, ivory/electrum/graphite materials, translucent force-glass, and visible internal force seams. Upper Strata is a high-altitude civilization of immense pale platforms, terraces, bridges, and broken megastructures held together by visible force lattices, tension planes, vector beams, and gravity fields rather than conventional supports. LIFE subfamily: opaline ivory, jade/emerald force light, branching internal channels, layered regenerative structures, expanding curves, and biological abundance expressed as high-order anatomy rather than leaves, vines, druids, or plant people. Living Archive is an older Eliteborn with a serene face, shown small in frame inside a vast Upper Strata chamber where translucent anatomical patterns of previous LIFE bodies are stored as layered force impressions in the walls. They should be reaching into one of those luminous impressions and drawing its pattern back toward themselves. The stored figures are not ghosts or dead spirits; they are preserved biological-force blueprints. Use jade, pearl, and warm electrum with no books, libraries, scrolls, or necromancy. The card should visually say that LIFE remembers how a body was built and can call that design back into possibility.",
+      "prototype": false,
+      "text_mode": "concise",
+      "effect_authority": "Eliteborn v1 rebuild",
+      "force_labels": [
+        "LIFE"
+      ],
+      "force_count_required": 1,
+      "template_mode": "single-force-unit",
+      "template_key": "ELITEBORN_LIFE_TEMPLATE",
+      "generator_template_rule": "Use the approved LIFE Eliteborn template exactly for frame/skin. Do not substitute another Force template and do not recolor a generic Eliteborn frame.",
+      "mechanic_strip_label": "LIFE"
+    },
+    {
+      "id": "ELI-015",
+      "name": "Abundance Without End",
+      "force": "LIFE",
+      "type": "Eliteborn Unit — Life",
+      "cost": 6,
+      "resource": 2,
+      "stats": "5/9 | LIFE",
+      "rules": "End of turn: if every ally is at full HP, all allies gain +0/+1 permanently.",
+      "descriptor": "Eliteborn are one perfected force-civilization, not knights, royalty, paladins, robots, angels, or four unrelated factions. All Units share refined humanoid-adjacent anatomy, sculptural force-integrated garments, ivory/electrum/graphite materials, translucent force-glass, and visible internal force seams. Upper Strata is a high-altitude civilization of immense pale platforms, terraces, bridges, and broken megastructures held together by visible force lattices, tension planes, vector beams, and gravity fields rather than conventional supports. LIFE subfamily: opaline ivory, jade/emerald force light, branching internal channels, layered regenerative structures, expanding curves, and biological abundance expressed as high-order anatomy rather than leaves, vines, druids, or plant people. Abundance Without End is the most expansive individual LIFE design in the set. Use a wide environment-dominant composition with the Eliteborn suspended upright above a force platform while multiple smooth jade-white anatomical extensions unfurl from their body into surrounding architecture. These are not wings, roots, or vines; they are new structural continuations of the same force-grown tissue, as if the boundary between person and healthy environment has become optional. Every nearby allied position should be connected by a clean pulse of green-white force. The figure's expression is peaceful rather than holy. The image should feel like perfect health becoming contagious and physically increasing the capacity of everything nearby.",
+      "prototype": false,
+      "text_mode": "concise",
+      "effect_authority": "Eliteborn v1 rebuild",
+      "force_labels": [
+        "LIFE"
+      ],
+      "force_count_required": 1,
+      "template_mode": "single-force-unit",
+      "template_key": "ELITEBORN_LIFE_TEMPLATE",
+      "generator_template_rule": "Use the approved LIFE Eliteborn template exactly for frame/skin. Do not substitute another Force template and do not recolor a generic Eliteborn frame.",
+      "mechanic_strip_label": "LIFE"
+    },
+    {
+      "id": "ELI-016",
+      "name": "Quiet Mark",
+      "force": "DEATH",
+      "type": "Eliteborn Unit — Death",
+      "cost": 2,
+      "resource": 1,
+      "stats": "3/3 | DEATH",
+      "rules": "On play: mark an enemy until this leaves play. First time it takes damage each turn: deal 1 more.",
+      "descriptor": "Eliteborn are one perfected force-civilization, not knights, royalty, paladins, robots, angels, or four unrelated factions. All Units share refined humanoid-adjacent anatomy, sculptural force-integrated garments, ivory/electrum/graphite materials, translucent force-glass, and visible internal force seams. Upper Strata is a high-altitude civilization of immense pale platforms, terraces, bridges, and broken megastructures held together by visible force lattices, tension planes, vector beams, and gravity fields rather than conventional supports. DEATH subfamily: bone-white, pale graphite, muted violet-gray force light, tapered silhouettes, missing sections, negative space, thin terminal geometry, and serene subtraction. DEATH is not undead, skeletal, necromantic, or grim-reaper imagery. Quiet Mark is a slender Eliteborn shown in strict right-facing profile, occupying only one third of the image. A hair-thin violet-gray line extends from a pale force mark on their fingertip to an empty target position far across Upper Strata. Where the line touches the distant space, part of the architecture has already begun to lose material around its edges. The character wears minimal bone-white structural garments with deliberate gaps exposing dark negative spaces around the ribs and shoulders; no skull motifs, robes, or scythe. Their expression is neutral and almost compassionate. The design should communicate that DEATH does not need rage—it only needs to identify what will end.",
+      "prototype": false,
+      "text_mode": "concise",
+      "effect_authority": "Eliteborn v1 rebuild",
+      "force_labels": [
+        "DEATH"
+      ],
+      "force_count_required": 1,
+      "template_mode": "single-force-unit",
+      "template_key": "ELITEBORN_DEATH_TEMPLATE",
+      "generator_template_rule": "Use the approved DEATH Eliteborn template exactly for frame/skin. Do not substitute another Force template and do not recolor a generic Eliteborn frame.",
+      "mechanic_strip_label": "DEATH"
+    },
+    {
+      "id": "ELI-017",
+      "name": "Last Witness",
+      "force": "DEATH",
+      "type": "Eliteborn Unit — Death",
+      "cost": 3,
+      "resource": 2,
+      "stats": "4/4 | DEATH",
+      "rules": "Whenever another Unit dies: +1 STR this turn; restore 1 HP.",
+      "descriptor": "Eliteborn are one perfected force-civilization, not knights, royalty, paladins, robots, angels, or four unrelated factions. All Units share refined humanoid-adjacent anatomy, sculptural force-integrated garments, ivory/electrum/graphite materials, translucent force-glass, and visible internal force seams. Upper Strata is a high-altitude civilization of immense pale platforms, terraces, bridges, and broken megastructures held together by visible force lattices, tension planes, vector beams, and gravity fields rather than conventional supports. DEATH subfamily: bone-white, pale graphite, muted violet-gray force light, tapered silhouettes, missing sections, negative space, thin terminal geometry, and serene subtraction. DEATH is not undead, skeletal, necromantic, or grim-reaper imagery. Last Witness is a mature Eliteborn standing perfectly still while multiple distant force-silhouettes collapse into thin lines and disappear behind them. Use a frontal but off-center composition with large negative space, making this one of the quietest cards in the set. Each disappearance adds one new pale violet line to the character's body and subtly restores a missing edge of their own form. Their garment is austere graphite-white, fitted and architectural, with no funeral robes or undead styling. The image should suggest that witnessing endings makes this being more complete and more dangerous.",
+      "prototype": false,
+      "text_mode": "concise",
+      "effect_authority": "Eliteborn v1 rebuild",
+      "force_labels": [
+        "DEATH"
+      ],
+      "force_count_required": 1,
+      "template_mode": "single-force-unit",
+      "template_key": "ELITEBORN_DEATH_TEMPLATE",
+      "generator_template_rule": "Use the approved DEATH Eliteborn template exactly for frame/skin. Do not substitute another Force template and do not recolor a generic Eliteborn frame.",
+      "mechanic_strip_label": "DEATH"
+    },
+    {
+      "id": "ELI-018",
+      "name": "Severance Form",
+      "force": "DEATH",
+      "type": "Eliteborn Unit — Death",
+      "cost": 4,
+      "resource": 1,
+      "stats": "4/5 | DEATH",
+      "rules": "When this joins a Formation: choose a damaged enemy; it loses 2 maximum HP.",
+      "descriptor": "Eliteborn are one perfected force-civilization, not knights, royalty, paladins, robots, angels, or four unrelated factions. All Units share refined humanoid-adjacent anatomy, sculptural force-integrated garments, ivory/electrum/graphite materials, translucent force-glass, and visible internal force seams. Upper Strata is a high-altitude civilization of immense pale platforms, terraces, bridges, and broken megastructures held together by visible force lattices, tension planes, vector beams, and gravity fields rather than conventional supports. DEATH subfamily: bone-white, pale graphite, muted violet-gray force light, tapered silhouettes, missing sections, negative space, thin terminal geometry, and serene subtraction. DEATH is not undead, skeletal, necromantic, or grim-reaper imagery. Severance Form is an Eliteborn with one clean horizontal section of the torso physically absent, the upper and lower body remaining aligned through a narrow violet force filament. Show them from a low rear angle stepping into a forming structure while a matching strip of material disappears from a distant damaged enemy silhouette. The missing body segment should read as controlled subtraction, not gore. Use bone-white surfaces with graphite edges and very sparse violet light. The composition should make it clear that when this Unit becomes part of something larger, it brings the principle of removal with it and permanently reduces what the enemy can contain.",
+      "prototype": false,
+      "text_mode": "concise",
+      "effect_authority": "Eliteborn v1 rebuild",
+      "force_labels": [
+        "DEATH"
+      ],
+      "force_count_required": 1,
+      "template_mode": "single-force-unit",
+      "template_key": "ELITEBORN_DEATH_TEMPLATE",
+      "generator_template_rule": "Use the approved DEATH Eliteborn template exactly for frame/skin. Do not substitute another Force template and do not recolor a generic Eliteborn frame.",
+      "mechanic_strip_label": "DEATH"
+    },
+    {
+      "id": "ELI-019",
+      "name": "Return of Silence",
+      "force": "DEATH",
+      "type": "Eliteborn Unit — Death",
+      "cost": 5,
+      "resource": 2,
+      "stats": "6/5 | DEATH",
+      "rules": "On play: return a DEATH Unit from discard to the field with 1 HP. It cannot attack this turn.",
+      "descriptor": "Eliteborn are one perfected force-civilization, not knights, royalty, paladins, robots, angels, or four unrelated factions. All Units share refined humanoid-adjacent anatomy, sculptural force-integrated garments, ivory/electrum/graphite materials, translucent force-glass, and visible internal force seams. Upper Strata is a high-altitude civilization of immense pale platforms, terraces, bridges, and broken megastructures held together by visible force lattices, tension planes, vector beams, and gravity fields rather than conventional supports. DEATH subfamily: bone-white, pale graphite, muted violet-gray force light, tapered silhouettes, missing sections, negative space, thin terminal geometry, and serene subtraction. DEATH is not undead, skeletal, necromantic, or grim-reaper imagery. Return of Silence should invert normal resurrection imagery. Show the Eliteborn crouched beside an empty person-shaped void in a suspended Upper Strata platform. Instead of pulling a ghost upward, they are carefully restoring the missing boundary of that void with thin bone-white lines until a second DEATH body begins to exist again. The returning figure should appear incomplete, fragile, and motionless, visually matching the 1 HP restriction. No graves, corpses, necromancer gestures, or green resurrection magic. This is DEATH using perfect knowledge of absence to recreate something that was already concluded.",
+      "prototype": false,
+      "text_mode": "concise",
+      "effect_authority": "Eliteborn v1 rebuild",
+      "force_labels": [
+        "DEATH"
+      ],
+      "force_count_required": 1,
+      "template_mode": "single-force-unit",
+      "template_key": "ELITEBORN_DEATH_TEMPLATE",
+      "generator_template_rule": "Use the approved DEATH Eliteborn template exactly for frame/skin. Do not substitute another Force template and do not recolor a generic Eliteborn frame.",
+      "mechanic_strip_label": "DEATH"
+    },
+    {
+      "id": "ELI-020",
+      "name": "Terminal Principle",
+      "force": "DEATH",
+      "type": "Eliteborn Unit — Death",
+      "cost": 6,
+      "resource": 1,
+      "stats": "7/6 | DEATH",
+      "rules": "Units destroyed by this are banished. First time this banishes an enemy each turn: restore 2 HP to this.",
+      "descriptor": "Eliteborn are one perfected force-civilization, not knights, royalty, paladins, robots, angels, or four unrelated factions. All Units share refined humanoid-adjacent anatomy, sculptural force-integrated garments, ivory/electrum/graphite materials, translucent force-glass, and visible internal force seams. Upper Strata is a high-altitude civilization of immense pale platforms, terraces, bridges, and broken megastructures held together by visible force lattices, tension planes, vector beams, and gravity fields rather than conventional supports. DEATH subfamily: bone-white, pale graphite, muted violet-gray force light, tapered silhouettes, missing sections, negative space, thin terminal geometry, and serene subtraction. DEATH is not undead, skeletal, necromantic, or grim-reaper imagery. Terminal Principle is the apex individual DEATH expression before Extinction. Use a full-body distant composition with a tall, nearly monochrome Eliteborn walking toward the viewer across a platform whose structures vanish cleanly several steps behind them. The character should have a readable calm face, close-cropped or severe hair, and minimal bone-white/graphite body architecture. Where their force passes through defeated matter, nothing remains—not ash, blood, or debris. A thin violet-white seam inside the chest brightens as erased material disappears, explaining the small self-restoration. Do not make the figure grim, monstrous, skeletal, crowned, or armed with a scythe.",
+      "prototype": false,
+      "text_mode": "concise",
+      "effect_authority": "Eliteborn v1 rebuild",
+      "force_labels": [
+        "DEATH"
+      ],
+      "force_count_required": 1,
+      "template_mode": "single-force-unit",
+      "template_key": "ELITEBORN_DEATH_TEMPLATE",
+      "generator_template_rule": "Use the approved DEATH Eliteborn template exactly for frame/skin. Do not substitute another Force template and do not recolor a generic Eliteborn frame.",
+      "mechanic_strip_label": "DEATH"
+    },
+    {
+      "id": "ELI-021",
+      "name": "Equilibrium",
+      "type": "Formation Card",
+      "requirement": "CHAOS + ORDER",
+      "cost": 3,
+      "resource": 2,
+      "rules": "On play & end of turn: redistribute each board’s current STR and HP separately as evenly as possible. On break: every Unit becomes the highest current STR and highest current HP among Units in play.",
+      "descriptor": "FORMATION ART — no single-character portrait. Show an ORDER structure and a CHAOS structure forced into one shared body of law above Upper Strata. One half is exact ivory/electrum symmetry; the other is crimson-violet asymmetry. A central force balance redistributes mass and light across two opposing board-like architectural fields until every structure on each side becomes nearly equal. At the bottom of the image, the merged system begins to fracture and every surviving structure suddenly copies the tallest STR-like vertical measure and deepest HP-like foundation measure visible anywhere. The result should feel beautiful, oppressive, and mathematical—not peaceful. Use the Eliteborn Formation template with ORDER and CHAOS requirement nodes.",
+      "stats": "Requirement: CHAOS + ORDER",
+      "prototype": false,
+      "text_mode": "concise",
+      "effect_authority": "Eliteborn v1 rebuild",
+      "force_labels": [
+        "CHAOS",
+        "ORDER"
+      ],
+      "force_count_required": 2,
+      "template_mode": "dual-force-50-50",
+      "template_key": "ELITEBORN_FORMATION_CHAOS_ORDER_50_50",
+      "generator_template_rule": "Build the Formation frame as a true 50/50 hybrid of the approved CHAOS and ORDER Eliteborn templates. Both Force identities must be equally visible in frame material, accent channels, and Force nodes. Do not use a generic Formation frame and do not let either Force visually dominate.",
+      "formation_frame_split": {
+        "ratio": "50/50",
+        "force_a": "CHAOS",
+        "force_b": "ORDER",
+        "layout": "balanced bilateral/interwoven hybrid; equal visual weight"
+      },
+      "mechanic_strip_label": "CHAOS + ORDER"
+    },
+    {
+      "id": "ELI-022",
+      "name": "Mutation",
+      "type": "Formation Card",
+      "requirement": "CHAOS + LIFE",
+      "cost": 3,
+      "resource": 1,
+      "rules": "On play & start of turn: each component transforms into another random same-Cost Unit from any Realm at full HP; rebuild this Formation from their new stats. On break: if its components are from different Realms, every enemy Unit transforms into a random Unit costing 1 less.",
+      "descriptor": "FORMATION ART — depict a single fused biological-force architecture in the middle of transforming through multiple valid bodies. LIFE contributes opaline regenerative anatomy and jade branching force channels; CHAOS fractures those channels into alternate silhouettes. Hard-edged hints of other Realm material languages should appear inside the same transforming mass—crystal facet, lunar blackglass, necro-organic tissue, temporal geometry—but never as a collage of separate characters. The Formation should look completely renewed every time it changes, making the full-HP refresh visually obvious. In the distance, enemy silhouettes begin collapsing into smaller, cheaper-looking body architectures when the union breaks.",
+      "stats": "Requirement: CHAOS + LIFE",
+      "prototype": false,
+      "text_mode": "concise",
+      "effect_authority": "Eliteborn v1 rebuild",
+      "force_labels": [
+        "CHAOS",
+        "LIFE"
+      ],
+      "force_count_required": 2,
+      "template_mode": "dual-force-50-50",
+      "template_key": "ELITEBORN_FORMATION_CHAOS_LIFE_50_50",
+      "generator_template_rule": "Build the Formation frame as a true 50/50 hybrid of the approved CHAOS and LIFE Eliteborn templates. Both Force identities must be equally visible in frame material, accent channels, and Force nodes. Do not use a generic Formation frame and do not let either Force visually dominate.",
+      "formation_frame_split": {
+        "ratio": "50/50",
+        "force_a": "CHAOS",
+        "force_b": "LIFE",
+        "layout": "balanced bilateral/interwoven hybrid; equal visual weight"
+      },
+      "mechanic_strip_label": "CHAOS + LIFE"
+    },
+    {
+      "id": "ELI-023",
+      "name": "Entropy",
+      "type": "Formation Card",
+      "requirement": "CHAOS + DEATH",
+      "cost": 4,
+      "resource": 2,
+      "rules": "Start of turn: this Formation and all enemies take X damage, where X is the number of turns Entropy has been active. On break from this damage: all enemies gain RUIN.",
+      "reminder": "RUIN — Start of turn: take 1 damage. RUIN remains until death.",
+      "descriptor": "FORMATION ART — show a fused CHAOS/DEATH phenomenon as a beautiful structure that is visibly less stable each layer outward. The center begins with one thin violet crack, then successive concentric turns show two, three, and four widening fracture bands. Enemy-side Upper Strata structures caught in the field lose increasingly large pieces each cycle. CHAOS provides unstable crimson-violet fractures; DEATH removes material entirely, leaving clean black absences. When the center finally collapses, thin RUIN marks remain attached only to the enemy structures already present. No demon smoke, rot, or explosion; this is escalating inevitability.",
+      "stats": "Requirement: CHAOS + DEATH",
+      "prototype": false,
+      "text_mode": "concise",
+      "effect_authority": "Eliteborn v1 rebuild",
+      "force_labels": [
+        "CHAOS",
+        "DEATH"
+      ],
+      "force_count_required": 2,
+      "template_mode": "dual-force-50-50",
+      "template_key": "ELITEBORN_FORMATION_CHAOS_DEATH_50_50",
+      "generator_template_rule": "Build the Formation frame as a true 50/50 hybrid of the approved CHAOS and DEATH Eliteborn templates. Both Force identities must be equally visible in frame material, accent channels, and Force nodes. Do not use a generic Formation frame and do not let either Force visually dominate.",
+      "formation_frame_split": {
+        "ratio": "50/50",
+        "force_a": "CHAOS",
+        "force_b": "DEATH",
+        "layout": "balanced bilateral/interwoven hybrid; equal visual weight"
+      },
+      "mechanic_strip_label": "CHAOS + DEATH"
+    },
+    {
+      "id": "ELI-024",
+      "name": "Harmony",
+      "type": "Formation Card",
+      "requirement": "ORDER + LIFE",
+      "cost": 3,
+      "resource": 1,
+      "rules": "Start of turn: allies restore 1 HP. ORDER/LIFE allies instead gain +1/+2 permanently. On break: all allies gain CONCORD.",
+      "reminder": "CONCORD — End of turn: restore 2 HP.",
+      "descriptor": "FORMATION ART — ORDER's exact ivory lattice and LIFE's jade regenerative channels weave into one enormous suspended bridge-organism that stabilizes an entire Upper Strata district. Force pulses move outward from the Formation to several allied positions. Neutral allies simply repair; ORDER/LIFE positions visibly gain new permanent structural layers. When the central bridge fractures, a softer secondary network remains connected between allies, representing CONCORD continuing after Harmony is gone. Avoid halos, angels, flowers, and generic healing light. The image should feel like perfect engineering and perfect biology agreeing on a single sustainable structure.",
+      "stats": "Requirement: ORDER + LIFE",
+      "prototype": false,
+      "text_mode": "concise",
+      "effect_authority": "Eliteborn v1 rebuild",
+      "force_labels": [
+        "ORDER",
+        "LIFE"
+      ],
+      "force_count_required": 2,
+      "template_mode": "dual-force-50-50",
+      "template_key": "ELITEBORN_FORMATION_ORDER_LIFE_50_50",
+      "generator_template_rule": "Build the Formation frame as a true 50/50 hybrid of the approved ORDER and LIFE Eliteborn templates. Both Force identities must be equally visible in frame material, accent channels, and Force nodes. Do not use a generic Formation frame and do not let either Force visually dominate.",
+      "formation_frame_split": {
+        "ratio": "50/50",
+        "force_a": "ORDER",
+        "force_b": "LIFE",
+        "layout": "balanced bilateral/interwoven hybrid; equal visual weight"
+      },
+      "mechanic_strip_label": "ORDER + LIFE"
+    },
+    {
+      "id": "ELI-025",
+      "name": "Stasis",
+      "type": "Formation Card",
+      "requirement": "ORDER + DEATH",
+      "cost": 4,
+      "resource": 2,
+      "rules": "On play & start of turn: reroll every Unit as ACTIVE or STASIS. STASIS Units cannot attack or take damage. On break: banish all STASIS Units.",
+      "reminder": "STASIS — Frozen in time: cannot attack or take damage.",
+      "descriptor": "FORMATION ART — depict Upper Strata as a field of suspended Unit-shaped force forms, some illuminated and moving, others locked inside perfectly clear force-glass slices where dust, cloth, and light are frozen mid-motion. ORDER contributes exact binary geometry and clean on/off alignment; DEATH contributes silent empty gaps around frozen forms. The central Formation resembles a vast switch or binary gate made from two interlocking Eliteborn force architectures, not a literal machine button. At the moment of break, every frozen form should vanish in a clean simultaneous 'snap' while active forms remain untouched.",
+      "stats": "Requirement: ORDER + DEATH",
+      "prototype": false,
+      "text_mode": "concise",
+      "effect_authority": "Eliteborn v1 rebuild",
+      "force_labels": [
+        "ORDER",
+        "DEATH"
+      ],
+      "force_count_required": 2,
+      "template_mode": "dual-force-50-50",
+      "template_key": "ELITEBORN_FORMATION_ORDER_DEATH_50_50",
+      "generator_template_rule": "Build the Formation frame as a true 50/50 hybrid of the approved ORDER and DEATH Eliteborn templates. Both Force identities must be equally visible in frame material, accent channels, and Force nodes. Do not use a generic Formation frame and do not let either Force visually dominate.",
+      "formation_frame_split": {
+        "ratio": "50/50",
+        "force_a": "ORDER",
+        "force_b": "DEATH",
+        "layout": "balanced bilateral/interwoven hybrid; equal visual weight"
+      },
+      "mechanic_strip_label": "ORDER + DEATH"
+    },
+    {
+      "id": "ELI-026",
+      "name": "Rebirth",
+      "type": "Formation Card",
+      "requirement": "LIFE + DEATH",
+      "cost": 4,
+      "resource": 1,
+      "rules": "While active, other allies have “On death: respawn with 1 HP.” On break: its components become untargetable REMNANTS. After 2 enemy Unit deaths, both return at full HP, unformed.",
+      "reminder": "REMNANT — Occupies a Unit space; cannot attack or be targeted.",
+      "descriptor": "FORMATION ART — LIFE and DEATH fold into a looping structure where completed bodies collapse into pale empty shells and then reappear from those same boundaries. Use jade living force and bone-violet terminal force in equal measure. Around the central Formation, allied silhouettes repeatedly disappear and return as thin 1-HP outlines. When the central union breaks, leave two unmistakable sculptural REMNANTS occupying real platform space—empty but solid force shells. Two distant enemy deaths trigger the shells to refill into separate complete bodies. No phoenixes, graveyards, zombies, or spiritual resurrection clichés.",
+      "stats": "Requirement: LIFE + DEATH",
+      "prototype": false,
+      "text_mode": "concise",
+      "effect_authority": "Eliteborn v1 rebuild",
+      "force_labels": [
+        "LIFE",
+        "DEATH"
+      ],
+      "force_count_required": 2,
+      "template_mode": "dual-force-50-50",
+      "template_key": "ELITEBORN_FORMATION_LIFE_DEATH_50_50",
+      "generator_template_rule": "Build the Formation frame as a true 50/50 hybrid of the approved LIFE and DEATH Eliteborn templates. Both Force identities must be equally visible in frame material, accent channels, and Force nodes. Do not use a generic Formation frame and do not let either Force visually dominate.",
+      "formation_frame_split": {
+        "ratio": "50/50",
+        "force_a": "LIFE",
+        "force_b": "DEATH",
+        "layout": "balanced bilateral/interwoven hybrid; equal visual weight"
+      },
+      "mechanic_strip_label": "LIFE + DEATH"
+    },
+    {
+      "id": "ELI-027",
+      "name": "Genesis",
+      "type": "Apex Formation Card",
+      "requirement": "LIFE ×5",
+      "cost": 6,
+      "resource": 2,
+      "rules": "On play: randomly mark every Unit ORIGIN or SOURCE. ORIGIN deaths leave REMNANTS and return end of turn at the STR/HP recorded when marked. On break: remove ORIGIN; respawn all dead SOURCE, then remove SOURCE.",
+      "descriptor": "APEX FORMATION ART — five LIFE currents converge into a colossal living force architecture spanning multiple Upper Strata platforms. Do not show five people posing together. Their identities should have merged into one self-generating structure whose opaline anatomy continuously reproduces the patterns around it. Every Unit-like form across both sides receives one of two subtle geometric marks: ORIGIN as a closed jade core, SOURCE as an open branching core. ORIGIN forms that disappear leave solid Remnant shells and reconstitute from their recorded pattern at the edge of the scene. The image should feel like the battlefield's biological starting conditions have been rewritten by a Force that now remembers how everything is supposed to exist.",
+      "stats": "Requirement: LIFE ×5",
+      "prototype": false,
+      "text_mode": "concise",
+      "effect_authority": "Eliteborn v1 rebuild",
+      "force_labels": [
+        "LIFE"
+      ],
+      "force_count_required": 5,
+      "template_mode": "mono-force-apex",
+      "template_key": "ELITEBORN_LIFE_APEX_TEMPLATE",
+      "generator_template_rule": "Use the approved LIFE Eliteborn template as the governing frame skin, intensified for an Apex Formation. It must remain unmistakably LIFE; do not mix in other Force colors.",
+      "formation_frame_split": {
+        "ratio": "100%",
+        "force_a": "LIFE",
+        "force_b": null,
+        "layout": "mono-force apex"
+      },
+      "mechanic_strip_label": "LIFE ×5"
+    },
+    {
+      "id": "ELI-028",
+      "name": "Extinction",
+      "type": "Apex Formation Card",
+      "requirement": "DEATH ×5",
+      "cost": 6,
+      "resource": 1,
+      "rules": "While active, Units this Formation kills and all copies in enemy hand/deck are banished. On break: all Units in play gain “On death: banish this and all copies from hand/deck.”",
+      "descriptor": "APEX FORMATION ART — five DEATH geometries collapse into one enormous negative-space structure. The central Formation should be defined less by visible mass than by the impossible absence it cuts through Upper Strata. Repeated motifs of the same enemy identity appear receding through distant layers, then vanish one after another as the central void touches the first instance, visually expressing deletion of every copy rather than ordinary death. When the Formation breaks, thin terminal marks spread to every remaining Unit silhouette on both sides. Use bone-white edges, graphite architecture, muted violet seams, and huge disciplined areas of nothing. No skulls, grave smoke, or explosions.",
+      "stats": "Requirement: DEATH ×5",
+      "prototype": false,
+      "text_mode": "concise",
+      "effect_authority": "Eliteborn v1 rebuild",
+      "force_labels": [
+        "DEATH"
+      ],
+      "force_count_required": 5,
+      "template_mode": "mono-force-apex",
+      "template_key": "ELITEBORN_DEATH_APEX_TEMPLATE",
+      "generator_template_rule": "Use the approved DEATH Eliteborn template as the governing frame skin, intensified for an Apex Formation. It must remain unmistakably DEATH; do not mix in other Force colors.",
+      "formation_frame_split": {
+        "ratio": "100%",
+        "force_a": "DEATH",
+        "force_b": null,
+        "layout": "mono-force apex"
+      },
+      "mechanic_strip_label": "DEATH ×5"
+    },
+    {
+      "id": "ELI-029",
+      "name": "Ascendancy",
+      "type": "Apex Formation Card",
+      "requirement": "ORDER ×5",
+      "cost": 6,
+      "resource": 2,
+      "rules": "While active, allies gain ASCENDENCE. While your board’s total STR+HP is higher, ASCENDENCE Units have +2/+2; this does not stack. On break: ASCENDENCE Units gain +1/+1 permanently.",
+      "reminder": "ASCENDENCE — +2/+2 while your board’s total STR+HP is higher.",
+      "descriptor": "APEX FORMATION ART — five ORDER axes merge into an impossibly exact vertical structure suspended above Upper Strata. Every bridge, platform, force line, and celestial perspective in the image snaps into alignment with it. Allied silhouettes below gain clean extra layers only while their side visibly outweighs the opposing field in total structural mass. Do not use crowns, thrones, angels, banners, or royal victory imagery. Ascendancy is superiority proven as mathematics. At the edge of the composition the apex begins to fracture, but the allied forms retain one smaller permanent layer of exact geometry, showing the +1/+1 legacy after the Formation breaks.",
+      "stats": "Requirement: ORDER ×5",
+      "prototype": false,
+      "text_mode": "concise",
+      "effect_authority": "Eliteborn v1 rebuild",
+      "force_labels": [
+        "ORDER"
+      ],
+      "force_count_required": 5,
+      "template_mode": "mono-force-apex",
+      "template_key": "ELITEBORN_ORDER_APEX_TEMPLATE",
+      "generator_template_rule": "Use the approved ORDER Eliteborn template as the governing frame skin, intensified for an Apex Formation. It must remain unmistakably ORDER; do not mix in other Force colors.",
+      "formation_frame_split": {
+        "ratio": "100%",
+        "force_a": "ORDER",
+        "force_b": null,
+        "layout": "mono-force apex"
+      },
+      "mechanic_strip_label": "ORDER ×5"
+    },
+    {
+      "id": "ELI-030",
+      "name": "Pandemonium",
+      "type": "Apex Formation Card",
+      "requirement": "CHAOS ×5",
+      "cost": 6,
+      "resource": 1,
+      "rules": "Start of turn: snapshot every Unit’s current STR/HP; each Unit simultaneously takes a random other Unit’s pair. On break: each Unit randomly gets +1/+1, -1/-1, +1/-1, -1/+1, +2/+2, -2/-2, +2/-2, or -2/+2.",
+      "descriptor": "APEX FORMATION ART — five CHAOS bodies have merged into one impossible structure where scale, proportion, and ownership of mass no longer agree. Across the scene, a tiny Unit silhouette suddenly carries the massive proportions of the apex while a formerly huge form has become fragile and narrow; several others visibly exchange their structural dimensions at the same instant. Use hard physical transformation rather than glowing spell effects. At Formation break, eight distinct asymmetric force bursts scatter through the battlefield, each altering a different combination of strength and durability. The result must remain beautiful and compositionally intentional, not visual noise. This is perfected uncertainty reaching critical mass.",
+      "stats": "Requirement: CHAOS ×5",
+      "prototype": false,
+      "text_mode": "concise",
+      "effect_authority": "Eliteborn v1 rebuild",
+      "force_labels": [
+        "CHAOS"
+      ],
+      "force_count_required": 5,
+      "template_mode": "mono-force-apex",
+      "template_key": "ELITEBORN_CHAOS_APEX_TEMPLATE",
+      "generator_template_rule": "Use the approved CHAOS Eliteborn template as the governing frame skin, intensified for an Apex Formation. It must remain unmistakably CHAOS; do not mix in other Force colors.",
+      "formation_frame_split": {
+        "ratio": "100%",
+        "force_a": "CHAOS",
+        "force_b": null,
+        "layout": "mono-force apex"
+      },
+      "mechanic_strip_label": "CHAOS ×5"
+    }
+  ],
+  "template_routing": {
+    "rule": "Template selection is data-driven and mandatory. Generators/renderers must read template_key/template_mode; never infer template from artwork.",
+    "unit_templates": {
+      "ORDER": "ELITEBORN_ORDER_TEMPLATE",
+      "CHAOS": "ELITEBORN_CHAOS_TEMPLATE",
+      "LIFE": "ELITEBORN_LIFE_TEMPLATE",
+      "DEATH": "ELITEBORN_DEATH_TEMPLATE"
+    },
+    "dual_force_formations": "Use both approved Force templates at equal 50/50 visual weight.",
+    "mono_force_apex": "Use the matching single-Force template, intensified for Apex status."
+  }
+}

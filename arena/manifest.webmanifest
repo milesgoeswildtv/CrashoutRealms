@@ -1,0 +1,10 @@
+{
+  "name": "REALMS — The Realm Table",
+  "short_name": "REALMS",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#0b0d0f",
+  "theme_color": "#0b0d0f"
+}
