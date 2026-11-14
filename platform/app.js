@@ -133,7 +133,7 @@ function updateAccountUI() {
   linkCreate.textContent = snapshot.destination?.linked ? "REALMS ACCOUNT LINKED" : "CREATE + LINK REALMS ACCOUNT";
 }
 function setBusy(busy) {
-  [authSubmit, discordButton, createToggle, signOutButton].forEach(button => { if (button) button.disabled = busy; });
+  [authSubmit, discordButton, createToggle, signOutButton, linkExisting, linkCreate].forEach(button => { if (button) button.disabled = busy; });
 }
 async function refreshIdentity() {
   snapshot = await identity.getSnapshot();
@@ -180,9 +180,27 @@ signOutButton.addEventListener("click", async () => {
   catch (error) { setMessage(error.message || "Sign-out failed.", "error"); }
   finally { setBusy(false); }
 });
-for (const button of [linkExisting, linkCreate]) button.addEventListener("click", () => {
-  setMessage("REALMS account linking is safely disabled until its server adapter and launch handoff pass verification.", "info");
-});
+async function beginRealmsLink(flow) {
+  if (!identity || !snapshot.authenticated) {
+    setMessage("Sign in to Crashout before linking REALMS.", "error");
+    return;
+  }
+  const button = flow === "existing" ? linkExisting : linkCreate;
+  setBusy(true);
+  button.disabled = true;
+  setMessage(flow === "existing" ? "Preparing secure REALMS account link…" : "Preparing your REALMS account…");
+  try {
+    const handoff = await identity.requestDestinationLink(flow);
+    setMessage("Secure handoff ready. Opening REALMS…", "success");
+    window.location.assign(handoff.launchUrl);
+  } catch (error) {
+    setMessage(error.message || "REALMS linking could not be started.", "error");
+    setBusy(false);
+    updateAccountUI();
+  }
+}
+linkExisting.addEventListener("click", () => beginRealmsLink("existing"));
+linkCreate.addEventListener("click", () => beginRealmsLink("create"));
 document.querySelector("#close-account").addEventListener("click", () => accountDialog.close());
 window.addEventListener("hashchange", render);
 
